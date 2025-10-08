@@ -1,0 +1,54 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class OrderItem extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'order_id',
+        'product_id', 
+        'product_name',
+        'price',
+        'qty_units',
+        'total_qty',
+        'claimed'
+    ];
+
+    protected $casts = [
+        'price' => 'decimal:2',
+        'qty_units' => 'integer',
+        'total_qty' => 'integer',
+        'product_id' => 'integer',
+        'claimed' => 'boolean'
+    ];
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    public function scopeNotClaimed($query)
+    {
+        return $query->where('claimed', false);
+    }
+
+    public function scopeClaimed($query)
+    {
+        return $query->where('claimed', true);
+    }
+
+    public function markAsClaimed()
+    {
+        $this->update(['claimed' => true]);
+    }
+}
