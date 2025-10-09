@@ -6,3 +6,4 @@
 /storage/framework/views
 .env
 /bootstrap/cache
+/storage/app/public/clients

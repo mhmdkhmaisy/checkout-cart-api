@@ -1,0 +1,24 @@
+{
+    "latest": {
+        "standalone": "0.1.1",
+        "windows": "0.1.1"
+    },
+    "files": [
+        {
+            "os": "standalone",
+            "version": "0.1.1",
+            "url": "http:\/\/aragon-data.live\/storage\/clients\/client_standalone_0.1.1.jar",
+            "size": 4094821,
+            "hash": "8fbcfa283b753bd573e3a7cead66d196d0afa5aab6ed8887fa56e179aa9dcc25",
+            "changelog": null
+        },
+        {
+            "os": "windows",
+            "version": "0.1.1",
+            "url": "http:\/\/aragon-data.live\/storage\/clients\/client_windows_0.1.1.exe",
+            "size": 2724984,
+            "hash": "864d70dd755dab8431c2465531067cf8130166585e55dd4c4bb7de3df54a1967",
+            "changelog": "00000"
+        }
+    ]
+}

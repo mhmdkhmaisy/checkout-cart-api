@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Aragon RSPS Donation Admin')</title>
+    <title>@yield('title', 'Aragon RSPS Admin Panel')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
@@ -79,7 +79,7 @@
                         <h1 class="text-xl font-bold dragon-text-glow text-dragon-red">
                             Admin Panel
                         </h1>
-                        <p class="text-dragon-silver-dark text-sm">Dragon's Donation System</p>
+                        <p class="text-dragon-silver-dark text-sm">Dragon's Management System</p>
                     </div>
                 </div>
             </div>
@@ -88,63 +88,146 @@
                 <ul class="space-y-2 px-4">
                     <li>
                         <a href="{{ route('admin.dashboard') }}" 
-                           class="nav-link flex items-center px-4 py-3 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                           class="nav-link flex items-center px-4 py-3 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.index') ? 'active' : '' }}">
                             <i class="fas fa-tachometer-alt mr-3"></i>
                             Dashboard
                         </a>
                     </li>
-                    <li>
-                        <a href="{{ route('admin.products.index') }}" 
-                           class="nav-link flex items-center px-4 py-3 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
-                            <i class="fas fa-box mr-3"></i>
-                            Products
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.orders.index') }}" 
-                           class="nav-link flex items-center px-4 py-3 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.orders.index') || request()->routeIs('admin.orders.show') ? 'active' : '' }}">
-                            <i class="fas fa-shopping-cart mr-3"></i>
-                            Orders
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.orders.logs') }}" 
-                           class="nav-link flex items-center px-4 py-3 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.orders.logs') ? 'active' : '' }}">
-                            <i class="fas fa-list-alt mr-3"></i>
-                            Order Logs
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.api-docs') }}" 
-                           class="nav-link flex items-center px-4 py-3 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.api-docs') ? 'active' : '' }}">
-                            <i class="fas fa-code mr-3"></i>
-                            API Documentation
-                        </a>
-                    </li>
+
+                    <!-- Orders Section -->
+                    <div class="pt-4">
+                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Payment System</h3>
+                        <div class="mt-2 space-y-1">
+                            <a href="{{ route('admin.orders.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.orders.index') || request()->routeIs('admin.orders.show') ? 'active' : '' }}">
+                                <i class="fas fa-shopping-cart mr-3"></i>
+                                All Orders
+                            </a>
+
+                            <a href="{{ route('admin.products.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.products.index') || request()->routeIs('admin.products.show') ? 'active' : '' }}">
+                                <i class="fas fa-box mr-3"></i>
+                                All Products
+                            </a>
+
+                            <a href="{{ route('admin.orders.logs') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.orders.logs') ? 'active' : '' }}">
+                                <i class="fas fa-list-alt mr-3"></i>
+                                Payment Logs
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Vote Management Section -->
+                    <div class="pt-4">
+                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Vote System</h3>
+                        <div class="mt-2 space-y-1">
+                            <a href="{{ route('admin.vote.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.vote.index') ? 'active' : '' }}">
+                                <i class="fas fa-vote-yea mr-3"></i>
+                                Vote Sites
+                            </a>
+                            <a href="{{ route('admin.vote.votes') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.vote.votes') ? 'active' : '' }}">
+                                <i class="fas fa-list mr-3"></i>
+                                Vote History
+                            </a>
+                            <a href="{{ route('admin.vote.stats') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.vote.stats') ? 'active' : '' }}">
+                                <i class="fas fa-chart-bar mr-3"></i>
+                                Vote Statistics
+                            </a>
+                            <a href="{{ route('vote.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg" target="_blank">
+                                <i class="fas fa-external-link-alt mr-3"></i>
+                                Public Vote Page
+                            </a>
+                        </div>
+                    </div>
+                    <!-- API Documentation -->
+                    <div class="pt-4">
+                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">API Documentation</h3>
+                        <div class="mt-2 space-y-1">
+                            <a href="{{ route('admin.api-docs') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.api-docs') ? 'active' : '' }}">
+                                <div class="p-2 bg-dragon-red rounded-lg mr-4 group-hover:bg-dragon-red-bright transition-colors">
+                                    <svg class="w-5 h-5 text-dragon-silver" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                                    </svg>
+                                </div>
+                                Store API Docs
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Client Managment Documentation -->
+                    <div class="pt-4">
+                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Client Managment</h3>
+                        <div class="mt-2 space-y-1">
+                            <a href="{{ route('admin.clients.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.clients.*') ? 'active' : '' }}">
+                                <i class="fas fa-download mr-3"></i>
+                               Client Management
+                            </a>
+                        </div>
+                    </div>
                 </ul>
             </nav>
+
+            <!-- User Info -->
+            <div class="border-t border-dragon-border p-4 mt-8">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-dragon-red rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-dragon-silver text-sm"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-dragon-silver">Admin User</div>
+                        <div class="text-xs text-dragon-silver-dark">Administrator</div>
+                    </div>
+                </div>
+            </div>
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 p-8">
-            @yield('content')
-        </main>
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-dragon-surface border-b border-dragon-border px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-2xl font-bold text-dragon-red dragon-text-glow">
+                        @yield('header', 'Admin Dashboard')
+                    </h1>
+                    <div class="flex items-center space-x-4">
+                        <a href="{{ route('vote.index') }}" 
+                           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                            <i class="fas fa-external-link-alt mr-2"></i>
+                            View Vote Page
+                        </a>
+                        <span class="text-sm text-dragon-silver-dark">{{ now()->format('M j, Y g:i A') }}</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="flex-1 overflow-y-auto p-6">
+                @if(session('success'))
+                    <div class="mb-6 p-4 bg-green-600 text-green-100 rounded-lg">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        {{ session('success') }}
+                    </div>
+                @endif
+
+                @if(session('error'))
+                    <div class="mb-6 p-4 bg-red-600 text-red-100 rounded-lg">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        {{ session('error') }}
+                    </div>
+                @endif
+
+                @yield('content')
+            </main>
+        </div>
     </div>
 
-    <!-- Scripts -->
-    <script>
-        // Auto-hide alerts after 5 seconds
-        document.addEventListener('DOMContentLoaded', function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                setTimeout(function() {
-                    alert.style.opacity = '0';
-                    setTimeout(function() {
-                        alert.remove();
-                    }, 300);
-                }, 5000);
-            });
-        });
-    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    @stack('scripts')
 </body>
 </html>
