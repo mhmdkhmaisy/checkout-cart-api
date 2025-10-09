@@ -1,16 +1,16 @@
 @extends('admin.layout')
 
-@section('title', 'Products - RSPS Donation Admin')
+@section('title', 'Products - Aragon RSPS Donation Admin')
 
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
-        <h2 class="text-3xl font-bold gradient-green bg-clip-text text-transparent">
+        <h2 class="text-3xl font-bold text-dragon-red dragon-text-glow">
             Products Management
         </h2>
         <button onclick="showCreateForm()" 
-           class="gradient-green px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity">
+           class="gradient-red px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity">
             Add New Product
         </button>
     </div>
@@ -21,10 +21,10 @@
     <!-- Create/Edit Form Modal -->
     <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+            <div class="bg-dragon-surface rounded-lg shadow-lg p-6 w-full max-w-md border border-dragon-border">
                 <div class="flex justify-between items-center mb-6">
-                    <h3 id="modal-title" class="text-xl font-bold text-white">Add New Product</h3>
-                    <button onclick="closeModal()" class="text-gray-400 hover:text-white">
+                    <h3 id="modal-title" class="text-xl font-bold text-dragon-silver">Add New Product</h3>
+                    <button onclick="closeModal()" class="text-dragon-silver-dark hover:text-dragon-silver">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -37,44 +37,44 @@
                     <input type="hidden" id="form-method" name="_method" value="POST">
                     
                     <div>
-                        <label for="product_name" class="block text-sm font-medium text-gray-300 mb-2">Product Name</label>
+                        <label for="product_name" class="block text-sm font-medium text-dragon-red mb-2">Product Name</label>
                         <input type="text" 
                                id="product_name" 
                                name="product_name" 
-                               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                               class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
                                required>
                         <div id="product_name_error" class="text-red-400 text-sm mt-1 hidden"></div>
                     </div>
 
                     <div>
-                        <label for="item_id" class="block text-sm font-medium text-gray-300 mb-2">Item ID</label>
+                        <label for="item_id" class="block text-sm font-medium text-dragon-red mb-2">Item ID</label>
                         <input type="number" 
                                id="item_id" 
                                name="item_id" 
-                               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                               class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
                                required>
                         <div id="item_id_error" class="text-red-400 text-sm mt-1 hidden"></div>
                     </div>
 
                     <div>
-                        <label for="qty_unit" class="block text-sm font-medium text-gray-300 mb-2">Quantity Unit</label>
+                        <label for="qty_unit" class="block text-sm font-medium text-dragon-red mb-2">Quantity Unit</label>
                         <input type="number" 
                                id="qty_unit" 
                                name="qty_unit" 
                                min="1"
-                               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                               class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
                                required>
                         <div id="qty_unit_error" class="text-red-400 text-sm mt-1 hidden"></div>
                     </div>
 
                     <div>
-                        <label for="price" class="block text-sm font-medium text-gray-300 mb-2">Price ($)</label>
+                        <label for="price" class="block text-sm font-medium text-dragon-red mb-2">Price ($)</label>
                         <input type="number" 
                                id="price" 
                                name="price" 
                                step="0.01" 
                                min="0.01"
-                               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                               class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
                                required>
                         <div id="price_error" class="text-red-400 text-sm mt-1 hidden"></div>
                     </div>
@@ -85,17 +85,17 @@
                                name="is_active" 
                                value="1"
                                checked
-                               class="w-4 h-4 text-green-600 bg-gray-700 border-gray-600 rounded focus:ring-green-500 focus:ring-2">
-                        <label for="is_active" class="ml-2 text-sm font-medium text-gray-300">Product is active</label>
+                               class="w-4 h-4 text-dragon-red bg-dragon-black border-dragon-border rounded focus:ring-dragon-red focus:ring-2">
+                        <label for="is_active" class="ml-2 text-sm font-medium text-dragon-silver-dark">Product is active</label>
                     </div>
 
                     <div class="flex justify-end space-x-4 pt-4">
                         <button type="button" onclick="closeModal()" 
-                                class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition duration-200">
+                                class="px-6 py-2 bg-dragon-border hover:bg-dragon-silver-dark text-dragon-silver rounded-lg transition duration-200">
                             Cancel
                         </button>
                         <button type="submit" 
-                                class="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg transition duration-200">
+                                class="px-6 py-2 gradient-red hover:opacity-90 text-dragon-silver rounded-lg transition duration-200">
                             <span id="submit-text">Create Product</span>
                         </button>
                     </div>
@@ -105,28 +105,28 @@
     </div>
 
     <!-- Products Table -->
-    <div class="glass-effect rounded-xl overflow-hidden">
+    <div class="glass-effect rounded-xl overflow-hidden border border-dragon-border">
         <div class="overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-dark-surface">
+                <thead class="bg-dragon-surface border-b border-dragon-border">
                     <tr>
-                        <th class="px-6 py-4 text-left font-semibold text-green-primary">ID</th>
-                        <th class="px-6 py-4 text-left font-semibold text-green-primary">Product Name</th>
-                        <th class="px-6 py-4 text-left font-semibold text-green-primary">Item ID</th>
-                        <th class="px-6 py-4 text-left font-semibold text-green-primary">Qty Unit</th>
-                        <th class="px-6 py-4 text-left font-semibold text-green-primary">Price</th>
-                        <th class="px-6 py-4 text-left font-semibold text-green-primary">Status</th>
-                        <th class="px-6 py-4 text-left font-semibold text-green-primary">Actions</th>
+                        <th class="px-6 py-4 text-left font-semibold text-dragon-red">ID</th>
+                        <th class="px-6 py-4 text-left font-semibold text-dragon-red">Product Name</th>
+                        <th class="px-6 py-4 text-left font-semibold text-dragon-red">Item ID</th>
+                        <th class="px-6 py-4 text-left font-semibold text-dragon-red">Qty Unit</th>
+                        <th class="px-6 py-4 text-left font-semibold text-dragon-red">Price</th>
+                        <th class="px-6 py-4 text-left font-semibold text-dragon-red">Status</th>
+                        <th class="px-6 py-4 text-left font-semibold text-dragon-red">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="products-table-body" class="divide-y divide-gray-700">
+                <tbody id="products-table-body" class="divide-y divide-dragon-border">
                     @forelse($products as $product)
-                        <tr class="hover:bg-dark-surface transition-colors" data-product-id="{{ $product->id }}">
-                            <td class="px-6 py-4">{{ $product->id }}</td>
-                            <td class="px-6 py-4 font-medium">{{ $product->product_name }}</td>
-                            <td class="px-6 py-4">{{ $product->item_id }}</td>
-                            <td class="px-6 py-4">{{ $product->qty_unit }}</td>
-                            <td class="px-6 py-4">${{ number_format($product->price, 2) }}</td>
+                        <tr class="hover:bg-dragon-surface transition-colors" data-product-id="{{ $product->id }}">
+                            <td class="px-6 py-4 text-dragon-silver">{{ $product->id }}</td>
+                            <td class="px-6 py-4 font-medium text-dragon-silver">{{ $product->product_name }}</td>
+                            <td class="px-6 py-4 text-dragon-silver">{{ $product->item_id }}</td>
+                            <td class="px-6 py-4 text-dragon-silver">{{ $product->qty_unit }}</td>
+                            <td class="px-6 py-4 text-dragon-silver">${{ number_format($product->price, 2) }}</td>
                             <td class="px-6 py-4">
                                 <span class="px-3 py-1 rounded-full text-xs font-medium
                                     @if($product->is_active) bg-green-600 text-green-100
@@ -146,9 +146,9 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-400">
+                            <td colspan="7" class="px-6 py-8 text-center text-dragon-silver-dark">
                                 No products found. <button onclick="showCreateForm()" 
-                                                         class="text-green-primary hover:underline">Create your first product</button>
+                                                         class="text-dragon-red hover:underline">Create your first product</button>
                             </td>
                         </tr>
                     @endforelse
@@ -268,9 +268,9 @@ function deleteProduct(productId) {
             if (tbody.children.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="px-6 py-8 text-center text-gray-400">
+                        <td colspan="7" class="px-6 py-8 text-center text-dragon-silver-dark">
                             No products found. <button onclick="showCreateForm()" 
-                                                     class="text-green-primary hover:underline">Create your first product</button>
+                                                     class="text-dragon-red hover:underline">Create your first product</button>
                         </td>
                     </tr>
                 `;
@@ -314,7 +314,7 @@ function showMessage(message, type) {
     const alertClass = type === 'success' ? 'bg-green-600' : 'bg-red-600';
     
     container.innerHTML = `
-        <div class="${alertClass} text-white px-6 py-4 rounded-lg mb-4">
+        <div class="${alertClass} text-dragon-silver px-6 py-4 rounded-lg mb-4">
             ${message}
         </div>
     `;

@@ -8,26 +8,28 @@
             font-family: Arial, sans-serif;
             font-size: 14px;
             line-height: 1.6;
-            color: #333;
+            color: #e8e8e8;
             margin: 0;
             padding: 20px;
+            background-color: #0a0a0a;
         }
         .header {
             text-align: center;
-            border-bottom: 2px solid #333;
+            border-bottom: 2px solid #d40000;
             padding-bottom: 20px;
             margin-bottom: 30px;
         }
         .logo {
             font-size: 24px;
             font-weight: bold;
-            color: #2563eb;
+            color: #d40000;
             margin-bottom: 10px;
         }
         .receipt-title {
             font-size: 20px;
             font-weight: bold;
             margin-bottom: 5px;
+            color: #ff0000;
         }
         .order-info {
             display: table;
@@ -44,15 +46,17 @@
             font-weight: bold;
             font-size: 16px;
             margin-bottom: 10px;
-            color: #1f2937;
+            color: #d40000;
         }
         .info-item {
             margin-bottom: 8px;
+            color: #c0c0c0;
         }
         .info-label {
             font-weight: bold;
             display: inline-block;
             width: 120px;
+            color: #e8e8e8;
         }
         .status-badge {
             display: inline-block;
@@ -63,76 +67,83 @@
             text-transform: uppercase;
         }
         .status-paid {
-            background-color: #d1fae5;
-            color: #065f46;
+            background-color: #065f46;
+            color: #d1fae5;
         }
         .status-pending {
-            background-color: #fef3c7;
-            color: #92400e;
+            background-color: #92400e;
+            color: #fef3c7;
         }
         .items-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 30px;
+            background-color: #1a1a1a;
         }
         .items-table th,
         .items-table td {
-            border: 1px solid #d1d5db;
+            border: 1px solid #333333;
             padding: 12px;
             text-align: left;
         }
         .items-table th {
-            background-color: #f9fafb;
+            background-color: #333333;
             font-weight: bold;
+            color: #d40000;
+        }
+        .items-table td {
+            color: #c0c0c0;
         }
         .total-row {
-            background-color: #f3f4f6;
+            background-color: #333333;
             font-weight: bold;
+            color: #e8e8e8;
         }
         .instructions {
-            background-color: #ecfdf5;
-            border: 1px solid #a7f3d0;
+            background-color: #1a4d1a;
+            border: 1px solid #065f46;
             border-radius: 6px;
             padding: 15px;
             margin-bottom: 20px;
         }
         .instructions-title {
             font-weight: bold;
-            color: #065f46;
+            color: #d1fae5;
             margin-bottom: 10px;
         }
         .command-code {
-            background-color: #f3f4f6;
+            background-color: #333333;
             padding: 2px 6px;
             border-radius: 3px;
             font-family: monospace;
             font-weight: bold;
+            color: #ff0000;
         }
         .footer {
-            border-top: 1px solid #d1d5db;
+            border-top: 1px solid #333333;
             padding-top: 20px;
             text-align: center;
             font-size: 12px;
-            color: #6b7280;
+            color: #c0c0c0;
         }
         .coinbase-info {
-            background-color: #eff6ff;
-            border: 1px solid #bfdbfe;
+            background-color: #1a2332;
+            border: 1px solid #1e40af;
             border-radius: 6px;
             padding: 15px;
             margin-bottom: 20px;
         }
         .coinbase-title {
             font-weight: bold;
-            color: #1e40af;
+            color: #bfdbfe;
             margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="logo">{{ config('app.name', 'RSPS Store') }}</div>
-        <div class="receipt-title">Payment Receipt</div>
+        <div class="logo">🐉 {{ config('app.name', 'Aragon RSPS') }}</div>
+        <div class="receipt-title">Dragon's Payment Receipt</div>
         <div>Generated on {{ now()->format('F j, Y g:i A') }}</div>
     </div>
 
@@ -144,7 +155,7 @@
                 #{{ $order->id }}
             </div>
             <div class="info-item">
-                <span class="info-label">Username:</span>
+                <span class="info-label">Dragon Warrior:</span>
                 {{ $order->username }}
             </div>
             <div class="info-item">
@@ -187,12 +198,12 @@
     </div>
 
     @if($order->status === 'pending')
-        <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
-            <div style="font-weight: bold; color: #92400e; margin-bottom: 10px;">⚠️ Payment Confirmation Pending</div>
+        <div style="background-color: #92400e; border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
+            <div style="font-weight: bold; color: #fef3c7; margin-bottom: 10px;">⚠️ Payment Confirmation Pending</div>
             @if($order->payment_method === 'paypal')
-                <p style="color: #92400e; margin: 0;">We are waiting for confirmation from PayPal. This usually takes a few minutes.</p>
+                <p style="color: #fef3c7; margin: 0;">We are waiting for confirmation from PayPal. This usually takes a few minutes.</p>
             @else
-                <p style="color: #92400e; margin: 0;">We are waiting for confirmation from Coinbase. This may take up to 15 minutes for blockchain confirmation.</p>
+                <p style="color: #fef3c7; margin: 0;">We are waiting for confirmation from Coinbase. This may take up to 15 minutes for blockchain confirmation.</p>
             @endif
         </div>
     @endif
@@ -200,7 +211,7 @@
     @if($order->payment_method === 'coinbase' && $trackerUrl)
         <div class="coinbase-info">
             <div class="coinbase-title">🔗 Coinbase Payment Tracker</div>
-            <p style="margin: 0; color: #1e40af;">
+            <p style="margin: 0; color: #bfdbfe;">
                 Track your payment status: <strong>{{ $trackerUrl }}</strong>
             </p>
         </div>
@@ -209,7 +220,7 @@
     <table class="items-table">
         <thead>
             <tr>
-                <th>Item</th>
+                <th>Dragon's Treasure</th>
                 <th>Quantity</th>
                 <th>Unit Price</th>
                 <th>Total</th>
@@ -246,17 +257,17 @@
     </table>
 
     <div class="instructions">
-        <div class="instructions-title">🎮 How to Claim Your Items</div>
+        <div class="instructions-title">🎮 How to Claim Your Dragon's Treasure</div>
         <p><strong>1.</strong> Login to the game using the username: <strong>{{ $order->username }}</strong></p>
         <p><strong>2.</strong> Type the command: <span class="command-code">::claim</span></p>
-        <p><strong>3.</strong> Your items will be automatically added to your account!</p>
+        <p><strong>3.</strong> Your items will be automatically added to your dragon warrior's inventory!</p>
     </div>
 
     <div class="footer">
-        <p><strong>{{ config('app.name', 'RSPS Store') }}</strong></p>
-        <p>Thank you for your purchase! If you need assistance, please contact our support team.</p>
+        <p><strong>🐉 {{ config('app.name', 'Aragon RSPS') }} - Dragon's Hoard</strong></p>
+        <p>Thank you for your purchase! If you need assistance, please contact our dragon support team.</p>
         <p>Email: support@example.com | Discord: discord.gg/example</p>
-        <p>This receipt was generated automatically on {{ now()->format('F j, Y \a\t g:i A T') }}</p>
+        <p>This receipt was generated automatically on {{ now()->format('F j, Y \\a\\t g:i A T') }}</p>
     </div>
 </body>
 </html>

@@ -3,37 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout Testing Page</title>
+    <title>Aragon Dragon Checkout Testing</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dragon-black': '#0a0a0a',
+                        'dragon-surface': '#1a1a1a',
+                        'dragon-red': '#d40000',
+                        'dragon-red-bright': '#ff0000',
+                        'dragon-silver': '#e8e8e8',
+                        'dragon-silver-dark': '#c0c0c0',
+                        'dragon-border': '#333333'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .dragon-glow {
+            box-shadow: 0 0 20px rgba(212, 0, 0, 0.3);
+        }
+        .dragon-logo {
+            filter: drop-shadow(0 0 15px #d40000);
+            animation: dragonGlow 3s ease-in-out infinite alternate;
+            transition: all 0.3s ease;
+        }
+        .dragon-logo:hover {
+            filter: drop-shadow(0 0 25px #ff0000);
+            transform: scale(1.05);
+        }
+        @keyframes dragonGlow {
+            from { filter: drop-shadow(0 0 10px #d40000); }
+            to { filter: drop-shadow(0 0 20px #ff0000); }
+        }
+        .gradient-red {
+            background: linear-gradient(135deg, #ff0000, #d40000);
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-dragon-black text-dragon-silver min-h-screen">
+    <!-- Header with Aragon Dragon Logo -->
+    <header class="bg-dragon-surface border-b border-dragon-border p-6">
+        <div class="container mx-auto flex items-center justify-center space-x-6">
+            <div class="dragon-logo">
+                <img src="assets/aragon_logo.png" alt="Aragon Dragon Logo" class="h-20 w-auto object-contain">
+            </div>
+            <div class="text-center">
+                <h1 class="text-3xl font-bold text-dragon-red">Dragon's Hoard</h1>
+                <p class="text-dragon-silver-dark">Premium RSPS Items & Services</p>
+            </div>
+        </div>
+    </header>
+
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Checkout Testing Page</h1>
-        
         <!-- Products Section -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Available Products</h2>
+        <div class="bg-dragon-surface rounded-lg border border-dragon-border dragon-glow p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-dragon-red">Dragon's Treasure Vault</h2>
             <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Products will be loaded here -->
             </div>
             <div class="mt-4">
-                <button onclick="loadSampleProducts()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
-                    Load Sample Products
+                <button onclick="loadSampleProducts()" class="gradient-red hover:opacity-90 text-dragon-silver px-4 py-2 rounded">
+                    Load Dragon's Items
                 </button>
             </div>
         </div>
 
         <!-- Shopping Cart Section -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Shopping Cart</h2>
+        <div class="bg-dragon-surface rounded-lg border border-dragon-border dragon-glow p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-dragon-red">Dragon's Cart</h2>
             <div id="cart-items" class="space-y-4">
-                <p class="text-gray-500">Your cart is empty</p>
+                <p class="text-dragon-silver-dark">Your cart is empty</p>
             </div>
-            <div class="mt-6 pt-4 border-t">
+            <div class="mt-6 pt-4 border-t border-dragon-border">
                 <div class="flex justify-between items-center text-xl font-semibold">
-                    <span>Total: $<span id="cart-total">0.00</span></span>
-                    <button onclick="clearCart()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm">
+                    <span class="text-dragon-silver">Total: $<span id="cart-total">0.00</span></span>
+                    <button onclick="clearCart()" class="bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver px-4 py-2 rounded text-sm">
                         Clear Cart
                     </button>
                 </div>
@@ -41,13 +90,13 @@
         </div>
 
         <!-- Checkout Section -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-700">Checkout Options</h2>
+        <div class="bg-dragon-surface rounded-lg border border-dragon-border dragon-glow p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-dragon-red">Dragon's Checkout</h2>
             
             <!-- User ID Input -->
             <div class="mb-4">
-                <label for="user-id" class="block text-sm font-medium text-gray-700 mb-2">User ID (RSPS Username)</label>
-                <input type="text" id="user-id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                <label for="user-id" class="block text-sm font-medium text-dragon-red mb-2">Dragon Warrior Username</label>
+                <input type="text" id="user-id" class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-md text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red" 
                        placeholder="Enter your RSPS username" value="testuser123">
             </div>
 
@@ -72,9 +121,9 @@
         </div>
 
         <!-- API Response Section -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-700">API Response</h2>
-            <pre id="api-response" class="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-96">
+        <div class="bg-dragon-surface rounded-lg border border-dragon-border dragon-glow p-6">
+            <h2 class="text-2xl font-semibold mb-4 text-dragon-red">Dragon's Response</h2>
+            <pre id="api-response" class="bg-dragon-black p-4 rounded text-sm overflow-auto max-h-96 border border-dragon-border text-dragon-silver">
 No API calls made yet...
             </pre>
         </div>
@@ -84,49 +133,49 @@ No API calls made yet...
         let cart = [];
         let products = [];
 
-        // Sample products data
+        // Sample products data with dragon theme
         const sampleProducts = [
             {
                 id: 1,
                 name: "Dragon Scimitar",
-                description: "A powerful melee weapon",
+                description: "A powerful melee weapon forged in dragon fire",
                 price: 0.01,
-                image: "https://via.placeholder.com/150x150/4F46E5/FFFFFF?text=Dragon+Scim"
+                image: "https://via.placeholder.com/150x150/d40000/e8e8e8?text=Dragon+Scim"
             },
             {
                 id: 2,
                 name: "Abyssal Whip",
-                description: "High-level whip weapon",
+                description: "High-level whip weapon from the abyss",
                 price: 19.99,
-                image: "https://via.placeholder.com/150x150/DC2626/FFFFFF?text=Abyssal+Whip"
+                image: "https://via.placeholder.com/150x150/ff0000/e8e8e8?text=Abyssal+Whip"
             },
             {
                 id: 3,
                 name: "Bandos Chestplate",
-                description: "Strong melee armor",
+                description: "Strong melee armor blessed by the war god",
                 price: 29.99,
-                image: "https://via.placeholder.com/150x150/059669/FFFFFF?text=Bandos+Chest"
+                image: "https://via.placeholder.com/150x150/333333/d40000?text=Bandos+Chest"
             },
             {
                 id: 4,
                 name: "Dharok's Set",
-                description: "Complete Dharok's barrows set",
+                description: "Complete Dharok's barrows set of the damned",
                 price: 49.99,
-                image: "https://via.placeholder.com/150x150/7C2D12/FFFFFF?text=Dharoks+Set"
+                image: "https://via.placeholder.com/150x150/1a1a1a/ff0000?text=Dharoks+Set"
             },
             {
                 id: 5,
-                name: "Party Hat (Blue)",
-                description: "Rare cosmetic item",
+                name: "Party Hat (Crimson)",
+                description: "Rare cosmetic item in dragon's crimson",
                 price: 99.99,
-                image: "https://via.placeholder.com/150x150/1E40AF/FFFFFF?text=Party+Hat"
+                image: "https://via.placeholder.com/150x150/d40000/e8e8e8?text=Party+Hat"
             },
             {
                 id: 6,
                 name: "Dragon Bones (100x)",
-                description: "Stack of 100 dragon bones",
+                description: "Stack of 100 ancient dragon bones",
                 price: 14.99,
-                image: "https://via.placeholder.com/150x150/6B7280/FFFFFF?text=Dragon+Bones"
+                image: "https://via.placeholder.com/150x150/c0c0c0/d40000?text=Dragon+Bones"
             }
         ];
 
@@ -134,22 +183,22 @@ No API calls made yet...
         function loadSampleProducts() {
             products = sampleProducts;
             renderProducts();
-            updateApiResponse('Sample products loaded successfully', 'info');
+            updateApiResponse('Dragon\'s treasure loaded successfully', 'info');
         }
 
         // Render products grid
         function renderProducts() {
             const grid = document.getElementById('products-grid');
             grid.innerHTML = products.map(product => `
-                <div class="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                <div class="border border-dragon-border rounded-lg p-4 hover:shadow-lg transition-shadow bg-dragon-black">
                     <img src="${product.image}" alt="${product.name}" class="w-full h-32 object-cover rounded mb-3">
-                    <h3 class="font-semibold text-lg mb-2">${product.name}</h3>
-                    <p class="text-gray-600 text-sm mb-3">${product.description}</p>
+                    <h3 class="font-semibold text-lg mb-2 text-dragon-silver">${product.name}</h3>
+                    <p class="text-dragon-silver-dark text-sm mb-3">${product.description}</p>
                     <div class="flex justify-between items-center">
-                        <span class="text-xl font-bold text-green-600">$${product.price}</span>
+                        <span class="text-xl font-bold text-dragon-red">$${product.price}</span>
                         <button onclick="addToCart(${product.id})" 
-                                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm">
-                            Add to Cart
+                                class="gradient-red hover:opacity-90 text-dragon-silver px-4 py-2 rounded text-sm">
+                            Add to Hoard
                         </button>
                     </div>
                 </div>
@@ -173,7 +222,7 @@ No API calls made yet...
             
             renderCart();
             updateCheckoutButtons();
-            updateApiResponse(`Added ${product.name} to cart`, 'success');
+            updateApiResponse(`Added ${product.name} to dragon's hoard`, 'success');
         }
 
         // Remove from cart
@@ -181,7 +230,7 @@ No API calls made yet...
             cart = cart.filter(item => item.id !== productId);
             renderCart();
             updateCheckoutButtons();
-            updateApiResponse('Item removed from cart', 'info');
+            updateApiResponse('Item removed from hoard', 'info');
         }
 
         // Update quantity
@@ -204,7 +253,7 @@ No API calls made yet...
             cart = [];
             renderCart();
             updateCheckoutButtons();
-            updateApiResponse('Cart cleared', 'info');
+            updateApiResponse('Dragon\'s hoard cleared', 'info');
         }
 
         // Render cart
@@ -213,7 +262,7 @@ No API calls made yet...
             const totalElement = document.getElementById('cart-total');
             
             if (cart.length === 0) {
-                cartContainer.innerHTML = '<p class="text-gray-500">Your cart is empty</p>';
+                cartContainer.innerHTML = '<p class="text-dragon-silver-dark">Your cart is empty</p>';
                 totalElement.textContent = '0.00';
                 return;
             }
@@ -222,22 +271,22 @@ No API calls made yet...
             totalElement.textContent = total.toFixed(2);
 
             cartContainer.innerHTML = cart.map(item => `
-                <div class="flex items-center justify-between p-4 border rounded-lg">
+                <div class="flex items-center justify-between p-4 border border-dragon-border rounded-lg bg-dragon-black">
                     <div class="flex items-center space-x-4">
                         <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded">
                         <div>
-                            <h4 class="font-semibold">${item.name}</h4>
-                            <p class="text-gray-600">$${item.price} each</p>
+                            <h4 class="font-semibold text-dragon-silver">${item.name}</h4>
+                            <p class="text-dragon-silver-dark">$${item.price} each</p>
                         </div>
                     </div>
                     <div class="flex items-center space-x-3">
                         <button onclick="updateQuantity(${item.id}, ${item.quantity - 1})" 
-                                class="bg-gray-200 hover:bg-gray-300 w-8 h-8 rounded">-</button>
-                        <span class="font-semibold w-8 text-center">${item.quantity}</span>
+                                class="bg-dragon-border hover:bg-dragon-silver-dark text-dragon-silver w-8 h-8 rounded">-</button>
+                        <span class="font-semibold w-8 text-center text-dragon-silver">${item.quantity}</span>
                         <button onclick="updateQuantity(${item.id}, ${item.quantity + 1})" 
-                                class="bg-gray-200 hover:bg-gray-300 w-8 h-8 rounded">+</button>
+                                class="bg-dragon-border hover:bg-dragon-silver-dark text-dragon-silver w-8 h-8 rounded">+</button>
                         <button onclick="removeFromCart(${item.id})" 
-                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm ml-4">Remove</button>
+                                class="bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver px-3 py-1 rounded text-sm ml-4">Remove</button>
                     </div>
                 </div>
             `).join('');
@@ -258,12 +307,12 @@ No API calls made yet...
             const userId = document.getElementById('user-id').value.trim();
             
             if (!userId) {
-                updateApiResponse('Please enter a User ID', 'error');
+                updateApiResponse('Please enter a Dragon Warrior Username', 'error');
                 return;
             }
 
             if (cart.length === 0) {
-                updateApiResponse('Cart is empty', 'error');
+                updateApiResponse('Dragon\'s hoard is empty', 'error');
                 return;
             }
 
@@ -280,7 +329,7 @@ No API calls made yet...
             };
 
             try {
-                updateApiResponse('Processing checkout...', 'info');
+                updateApiResponse('Processing dragon\'s payment...', 'info');
                 
                 // Make API call to checkout endpoint
                 const response = await axios.post('/api/checkout', checkoutData, {
@@ -294,21 +343,21 @@ No API calls made yet...
                 
                 // If checkout successful and has payment URL, open in new tab
                 if (response.data.success && response.data.payment_url) {
-                    updateApiResponse(`Checkout successful! Opening ${paymentMethod} payment page...`, 'success');
+                    updateApiResponse(`Dragon's payment successful! Opening ${paymentMethod} portal...`, 'success');
                     window.open(response.data.payment_url, '_blank');
                 } else if (response.data.checkout_url) {
-                    updateApiResponse(`Checkout successful! Opening ${paymentMethod} payment page...`, 'success');
+                    updateApiResponse(`Dragon's payment successful! Opening ${paymentMethod} portal...`, 'success');
                     window.open(response.data.checkout_url, '_blank');
                 }
 
             } catch (error) {
                 console.error('Checkout error:', error);
-                let errorMessage = 'Checkout failed: ';
+                let errorMessage = 'Dragon\'s payment failed: ';
                 
                 if (error.response) {
                     errorMessage += JSON.stringify(error.response.data, null, 2);
                 } else if (error.request) {
-                    errorMessage += 'No response from server. Make sure the API is running.';
+                    errorMessage += 'No response from dragon\'s server. Make sure the API is running.';
                 } else {
                     errorMessage += error.message;
                 }
@@ -322,10 +371,10 @@ No API calls made yet...
             const responseElement = document.getElementById('api-response');
             const timestamp = new Date().toLocaleTimeString();
             
-            let color = 'text-gray-800';
-            if (type === 'success') color = 'text-green-800';
-            if (type === 'error') color = 'text-red-800';
-            if (type === 'info') color = 'text-blue-800';
+            let color = 'text-dragon-silver';
+            if (type === 'success') color = 'text-green-400';
+            if (type === 'error') color = 'text-dragon-red';
+            if (type === 'info') color = 'text-blue-400';
             
             responseElement.innerHTML = `<div class="${color}"><strong>[${timestamp}]</strong> ${message}</div>`;
             responseElement.scrollTop = responseElement.scrollHeight;
@@ -335,17 +384,17 @@ No API calls made yet...
         document.addEventListener('DOMContentLoaded', function() {
             loadSampleProducts();
             updateCheckoutButtons();
-            updateApiResponse('Page loaded. Add items to cart and test checkout!', 'info');
+            updateApiResponse('Dragon\'s hoard loaded. Add treasures to cart and test checkout!', 'info');
         });
 
         // Test API connectivity
         async function testApiConnection() {
             try {
                 const response = await axios.get('/api/products');
-                updateApiResponse('API connection successful!', 'success');
+                updateApiResponse('Dragon\'s API connection successful!', 'success');
                 return true;
             } catch (error) {
-                updateApiResponse('API connection failed. Using sample data.', 'error');
+                updateApiResponse('Dragon\'s API connection failed. Using sample data.', 'error');
                 return false;
             }
         }
@@ -357,7 +406,7 @@ No API calls made yet...
                 if (response.data && response.data.data) {
                     products = response.data.data;
                     renderProducts();
-                    updateApiResponse('Products loaded from API', 'success');
+                    updateApiResponse('Products loaded from dragon\'s API', 'success');
                 } else {
                     loadSampleProducts();
                 }
