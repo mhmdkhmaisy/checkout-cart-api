@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\VoteAdminController;
 use App\Http\Controllers\VoteController;
 use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\CacheFileController;
+use App\Http\Controllers\Admin\CacheBundleController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -62,6 +64,34 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('clients', ClientController::class);
     Route::patch('clients/{client}/toggle', [ClientController::class, 'toggle'])->name('clients.toggle');
     Route::get('clients-manifest', [ClientController::class, 'manifest'])->name('clients.manifest');
+
+        // Cache management routes
+    Route::prefix('cache')->name('cache.')->group(function () {
+        Route::get('/', [CacheFileController::class, 'index'])->name('index');
+        Route::get('/create', [CacheFileController::class, 'create'])->name('create');
+        Route::post('/', [CacheFileController::class, 'store'])->name('store');
+        Route::post('/check-duplicates', [CacheFileController::class, 'checkDuplicates'])->name('check-duplicates');
+        Route::post('/store-tar', [CacheFileController::class, 'storeTar'])->name('store-tar');
+        Route::post('/extract-file', [CacheFileController::class, 'extractFile'])->name('extract-file');
+        Route::get('/extraction-progress', [CacheFileController::class, 'extractionProgress'])->name('extraction-progress');
+        Route::post('/bulk-delete', [CacheFileController::class, 'bulkDelete'])->name('bulk-delete');
+        Route::post('/delete-all', [CacheFileController::class, 'deleteAll'])->name('delete-all');
+        Route::delete('/{cacheFile}', [CacheFileController::class, 'destroy'])->name('destroy');
+        Route::post('/regenerate-manifest', [CacheFileController::class, 'regenerateManifest'])->name('regenerate-manifest');
+        Route::get('/download-manifest', [CacheFileController::class, 'downloadManifest'])->name('download-manifest');
+        Route::get('/upload-progress', [CacheFileController::class, 'uploadProgress'])->name('upload-progress');
+        
+        // Bundle management routes
+        Route::prefix('bundles')->name('bundles.')->group(function () {
+            Route::get('/', [CacheBundleController::class, 'index'])->name('index');
+            Route::delete('/{bundle}', [CacheBundleController::class, 'destroy'])->name('destroy');
+            Route::post('/clear-expired', [CacheBundleController::class, 'clearExpired'])->name('clear-expired');
+            Route::post('/clear-all', [CacheBundleController::class, 'clearAll'])->name('clear-all');
+            Route::get('/{bundle}/download', [CacheBundleController::class, 'download'])->name('download');
+        });
+    });
+
+
 });
 
 // Payment completion pages (NEW ROUTES)

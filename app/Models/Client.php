@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Client extends Model
 {
@@ -38,6 +39,24 @@ class Client extends Model
         'linux' => '.AppImage',
         'standalone' => '.jar'
     ];
+
+    /**
+     * Boot method to add model event listeners
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Ensure only one enabled client per OS when saving
+        static::saving(function ($client) {
+            if ($client->enabled && $client->isDirty('enabled')) {
+                // Disable other clients for the same OS
+                static::where('os', $client->os)
+                    ->where('id', '!=', $client->id ?? 0)
+                    ->update(['enabled' => false]);
+            }
+        });
+    }
 
     /**
      * Get the display name for the OS
@@ -90,6 +109,58 @@ class Client extends Model
             ->map(function ($clients) {
                 return $clients->first();
             });
+    }
+
+    /**
+     * Safely enable a client, ensuring only one per OS is enabled
+     */
+    public function enableForOs()
+    {
+        return DB::transaction(function () {
+            // Disable all other clients for this OS
+            static::where('os', $this->os)
+                ->where('id', '!=', $this->id)
+                ->update(['enabled' => false]);
+            
+            // Enable this client
+            $this->update(['enabled' => true]);
+            
+            return $this;
+        });
+    }
+
+    /**
+     * Get the currently enabled client for a specific OS
+     */
+    public static function getEnabledForOs($os)
+    {
+        return static::where('os', $os)
+            ->where('enabled', true)
+            ->first();
+    }
+
+    /**
+     * Validate that only one client per OS can be enabled
+     */
+    public static function validateUniqueEnabledPerOs()
+    {
+        $duplicates = DB::select("
+            SELECT os, COUNT(*) as count 
+            FROM clients 
+            WHERE enabled = 1 
+            GROUP BY os 
+            HAVING count > 1
+        ");
+
+        if (!empty($duplicates)) {
+            $issues = collect($duplicates)->map(function ($item) {
+                return "OS '{$item->os}' has {$item->count} enabled clients";
+            })->join(', ');
+            
+            throw new \Exception("Data integrity issue: {$issues}");
+        }
+
+        return true;
     }
 
     /**

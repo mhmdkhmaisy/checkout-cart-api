@@ -106,7 +106,23 @@
             </div>
 
             <!-- Submit Buttons -->
-            <div class="flex justify-between items-center pt-6">
+            <div class="flex justify-end space-x-3 pt-6">
+                <a href="{{ route('admin.clients.show', $client) }}" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">Cancel</a>
+                <button type="submit" class="px-6 py-2 bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver rounded-lg transition-colors">
+                    <i class="fas fa-save mr-2"></i>Update Client
+                </button>
+            </div>
+        </form>
+
+        <!-- Separate Delete Form (outside the update form) -->
+        <div class="mt-8 pt-6 border-t border-dragon-border">
+            <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+                <h3 class="flex items-center text-red-400 font-medium mb-3">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Danger Zone
+                </h3>
+                <p class="text-dragon-silver-dark text-sm mb-4">
+                    Once you delete this client, there is no going back. Please be certain.
+                </p>
                 <form action="{{ route('admin.clients.destroy', $client) }}" method="POST" class="inline">
                     @csrf
                     @method('DELETE')
@@ -115,15 +131,8 @@
                         <i class="fas fa-trash mr-2"></i>Delete Client
                     </button>
                 </form>
-                
-                <div class="flex space-x-3">
-                    <a href="{{ route('admin.clients.show', $client) }}" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">Cancel</a>
-                    <button type="submit" class="px-6 py-2 bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver rounded-lg transition-colors">
-                        <i class="fas fa-save mr-2"></i>Update Client
-                    </button>
-                </div>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 @endsection

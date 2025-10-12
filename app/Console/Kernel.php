@@ -12,7 +12,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Clean up expired cache bundles every hour
+        $schedule->command('cache:cleanup-bundles')->hourly();
+        
+        // Regenerate cache manifest daily at 3 AM
+        $schedule->command('cache:generate-manifest')->dailyAt('03:00');
     }
 
     /**
@@ -24,4 +28,12 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
+    /**
+     * Get the commands to register.
+     */
+    protected $commands = [
+        Commands\GenerateCacheManifest::class,
+        Commands\CleanupCacheBundles::class,
+    ];
 }

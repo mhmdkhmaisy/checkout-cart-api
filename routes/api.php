@@ -7,7 +7,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ClaimController;
-
+use App\Http\Controllers\Api\CacheController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -46,4 +46,19 @@ Route::prefix('admin')->group(function () {
     Route::get('/orders/{orderId}/events', [AdminController::class, 'orderEvents']);
     Route::get('/orders/stats', [AdminController::class, 'orderStats']);
     Route::patch('/orders/{orderId}/status', [AdminController::class, 'updateOrderStatus']);
+});
+
+// Enhanced Cache API routes (public access for launcher/client)
+Route::prefix('cache')->name('api.cache.')->group(function () {
+    // Core manifest and download endpoints
+    Route::get('/manifest', [CacheController::class, 'manifest'])->name('manifest');
+    Route::get('/download', [CacheController::class, 'download'])->name('download');
+    Route::get('/file/{filename}', [CacheController::class, 'downloadFile'])->name('file');
+    
+    // Directory structure and navigation
+    Route::get('/directory-tree', [CacheController::class, 'directoryTree'])->name('directory-tree');
+    Route::get('/search', [CacheController::class, 'search'])->name('search');
+    
+    // Statistics and monitoring
+    Route::get('/stats', [CacheController::class, 'stats'])->name('stats');
 });

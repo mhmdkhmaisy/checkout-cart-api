@@ -7,6 +7,7 @@ use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\DB;
 
 class ClientController extends Controller
 {
@@ -63,28 +64,46 @@ class ClientController extends Controller
         $hash = hash_file('sha256', $fullPath);
         $size = $file->getSize();
 
-        // If this client is enabled, disable other clients for the same OS
-        if ($request->boolean('enabled', true)) {
-            Client::where('os', $os)->update(['enabled' => false]);
+        try {
+            DB::beginTransaction();
+
+            // If this client should be enabled, disable other clients for the same OS first
+            if ($request->boolean('enabled', true)) {
+                Client::where('os', $os)->update(['enabled' => false]);
+            }
+
+            // Create client record
+            $client = Client::create([
+                'os' => $os,
+                'version' => $version,
+                'file_path' => $filePath,
+                'original_filename' => $file->getClientOriginalName(),
+                'size' => $size,
+                'hash' => $hash,
+                'enabled' => $request->boolean('enabled', true),
+                'changelog' => $request->changelog
+            ]);
+
+            DB::commit();
+
+            // Generate new manifest
+            $this->generateManifest();
+
+            return redirect()->route('admin.clients.index')
+                ->with('success', "Client {$version} for {$client->os_display} uploaded successfully!");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            // Clean up uploaded file if database operation failed
+            if (Storage::exists($filePath)) {
+                Storage::delete($filePath);
+            }
+            
+            return back()->withErrors([
+                'error' => 'Failed to create client: ' . $e->getMessage()
+            ]);
         }
-
-        // Create client record
-        $client = Client::create([
-            'os' => $os,
-            'version' => $version,
-            'file_path' => $filePath,
-            'original_filename' => $file->getClientOriginalName(),
-            'size' => $size,
-            'hash' => $hash,
-            'enabled' => $request->boolean('enabled', true),
-            'changelog' => $request->changelog
-        ]);
-
-        // Generate new manifest
-        $this->generateManifest();
-
-        return redirect()->route('admin.clients.index')
-            ->with('success', "Client {$version} for {$client->os_display} uploaded successfully!");
     }
 
     public function show(Client $client)
@@ -106,58 +125,95 @@ class ClientController extends Controller
             'enabled' => 'boolean'
         ]);
 
-        // If enabling this client, disable others for the same OS
-        if ($request->boolean('enabled') && !$client->enabled) {
-            Client::where('os', $client->os)->where('id', '!=', $client->id)->update(['enabled' => false]);
+        try {
+            DB::beginTransaction();
+
+            // If enabling this client, disable others for the same OS first
+            if ($request->boolean('enabled') && !$client->enabled) {
+                Client::where('os', $client->os)->where('id', '!=', $client->id)->update(['enabled' => false]);
+            }
+
+            $client->update([
+                'version' => $request->version,
+                'changelog' => $request->changelog,
+                'enabled' => $request->boolean('enabled')
+            ]);
+
+            DB::commit();
+
+            // Regenerate manifest
+            $this->generateManifest();
+
+            return redirect()->route('admin.clients.index')
+                ->with('success', 'Client updated successfully!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors([
+                'error' => 'Failed to update client: ' . $e->getMessage()
+            ]);
         }
-
-        $client->update([
-            'version' => $request->version,
-            'changelog' => $request->changelog,
-            'enabled' => $request->boolean('enabled')
-        ]);
-
-        // Regenerate manifest
-        $this->generateManifest();
-
-        return redirect()->route('admin.clients.index')
-            ->with('success', 'Client updated successfully!');
     }
 
     public function destroy(Client $client)
     {
-        // Delete the file
-        if (Storage::exists($client->file_path)) {
-            Storage::delete($client->file_path);
+        try {
+            DB::beginTransaction();
+
+            // Delete the file
+            if (Storage::exists($client->file_path)) {
+                Storage::delete($client->file_path);
+            }
+
+            $client->delete();
+
+            DB::commit();
+
+            // Regenerate manifest
+            $this->generateManifest();
+
+            return redirect()->route('admin.clients.index')
+                ->with('success', 'Client deleted successfully!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors([
+                'error' => 'Failed to delete client: ' . $e->getMessage()
+            ]);
         }
-
-        $client->delete();
-
-        // Regenerate manifest
-        $this->generateManifest();
-
-        return redirect()->route('admin.clients.index')
-            ->with('success', 'Client deleted successfully!');
     }
 
     public function toggle(Client $client)
     {
-        // If enabling, disable other clients for the same OS
-        if (!$client->enabled) {
-            Client::where('os', $client->os)->where('id', '!=', $client->id)->update(['enabled' => false]);
+        try {
+            DB::beginTransaction();
+
+            // If enabling, disable other clients for the same OS first
+            if (!$client->enabled) {
+                Client::where('os', $client->os)->where('id', '!=', $client->id)->update(['enabled' => false]);
+            }
+
+            $client->update(['enabled' => !$client->enabled]);
+
+            DB::commit();
+
+            // Regenerate manifest
+            $this->generateManifest();
+
+            $status = $client->enabled ? 'enabled' : 'disabled';
+            return response()->json([
+                'success' => true,
+                'message' => "Client {$status} successfully!",
+                'enabled' => $client->enabled
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to toggle client: ' . $e->getMessage()
+            ], 500);
         }
-
-        $client->update(['enabled' => !$client->enabled]);
-
-        // Regenerate manifest
-        $this->generateManifest();
-
-        $status = $client->enabled ? 'enabled' : 'disabled';
-        return response()->json([
-            'success' => true,
-            'message' => "Client {$status} successfully!",
-            'enabled' => $client->enabled
-        ]);
     }
 
     public function manifest()

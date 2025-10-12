@@ -144,6 +144,22 @@
                             </a>
                         </div>
                     </div>
+                    <!-- Client Managment Documentation -->
+                    <div class="pt-4">
+                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Client Managment</h3>
+                        <div class="mt-2 space-y-1">
+                            <a href="{{ route('admin.clients.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.clients.index') ? 'active' : '' }}">
+                                <i class="fas fa-download mr-3"></i>
+                               Client Management
+                            </a>
+                            <a href="{{ route('admin.cache.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.cache.index') ? 'active' : '' }}">
+                                <i class="fas fa-memory mr-3"></i>
+                               Cache Management
+                            </a>
+                        </div>
+                    </div>
                     <!-- API Documentation -->
                     <div class="pt-4">
                         <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">API Documentation</h3>
@@ -151,22 +167,11 @@
                             <a href="{{ route('admin.api-docs') }}" 
                                class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.api-docs') ? 'active' : '' }}">
                                 <div class="p-2 bg-dragon-red rounded-lg mr-4 group-hover:bg-dragon-red-bright transition-colors">
-                                    <svg class="w-5 h-5 text-dragon-silver" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4 text-dragon-silver" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
                                     </svg>
                                 </div>
-                                Store API Docs
-                            </a>
-                        </div>
-                    </div>
-                    <!-- Client Managment Documentation -->
-                    <div class="pt-4">
-                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Client Managment</h3>
-                        <div class="mt-2 space-y-1">
-                            <a href="{{ route('admin.clients.index') }}" 
-                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.clients.*') ? 'active' : '' }}">
-                                <i class="fas fa-download mr-3"></i>
-                               Client Management
+                                API Documentation
                             </a>
                         </div>
                     </div>
