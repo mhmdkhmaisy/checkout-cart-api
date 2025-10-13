@@ -104,11 +104,65 @@ else → 5 files/batch
 
 ## Testing Locally
 
-1. Start Laravel dev server: `php artisan serve`
-2. Upload batch of files (100+ small files or 10+ large files)
-3. Monitor speed - should stay consistent
-4. Check browser network tab for timing
-5. Verify no CPU spikes during uploads
+### ⚠️ IMPORTANT: PHP Development Server Limitation
+
+The built-in `php artisan serve` server is **single-threaded** and has poor performance with large uploads. It's designed for development only, not performance testing.
+
+**For proper performance testing, use one of these:**
+
+### Option 1: Run with PHP Settings (Basic)
+```bash
+php -d upload_max_filesize=1024M \
+    -d post_max_size=1024M \
+    -d memory_limit=2G \
+    -d max_execution_time=600 \
+    -d max_input_time=600 \
+    artisan serve --host=0.0.0.0 --port=8000
+```
+
+### Option 2: Use PHP Built-in Server (Better)
+```bash
+# Navigate to public directory
+cd public
+php -d upload_max_filesize=1024M \
+    -d post_max_size=1024M \
+    -d memory_limit=2G \
+    -S 0.0.0.0:8000
+```
+
+### Option 3: Use Apache/Nginx (Best Performance)
+
+**Apache with mod_php:**
+1. Configure in `.htaccess` (already done)
+2. Or set in `php.ini`:
+   ```ini
+   upload_max_filesize = 1024M
+   post_max_size = 1024M
+   memory_limit = 2G
+   max_execution_time = 600
+   ```
+
+**Nginx with PHP-FPM:**
+1. Add to nginx config:
+   ```nginx
+   client_max_body_size 1024M;
+   client_body_timeout 600s;
+   fastcgi_read_timeout 600s;
+   ```
+2. Update PHP-FPM pool config or `php.ini`
+
+### Testing Steps
+
+1. Start server with proper PHP settings (see options above)
+2. Upload batch of files:
+   - 100+ small files (1-5MB each) 
+   - 10+ medium files (50-100MB each)
+   - 1-2 large files (200MB+)
+3. Monitor upload speed in browser DevTools Network tab
+4. Expected results:
+   - **Small files:** 15-20 MB/s sustained
+   - **Large files:** 10-15 MB/s (depends on disk I/O)
+   - **No speed degradation** over time
 
 ## Monitoring
 
