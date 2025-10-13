@@ -506,63 +506,32 @@
             </button>
         </div>
 
-        <!-- Upload Options -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <!-- Files Upload -->
-            <div class="glass-effect rounded-lg p-6">
-                <h4 class="text-lg font-medium text-dragon-silver mb-4">
-                    <i class="fas fa-file mr-2"></i>Upload Individual Files
+        <!-- Unified Upload Section -->
+        <div class="glass-effect rounded-lg p-8 mb-6">
+            <div id="unified-drop-zone" class="border-2 border-dashed border-dragon-border rounded-lg p-12 text-center transition-colors hover:border-dragon-red">
+                <i class="fas fa-cloud-upload-alt text-5xl text-dragon-silver-dark mb-4"></i>
+                <h4 class="text-xl font-medium text-dragon-silver mb-3">
+                    Drop files or folders here
                 </h4>
-                <div id="files-drop-zone" class="border-2 border-dashed border-dragon-border rounded-lg p-6 text-center transition-colors hover:border-dragon-red">
-                    <i class="fas fa-file-upload text-3xl text-dragon-silver-dark mb-3"></i>
-                    <p class="text-dragon-silver mb-2">Drop files here or</p>
-                    <button type="button" onclick="document.getElementById('files-input').click()" 
-                            class="px-4 py-2 bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver rounded-lg transition-colors">
-                        Browse Files
+                <p class="text-dragon-silver-dark mb-6">
+                    Supports all file types, directories, and archives
+                </p>
+                <div class="flex justify-center gap-4 mb-4">
+                    <button type="button" onclick="document.getElementById('unified-files-input').click()" 
+                            class="px-6 py-3 bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver rounded-lg transition-colors inline-flex items-center">
+                        <i class="fas fa-file mr-2"></i>Browse Files
                     </button>
-                    <input type="file" id="files-input" multiple class="hidden">
-                    <p class="text-xs text-dragon-silver-dark mt-2">
-                        All file types supported • Max 1GB per file
-                    </p>
-                </div>
-            </div>
-
-            <!-- Folder Upload -->
-            <div class="glass-effect rounded-lg p-6">
-                <h4 class="text-lg font-medium text-dragon-silver mb-4">
-                    <i class="fas fa-folder mr-2"></i>Upload Folders
-                </h4>
-                <div id="folder-drop-zone" class="border-2 border-dashed border-dragon-border rounded-lg p-6 text-center transition-colors hover:border-dragon-red">
-                    <i class="fas fa-folder-open text-3xl text-dragon-silver-dark mb-3"></i>
-                    <p class="text-dragon-silver mb-2">Drop folders here or</p>
-                    <button type="button" onclick="document.getElementById('folder-input').click()" 
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                        Browse Folders
+                    <button type="button" onclick="document.getElementById('unified-folder-input').click()" 
+                            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors inline-flex items-center">
+                        <i class="fas fa-folder mr-2"></i>Browse Folders
                     </button>
-                    <input type="file" id="folder-input" webkitdirectory directory multiple class="hidden">
-                    <p class="text-xs text-dragon-silver-dark mt-2">
-                        Preserves directory structure • All file types
-                    </p>
                 </div>
-            </div>
-
-            <!-- TAR Upload -->
-            <div class="glass-effect rounded-lg p-6">
-                <h4 class="text-lg font-medium text-dragon-silver mb-4">
-                    <i class="fas fa-file-archive mr-2"></i>Upload TAR Archives
-                </h4>
-                <div id="tar-drop-zone" class="border-2 border-dashed border-dragon-border rounded-lg p-6 text-center transition-colors hover:border-dragon-red">
-                    <i class="fas fa-archive text-3xl text-dragon-silver-dark mb-3"></i>
-                    <p class="text-dragon-silver mb-2">Drop .tar files here or</p>
-                    <button type="button" onclick="document.getElementById('tar-input').click()" 
-                            class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
-                        Browse TAR Files
-                    </button>
-                    <input type="file" id="tar-input" accept=".tar,.tar.gz,.tgz" multiple class="hidden">
-                    <p class="text-xs text-dragon-silver-dark mt-2">
-                        Auto-extracts with real-time progress
-                    </p>
-                </div>
+                <input type="file" id="unified-files-input" multiple class="hidden">
+                <input type="file" id="unified-folder-input" webkitdirectory directory multiple class="hidden">
+                <p class="text-xs text-dragon-silver-dark mt-4">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    TAR archives (.tar, .tar.gz, .tgz) will be auto-extracted • Max 1GB per file
+                </p>
             </div>
         </div>
 
@@ -1268,54 +1237,21 @@ window.addEventListener('beforeunload', function(e) {
     }
 });
 
-// Drag & Drop functionality for files
-const filesDropZone = document.getElementById('files-drop-zone');
-const filesInput = document.getElementById('files-input');
+// Unified Drag & Drop functionality
+const unifiedDropZone = document.getElementById('unified-drop-zone');
+const unifiedFilesInput = document.getElementById('unified-files-input');
+const unifiedFolderInput = document.getElementById('unified-folder-input');
 
-setupDropZone(filesDropZone, (files) => {
-    handleFileSelection(Array.from(files), 'files');
+setupDropZone(unifiedDropZone, (files) => {
+    handleUnifiedFileSelection(Array.from(files));
 });
 
-filesInput.addEventListener('change', (e) => {
-    handleFileSelection(Array.from(e.target.files), 'files');
+unifiedFilesInput.addEventListener('change', (e) => {
+    handleUnifiedFileSelection(Array.from(e.target.files));
 });
 
-// Drag & Drop functionality for folders
-const folderDropZone = document.getElementById('folder-drop-zone');
-const folderInput = document.getElementById('folder-input');
-
-setupDropZone(folderDropZone, (files) => {
-    handleFileSelection(Array.from(files), 'folders');
-});
-
-folderInput.addEventListener('change', (e) => {
-    handleFileSelection(Array.from(e.target.files), 'folders');
-});
-
-// Drag & Drop functionality for TAR files
-const tarDropZone = document.getElementById('tar-drop-zone');
-const tarInput = document.getElementById('tar-input');
-
-setupDropZone(tarDropZone, (files) => {
-    const tarFiles = Array.from(files).filter(file => 
-        file.name.toLowerCase().endsWith('.tar') || 
-        file.name.toLowerCase().endsWith('.tar.gz') || 
-        file.name.toLowerCase().endsWith('.tgz')
-    );
-    if (tarFiles.length > 0) {
-        handleFileSelection(tarFiles, 'tar');
-    } else {
-        showConfirmationModal(
-            'Invalid File Type',
-            'Please select valid TAR files (.tar, .tar.gz, .tgz)',
-            () => {},
-            'OK'
-        );
-    }
-});
-
-tarInput.addEventListener('change', (e) => {
-    handleFileSelection(Array.from(e.target.files), 'tar');
+unifiedFolderInput.addEventListener('change', (e) => {
+    handleUnifiedFileSelection(Array.from(e.target.files));
 });
 
 function setupDropZone(dropZone, onFilesDropped) {
@@ -1338,6 +1274,38 @@ function setupDropZone(dropZone, onFilesDropped) {
         const files = e.dataTransfer.files;
         onFilesDropped(files);
     });
+}
+
+function handleUnifiedFileSelection(files) {
+    if (files.length === 0) return;
+    
+    // Add files to selection with automatic type detection
+    files.forEach(file => {
+        const exists = selectedFiles.some(f => 
+            f.name === file.name && 
+            f.size === file.size && 
+            f.lastModified === file.lastModified
+        );
+        
+        if (!exists) {
+            // Auto-detect file type
+            const fileName = file.name.toLowerCase();
+            const webkitPath = file.webkitRelativePath || '';
+            
+            if (fileName.endsWith('.tar') || fileName.endsWith('.tar.gz') || fileName.endsWith('.tgz')) {
+                file.uploadType = 'tar';
+            } else if (webkitPath && webkitPath.includes('/')) {
+                file.uploadType = 'folders';
+            } else {
+                file.uploadType = 'files';
+            }
+            
+            selectedFiles.push(file);
+        }
+    });
+    
+    updateSelectedFilesCount();
+    document.getElementById('start-upload-btn').disabled = selectedFiles.length === 0;
 }
 
 function handleFileSelection(files, type) {
