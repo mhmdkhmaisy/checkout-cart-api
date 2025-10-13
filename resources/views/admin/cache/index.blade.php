@@ -843,20 +843,22 @@ function hideContextMenu() {
 function openFile(element) {
     const fileType = element.getAttribute('data-file-type');
     
+    // OPEN only works for directories/folders
     if (fileType === 'directory') {
         // Navigate to directory using navigation path
         const navigationPath = element.getAttribute('data-navigation-path') || element.getAttribute('data-relative-path');
         navigateTo(navigationPath);
-    } else {
-        // Download file
-        const fileId = element.getAttribute('data-file-id');
-        downloadFile(fileId);
     }
+    // Files cannot be "opened" - use download instead
 }
 
 function openSelectedFile() {
     if (contextMenuTarget) {
-        openFile(contextMenuTarget);
+        const fileType = contextMenuTarget.getAttribute('data-file-type');
+        // Only open if it's a directory
+        if (fileType === 'directory') {
+            openFile(contextMenuTarget);
+        }
     }
     hideContextMenu();
 }
