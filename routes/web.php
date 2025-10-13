@@ -10,6 +10,7 @@ use App\Http\Controllers\VoteController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\CacheFileController;
 use App\Http\Controllers\Admin\CacheBundleController;
+use App\Http\Controllers\Admin\ChunkedUploadController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -80,6 +81,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/regenerate-manifest', [CacheFileController::class, 'regenerateManifest'])->name('regenerate-manifest');
         Route::get('/download-manifest', [CacheFileController::class, 'downloadManifest'])->name('download-manifest');
         Route::get('/upload-progress', [CacheFileController::class, 'uploadProgress'])->name('upload-progress');
+        
+        // Chunked upload routes (TUS protocol)
+        Route::any('/chunked-upload/{any?}', [ChunkedUploadController::class, 'handle'])
+            ->where('any', '.*')
+            ->name('chunked-upload');
+        Route::get('/chunked-upload-status', [ChunkedUploadController::class, 'status'])->name('chunked-upload-status');
+        Route::get('/chunked-upload-sessions', [ChunkedUploadController::class, 'sessions'])->name('chunked-upload-sessions');
         
         // Bundle management routes
         Route::prefix('bundles')->name('bundles.')->group(function () {

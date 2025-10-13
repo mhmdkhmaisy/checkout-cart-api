@@ -145,10 +145,31 @@
                     </div>
                 </div>
                 <div class="flex gap-3">
-                    <div class="relative">
-                        <button onclick="showUploadModal()" class="px-4 py-2 bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver rounded-lg transition-colors">
+                    <div class="relative inline-block">
+                        <button onclick="toggleUploadMenu()" id="upload-menu-btn" class="px-4 py-2 bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver rounded-lg transition-colors flex items-center">
                             <i class="fas fa-upload mr-2"></i>Upload
+                            <i class="fas fa-chevron-down ml-2 text-xs"></i>
                         </button>
+                        <div id="upload-menu" class="hidden absolute left-0 mt-2 w-72 bg-dragon-black border border-dragon-border rounded-lg shadow-xl z-50">
+                            <button onclick="showChunkedUploadModal(); hideUploadMenu();" class="w-full px-4 py-3 text-left hover:bg-dragon-red/20 transition-colors border-b border-dragon-border">
+                                <div class="flex items-center">
+                                    <i class="fas fa-bolt text-yellow-400 mr-3 text-lg"></i>
+                                    <div>
+                                        <p class="text-dragon-silver font-medium">Chunked Upload (Recommended)</p>
+                                        <p class="text-xs text-dragon-silver-dark">Fast, resumable, for large files</p>
+                                    </div>
+                                </div>
+                            </button>
+                            <button onclick="showUploadModal(); hideUploadMenu();" class="w-full px-4 py-3 text-left hover:bg-dragon-red/20 transition-colors">
+                                <div class="flex items-center">
+                                    <i class="fas fa-upload text-blue-400 mr-3 text-lg"></i>
+                                    <div>
+                                        <p class="text-dragon-silver font-medium">Standard Upload</p>
+                                        <p class="text-xs text-dragon-silver-dark">Traditional upload method</p>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
                     </div>
                     <button onclick="createFolder()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
                         <i class="fas fa-folder-plus mr-2"></i>New Folder
@@ -1786,6 +1807,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Confirmation modal event listeners
     document.getElementById('confirm-action-btn').addEventListener('click', executeConfirmation);
 });
+
+function toggleUploadMenu() {
+    const menu = document.getElementById('upload-menu');
+    menu.classList.toggle('hidden');
+}
+
+function hideUploadMenu() {
+    document.getElementById('upload-menu').classList.add('hidden');
+}
+
+// Close upload menu when clicking outside
+document.addEventListener('click', function(e) {
+    const menuBtn = document.getElementById('upload-menu-btn');
+    const menu = document.getElementById('upload-menu');
+    if (!menuBtn.contains(e.target) && !menu.contains(e.target)) {
+        hideUploadMenu();
+    }
+});
 </script>
 @endpush
+
+<!-- Include Chunked Upload Modal -->
+@include('admin.cache.partials.chunked-upload-modal')
+
 @endsection
