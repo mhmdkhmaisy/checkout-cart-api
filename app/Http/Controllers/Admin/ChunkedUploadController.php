@@ -21,28 +21,12 @@ class ChunkedUploadController extends Controller
         $server = new TusServer('file');
         $server->setApiPath('/admin/cache/chunked-upload')
                ->setUploadDir($uploadDir);
-        
-        try {
-            \Log::info('TUS Request', [
-                'method' => $request->method(),
-                'path' => $request->path(),
-                'headers' => $request->headers->all(),
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('TUS logging error: ' . $e->getMessage());
-        }
 
         $server->event()->addListener('tus-server.upload.created', function($event) {
             $file = $event->getFile();
             $fileMeta = $file->details();
             $metadata = $fileMeta['metadata'] ?? [];
             $fileKey = $file->getKey();
-            
-            \Log::info('Upload created', [
-                'key' => $fileKey,
-                'metadata' => $metadata,
-                'details' => $fileMeta
-            ]);
             
             UploadSession::create([
                 'upload_key' => $fileKey,
