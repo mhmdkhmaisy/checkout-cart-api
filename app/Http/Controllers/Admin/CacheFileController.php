@@ -761,9 +761,27 @@ class CacheFileController extends Controller
                 $key = $originalName . '|' . ($fullRelativePath ?? '');
                 $existing = $existingFiles->get($key);
 
-                // Store file first
-                $storagePath = 'cache_files/' . uniqid() . '_' . $originalName;
-                $path = $file->storeAs('cache_files', basename($storagePath));
+                // Store file first - preserve directory structure if provided
+                if ($fullRelativePath && $preserveStructure) {
+                    // Sanitize the relative path to prevent directory traversal
+                    $safePath = str_replace(['..', '\\'], ['', '/'], $fullRelativePath);
+                    $safePath = trim($safePath, '/');
+                    
+                    // Preserve the full directory structure
+                    $directory = dirname($safePath);
+                    if ($directory && $directory !== '.') {
+                        $storagePath = 'cache_files/' . $directory . '/' . $originalName;
+                        $storageDir = 'cache_files/' . $directory;
+                    } else {
+                        $storagePath = 'cache_files/' . $originalName;
+                        $storageDir = 'cache_files';
+                    }
+                    $path = $file->storeAs($storageDir, $originalName);
+                } else {
+                    // Flat storage with unique ID
+                    $storagePath = 'cache_files/' . uniqid() . '_' . $originalName;
+                    $path = $file->storeAs('cache_files', basename($storagePath));
+                }
 
                 // PERFORMANCE FIX: Skip hashing during upload for maximum speed
                 // Only hash if we need to check for duplicates
