@@ -1187,9 +1187,34 @@ function setupFileBrowserDragDrop() {
         }
     });
     
-    dropZone.addEventListener('drop', (e) => {
+    dropZone.addEventListener('drop', async (e) => {
         e.preventDefault();
         dropOverlay.classList.add('hidden');
+        
+        const items = Array.from(e.dataTransfer.items);
+        
+        // Check if any folders are being dropped
+        let hasFolder = false;
+        if (items.length > 0 && items[0].webkitGetAsEntry) {
+            for (const item of items) {
+                const entry = item.webkitGetAsEntry();
+                if (entry && entry.isDirectory) {
+                    hasFolder = true;
+                    break;
+                }
+            }
+        }
+        
+        if (hasFolder) {
+            // Show error message for folder drag & drop
+            showConfirmationModal(
+                'Folders Not Supported in Drag & Drop',
+                'Due to browser security restrictions, folders cannot be dragged and dropped. Please use the "Browse Folders" button instead.',
+                () => {},
+                'OK'
+            );
+            return;
+        }
         
         const files = Array.from(e.dataTransfer.files);
         if (files.length > 0) {

@@ -214,8 +214,17 @@ class CacheFileController extends Controller
         foreach ($files as $index => $fileData) {
             $relativePath = $fileData['relative_path'] ?? null;
             
+            // Normalize relative_path: extract directory path only (strip filename)
+            $directoryPath = null;
+            if ($relativePath) {
+                $pathParts = explode('/', $relativePath);
+                array_pop($pathParts); // Remove filename
+                $directoryPath = implode('/', $pathParts);
+                $directoryPath = $directoryPath ?: null;
+            }
+            
             $existing = CacheFile::where('filename', $fileData['name'])
-                ->where('relative_path', $relativePath)
+                ->where('relative_path', $directoryPath)
                 ->first();
             
             if ($existing) {
@@ -949,7 +958,7 @@ class CacheFileController extends Controller
                 // Prepare record for batch upsert
                 $recordsToUpsert[] = [
                     'filename' => $originalName,
-                    'relative_path' => $fullRelativePath,
+                    'relative_path' => $directoryPath ?: null,
                     'path' => $path,
                     'size' => $file->getSize(),
                     'hash' => $hash,
@@ -999,17 +1008,18 @@ class CacheFileController extends Controller
         $hash = hash_file('sha256', $file->getRealPath());
         $mimeType = $file->getMimeType() ?: 'application/octet-stream';
 
-        // CRITICAL FIX: Enhanced relative path handling for folder uploads
+        // Extract directory path from relative path (excluding filename)
+        $directoryPath = null;
         if ($relativePath && $preserveStructure) {
-            // Preserve the EXACT full relative path including directory structure
-            $fullRelativePath = $relativePath;
-        } else {
-            $fullRelativePath = null;
+            $pathParts = explode('/', $relativePath);
+            array_pop($pathParts); // Remove filename
+            $directoryPath = implode('/', $pathParts);
+            $directoryPath = $directoryPath ?: null;
         }
 
         // Check if identical file already exists (same hash)
         $existing = CacheFile::where('filename', $originalName)
-            ->where('relative_path', $fullRelativePath)
+            ->where('relative_path', $directoryPath)
             ->first();
 
         if ($existing && $existing->hash === $hash) {
@@ -1025,19 +1035,11 @@ class CacheFileController extends Controller
         $storagePath = 'cache_files/' . uniqid() . '_' . $originalName;
         $path = $file->storeAs('cache_files', basename($storagePath));
 
-        // Extract directory path from relative path for metadata
-        $directoryPath = null;
-        if ($fullRelativePath) {
-            $pathParts = explode('/', $fullRelativePath);
-            array_pop($pathParts); // Remove filename
-            $directoryPath = implode('/', $pathParts);
-        }
-
         // Create or update database record with enhanced metadata (overwrite if hash differs)
         CacheFile::updateOrCreate(
             [
                 'filename' => $originalName,
-                'relative_path' => $fullRelativePath
+                'relative_path' => $directoryPath ?: null
             ],
             [
                 'path' => $path,
@@ -1047,7 +1049,7 @@ class CacheFileController extends Controller
                 'mime_type' => $mimeType,
                 'metadata' => [
                     'original_name' => $originalName,
-                    'relative_path' => $fullRelativePath,
+                    'relative_path' => $relativePath,
                     'directory_path' => $directoryPath,
                     'file_extension' => pathinfo($originalName, PATHINFO_EXTENSION),
                     'upload_time' => now()->toISOString(),
@@ -1143,9 +1145,18 @@ class CacheFileController extends Controller
         $hash = hash_file('sha256', $fileInfo->getRealPath());
         $mimeType = mime_content_type($fileInfo->getRealPath()) ?: 'application/octet-stream';
         
-        // Check if identical file already exists (same hash)
+        // Extract directory path from relative path (excluding filename)
+        $directoryPath = null;
+        if ($relativePath) {
+            $pathParts = explode('/', $relativePath);
+            array_pop($pathParts); // Remove filename
+            $directoryPath = implode('/', $pathParts);
+            $directoryPath = $directoryPath ?: null;
+        }
+        
+        // Check if identical file already exists (same hash) using directory path
         $existing = CacheFile::where('filename', $filename)
-            ->where('relative_path', $relativePath)
+            ->where('relative_path', $directoryPath)
             ->first();
         
         if ($existing && $existing->hash === $hash) {
@@ -1157,8 +1168,19 @@ class CacheFileController extends Controller
             ];
         }
 
-        // Enhanced storage with unique naming
-        $storagePath = 'cache_files/' . uniqid() . '_' . $filename;
+        // PRESERVE DIRECTORY STRUCTURE: Store files with their directory structure in cache_files
+        if ($directoryPath) {
+            // Sanitize path to prevent directory traversal
+            $safePath = str_replace(['..', '\\'], ['', '/'], $directoryPath);
+            $safePath = trim($safePath, '/');
+            $storagePath = 'cache_files/' . $safePath . '/' . $filename;
+            $storageDir = 'cache_files/' . $safePath;
+        } else {
+            // Root level file
+            $storagePath = 'cache_files/' . $filename;
+            $storageDir = 'cache_files';
+        }
+        
         $destinationPath = storage_path('app/' . $storagePath);
         
         // Ensure directory exists
@@ -1169,19 +1191,11 @@ class CacheFileController extends Controller
         
         copy($fileInfo->getRealPath(), $destinationPath);
         
-        // Extract directory path from relative path for metadata
-        $directoryPath = null;
-        if ($relativePath) {
-            $pathParts = explode('/', $relativePath);
-            array_pop($pathParts); // Remove filename
-            $directoryPath = implode('/', $pathParts);
-        }
-        
         // Create or update database record with enhanced metadata (overwrite if hash differs)
         CacheFile::updateOrCreate(
             [
                 'filename' => $filename,
-                'relative_path' => $relativePath
+                'relative_path' => $directoryPath
             ],
             [
                 'path' => $storagePath,
