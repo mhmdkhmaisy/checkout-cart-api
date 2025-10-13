@@ -1360,30 +1360,30 @@ async function startBatchUpload() {
         await uploadTarFile(tarFile, selectedFiles.indexOf(tarFile));
     }
     
-    // OPTIMIZED: Upload regular files with dynamic concurrent batches based on file size
+    // OPTIMIZED: Upload regular files with larger batches for better speed
     if (regularFiles.length > 0) {
         // Determine optimal batch size based on average file size
         const avgFileSize = regularFiles.reduce((sum, file) => sum + file.size, 0) / regularFiles.length;
         let batchSize;
-        
+
         if (avgFileSize < 1024 * 1024) { // < 1MB files
-            batchSize = 10; // More concurrent uploads for small files
+            batchSize = 50; // Much larger batches for small files
         } else if (avgFileSize < 10 * 1024 * 1024) { // < 10MB files
-            batchSize = 5; // Medium batch size
+            batchSize = 20; // Larger batch size for medium files
+        } else if (avgFileSize < 50 * 1024 * 1024) { // < 50MB files
+            batchSize = 10; // Medium batch size
         } else {
-            batchSize = 2; // Fewer concurrent uploads for large files
+            batchSize = 5; // Fewer concurrent uploads for very large files
         }
-        
+
         const batches = [];
         for (let i = 0; i < regularFiles.length; i += batchSize) {
             batches.push(regularFiles.slice(i, i + batchSize));
         }
-        
-        // Process batches with optimized concurrency
+
+        // OPTIMIZED: Upload entire batch in single request for better performance
         for (const batch of batches) {
-            await Promise.all(batch.map((file) => 
-                uploadSingleFileOptimized(file, selectedFiles.indexOf(file))
-            ));
+            await uploadBatchOptimized(batch);
         }
     }
     
@@ -1531,6 +1531,111 @@ async function pollExtractionProgress(extractionId, fileIndex, resolve) {
             resolve();
         }
     }, 1000);
+}
+
+// OPTIMIZED: Upload entire batch in single HTTP request for maximum speed
+async function uploadBatchOptimized(batch) {
+    return new Promise((resolve) => {
+        const formData = new FormData();
+        const batchIndices = [];
+
+        // Add all files to single FormData
+        batch.forEach(file => {
+            const index = selectedFiles.indexOf(file);
+            batchIndices.push(index);
+            formData.append('files[]', file);
+
+            // Add relative path for folder uploads
+            if (file.webkitRelativePath) {
+                formData.append('relative_paths[]', file.webkitRelativePath);
+            } else {
+                formData.append('relative_paths[]', '');
+            }
+        });
+
+        formData.append('preserve_structure', document.getElementById('preserve-structure').checked ? '1' : '0');
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        const xhr = new XMLHttpRequest();
+        xhr.timeout = 300000; // 5 minutes timeout
+
+        let batchStartTime = Date.now();
+        let lastLoaded = 0;
+
+        // Track progress for entire batch
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+
+                // Calculate speed
+                const now = Date.now();
+                const elapsed = (now - batchStartTime) / 1000;
+                const speed = e.loaded / elapsed;
+
+                // Update progress for each file in batch proportionally
+                batchIndices.forEach(index => {
+                    updateFileProgress(index, percent, e.loaded / batch.length, e.total / batch.length);
+                    const speedElement = document.getElementById(`speed-${index}`);
+                    if (speedElement) speedElement.textContent = formatSpeed(speed);
+                });
+
+                updateOverallProgress();
+            }
+        });
+
+        // Handle completion
+        xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 400) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    batchIndices.forEach(index => {
+                        if (response.skipped_count > 0) {
+                            updateFileStatus(index, 'Completed (some skipped)', 'text-yellow-400');
+                        } else {
+                            updateFileStatus(index, 'Completed', 'text-green-400');
+                        }
+                    });
+                } catch (e) {
+                    batchIndices.forEach(index => {
+                        updateFileStatus(index, 'Completed', 'text-green-400');
+                    });
+                }
+            } else {
+                batchIndices.forEach(index => {
+                    updateFileStatus(index, 'Failed', 'text-red-400');
+                });
+            }
+            completedUploads += batch.length;
+            updateOverallProgress();
+            resolve();
+        });
+
+        xhr.addEventListener('error', () => {
+            batchIndices.forEach(index => {
+                updateFileStatus(index, 'Network Error', 'text-red-400');
+            });
+            completedUploads += batch.length;
+            updateOverallProgress();
+            resolve();
+        });
+
+        xhr.addEventListener('timeout', () => {
+            batchIndices.forEach(index => {
+                updateFileStatus(index, 'Upload Timeout', 'text-red-400');
+            });
+            completedUploads += batch.length;
+            updateOverallProgress();
+            resolve();
+        });
+
+        batchIndices.forEach(index => {
+            updateFileStatus(index, 'Uploading...', 'text-blue-400');
+        });
+
+        xhr.open('POST', '{{ route("admin.cache.store") }}');
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.send(formData);
+    });
 }
 
 // OPTIMIZED UPLOAD FUNCTION WITH BETTER SPEED HANDLING

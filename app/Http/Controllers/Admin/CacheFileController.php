@@ -131,7 +131,7 @@ class CacheFileController extends Controller
         // Increase memory and time limits for large uploads
         ini_set('memory_limit', '2G');
         set_time_limit(600); // 10 minutes
-        
+
         $request->validate([
             'files.*' => 'required|file|max:1048576', // 1GB max per file - supports ALL file types
             'folders.*' => 'file|max:1048576', // For folder uploads
@@ -143,30 +143,28 @@ class CacheFileController extends Controller
         $errors = [];
         $preserveStructure = $request->input('preserve_structure', true);
         $relativePaths = $request->input('relative_paths', []);
+        $recordsToInsert = [];
 
         // Handle individual files with enhanced multi-file support
         if ($request->hasFile('files')) {
             $files = $request->file('files');
-            
+
+            // OPTIMIZED: Batch process files to reduce DB queries
+            $fileData = [];
             foreach ($files as $index => $file) {
-                try {
-                    // Get relative path if provided (for folder uploads) - PRESERVE FULL STRUCTURE
-                    $relativePath = isset($relativePaths[$index]) ? $relativePaths[$index] : null;
-                    
-                    $result = $this->processUploadedFile($file, $relativePath, $preserveStructure);
-                    if ($result['success']) {
-                        if ($result['skipped']) {
-                            $skippedFiles[] = $result['filename'];
-                        } else {
-                            $uploadedFiles[] = $result['filename'];
-                        }
-                    } else {
-                        $errors[] = $result['error'];
-                    }
-                } catch (\Exception $e) {
-                    $errors[] = "Failed to upload '{$file->getClientOriginalName()}': " . $e->getMessage();
-                }
+                $relativePath = isset($relativePaths[$index]) ? $relativePaths[$index] : null;
+                $fileData[] = [
+                    'file' => $file,
+                    'relativePath' => $relativePath,
+                    'index' => $index
+                ];
             }
+
+            // Process in optimized batch
+            $result = $this->processBatchUpload($fileData, $preserveStructure);
+            $uploadedFiles = array_merge($uploadedFiles, $result['uploaded']);
+            $skippedFiles = array_merge($skippedFiles, $result['skipped']);
+            $errors = array_merge($errors, $result['errors']);
         }
 
         // Handle folder uploads (ZIP files)
@@ -183,7 +181,7 @@ class CacheFileController extends Controller
             }
         }
 
-        // Auto-regenerate manifest if any files were uploaded
+        // OPTIMIZED: Regenerate manifest only ONCE at the end
         if (!empty($uploadedFiles)) {
             try {
                 Artisan::call('cache:generate-manifest');
@@ -717,6 +715,121 @@ class CacheFileController extends Controller
     }
 
     /**
+     * OPTIMIZED: Batch process multiple file uploads to reduce DB queries
+     */
+    private function processBatchUpload(array $fileData, $preserveStructure = true): array
+    {
+        $uploadedFiles = [];
+        $skippedFiles = [];
+        $errors = [];
+
+        // OPTIMIZED: Build all filenames and paths first
+        $checkData = [];
+        foreach ($fileData as $data) {
+            $originalName = $data['file']->getClientOriginalName();
+            $relativePath = $data['relativePath'];
+            $fullRelativePath = ($relativePath && $preserveStructure) ? $relativePath : null;
+
+            $checkData[] = [
+                'filename' => $originalName,
+                'relative_path' => $fullRelativePath,
+                'file' => $data['file']
+            ];
+        }
+
+        // OPTIMIZED: Single query to check for existing files
+        $existingFiles = CacheFile::where(function($query) use ($checkData) {
+            foreach ($checkData as $data) {
+                $query->orWhere(function($q) use ($data) {
+                    $q->where('filename', $data['filename'])
+                      ->where('relative_path', $data['relative_path']);
+                });
+            }
+        })->get()->keyBy(function($item) {
+            return $item->filename . '|' . ($item->relative_path ?? '');
+        });
+
+        // Process each file
+        $recordsToUpsert = [];
+        foreach ($checkData as $data) {
+            try {
+                $file = $data['file'];
+                $originalName = $data['filename'];
+                $fullRelativePath = $data['relative_path'];
+
+                // OPTIMIZED: Only compute hash if needed for duplicate check
+                $key = $originalName . '|' . ($fullRelativePath ?? '');
+                $existing = $existingFiles->get($key);
+
+                // Store file first
+                $storagePath = 'cache_files/' . uniqid() . '_' . $originalName;
+                $path = $file->storeAs('cache_files', basename($storagePath));
+
+                // Compute hash after storage (can be done async if needed)
+                $hash = hash_file('sha256', $file->getRealPath());
+                $mimeType = $file->getMimeType() ?: 'application/octet-stream';
+
+                // Check if identical
+                if ($existing && $existing->hash === $hash) {
+                    // Delete the newly stored file since it's a duplicate
+                    Storage::delete($path);
+                    $skippedFiles[] = $originalName;
+                    continue;
+                }
+
+                // Extract directory path
+                $directoryPath = null;
+                if ($fullRelativePath) {
+                    $pathParts = explode('/', $fullRelativePath);
+                    array_pop($pathParts);
+                    $directoryPath = implode('/', $pathParts);
+                }
+
+                // Prepare record for batch upsert
+                $recordsToUpsert[] = [
+                    'filename' => $originalName,
+                    'relative_path' => $fullRelativePath,
+                    'path' => $path,
+                    'size' => $file->getSize(),
+                    'hash' => $hash,
+                    'file_type' => 'file',
+                    'mime_type' => $mimeType,
+                    'metadata' => json_encode([
+                        'original_name' => $originalName,
+                        'relative_path' => $fullRelativePath,
+                        'directory_path' => $directoryPath,
+                        'file_extension' => pathinfo($originalName, PATHINFO_EXTENSION),
+                        'upload_time' => now()->toISOString(),
+                        'supports_all_types' => true
+                    ]),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ];
+
+                $uploadedFiles[] = $originalName;
+
+            } catch (\Exception $e) {
+                $errors[] = "Failed to upload '{$data['filename']}': " . $e->getMessage();
+            }
+        }
+
+        // OPTIMIZED: Single batch upsert for all files
+        if (!empty($recordsToUpsert)) {
+            CacheFile::upsert(
+                $recordsToUpsert,
+                ['filename', 'relative_path'],
+                ['path', 'size', 'hash', 'file_type', 'mime_type', 'metadata', 'updated_at']
+            );
+        }
+
+        return [
+            'uploaded' => $uploadedFiles,
+            'skipped' => $skippedFiles,
+            'errors' => $errors
+        ];
+    }
+
+    /**
      * Process a single uploaded file with enhanced support for all file types
      */
     private function processUploadedFile($file, $relativePath = null, $preserveStructure = true): array
@@ -724,7 +837,7 @@ class CacheFileController extends Controller
         $originalName = $file->getClientOriginalName();
         $hash = hash_file('sha256', $file->getRealPath());
         $mimeType = $file->getMimeType() ?: 'application/octet-stream';
-        
+
         // CRITICAL FIX: Enhanced relative path handling for folder uploads
         if ($relativePath && $preserveStructure) {
             // Preserve the EXACT full relative path including directory structure
@@ -732,12 +845,12 @@ class CacheFileController extends Controller
         } else {
             $fullRelativePath = null;
         }
-        
+
         // Check if identical file already exists (same hash)
         $existing = CacheFile::where('filename', $originalName)
             ->where('relative_path', $fullRelativePath)
             ->first();
-        
+
         if ($existing && $existing->hash === $hash) {
             return [
                 'success' => true,
@@ -750,7 +863,7 @@ class CacheFileController extends Controller
         // Enhanced storage path generation
         $storagePath = 'cache_files/' . uniqid() . '_' . $originalName;
         $path = $file->storeAs('cache_files', basename($storagePath));
-        
+
         // Extract directory path from relative path for metadata
         $directoryPath = null;
         if ($fullRelativePath) {
@@ -758,7 +871,7 @@ class CacheFileController extends Controller
             array_pop($pathParts); // Remove filename
             $directoryPath = implode('/', $pathParts);
         }
-        
+
         // Create or update database record with enhanced metadata (overwrite if hash differs)
         CacheFile::updateOrCreate(
             [
