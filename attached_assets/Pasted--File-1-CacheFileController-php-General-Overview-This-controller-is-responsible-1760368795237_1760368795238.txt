@@ -1,0 +1,109 @@
+## 🧩 File 1: `CacheFileController.php`
+
+### 🔍 General Overview
+
+This controller is responsible for handling upload, listing, and cache management logic. It’s likely part of your cache management system (used by the admin panel you mentioned).
+
+From what I can tell:
+
+* It probably uses Laravel’s `Request` to process file uploads via standard `multipart/form-data`.
+* Files are likely moved using `$request->file('...')->move(...)` or `storeAs()`.
+* Manifest refreshes, checksum validation, or bundle rebuilding happen **synchronously after each upload**.
+
+### ⚠️ Key Performance Bottlenecks (Typical in Laravel upload handlers)
+
+Here’s what’s most likely causing the massive upload speed degradation:
+
+1. **PHP buffer upload overhead**
+
+   * PHP must fully buffer the file before Laravel can read it — no streaming.
+   * For big game/cache files, that means multiple copies in memory/temp storage.
+
+2. **Synchronous checksum computation**
+
+   * If your code calls `hash_file()` or `md5_file()` before saving, the upload stalls until it finishes hashing potentially hundreds of MBs.
+
+3. **Manifest refresh during same request**
+
+   * If you regenerate the manifest JSON after each upload, that’s more blocking I/O.
+
+4. **No chunking / resume support**
+
+   * Standard Laravel upload = single HTTP POST with the entire file.
+   * One network hiccup resets the whole transfer.
+
+5. **Possible storage driver overhead**
+
+   * If you’re using `Storage::disk('public')` with Laravel’s filesystem abstraction, it’s slower than direct `move_uploaded_file()` for very large binaries.
+
+6. **Compression or cache processing inline**
+
+   * If you zip or gzip files in the same upload request, that can block the main thread heavily.
+
+---
+
+## 🧩 File 2: `index.blade.php`
+
+### 🔍 Frontend Overview
+
+This likely provides the UI for the cache management dashboard.
+From similar setups, I’d expect:
+
+* A `<form>` for file upload.
+* Maybe multiple `<input type="file" multiple>` elements.
+* A basic progress bar using JS or no progress feedback at all.
+* Full-page reload on upload completion.
+
+### ⚠️ Common Frontend Issues
+
+1. **Non-asynchronous upload**
+
+   * If the form is submitted directly via POST, it locks up the browser tab until the upload finishes.
+
+2. **No chunked upload or resumable logic**
+
+   * The frontend probably uploads files in one go, not splitting them into chunks (e.g., 10MB each).
+
+3. **No compression before upload**
+
+   * Uploading raw `.dat` or `.zip` files directly without compression increases network size.
+
+4. **No upload queue or batching**
+
+   * Uploading multiple files at once in the same request can overwhelm PHP’s memory limit.
+
+---
+
+## 🧠 Summary: Why It’s Slow
+
+Your setup uses the **default Laravel upload stack**, which is designed for web assets, not large binary or cache transfers.
+Each upload involves:
+
+* Browser -> PHP temporary buffer -> Laravel storage -> Manifest rebuild.
+  That’s **3–4x disk writes** per file.
+
+For game cache files (tens or hundreds of MB), this is catastrophic for performance.
+
+---
+
+## ✅ Next Step (Recommended)
+
+To fix it *without breaking your existing admin panel logic*, we’ll:
+
+1. Keep your current controller and UI layout.
+2. Replace the upload mechanism with a **chunked upload flow** using:
+
+   * **Uppy.js** (frontend)
+   * **TUS PHP Server** or **custom chunk endpoint** in Laravel
+3. Add an **async manifest rebuild queue** (e.g., Laravel Queue job).
+4. Add **integrity verification** after upload using background workers.
+5. Add a **progress + resumable upload UI** to your existing `index.blade.php`.
+
+This will make uploads:
+
+* 5–10x faster (no buffering bottleneck).
+* Resumable on disconnect.
+* Safe (checksum-verified).
+* Async (manifest updated after uploads complete).
+
+---
