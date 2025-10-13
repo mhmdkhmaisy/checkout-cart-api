@@ -288,9 +288,9 @@
                                 
                                 <!-- Status Indicator -->
                                 <div class="absolute top-2 right-2">
-                                    @if($file->existsOnDisk())
+                                    @if($file->file_type === 'directory' || (method_exists($file, 'existsOnDisk') && $file->existsOnDisk()))
                                         <i class="fas fa-check-circle text-green-400 text-xs"></i>
-                                    @else
+                                    @elseif($file->file_type === 'file')
                                         <i class="fas fa-exclamation-triangle text-red-400 text-xs"></i>
                                     @endif
                                 </div>
@@ -352,7 +352,9 @@
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-dragon-silver">{{ $file->filename }}</div>
                                                 <div class="text-sm text-dragon-silver-dark">
-                                                    @if($file->existsOnDisk())
+                                                    @if($file->file_type === 'directory')
+                                                        <span class="text-blue-400"><i class="fas fa-folder mr-1"></i>Folder</span>
+                                                    @elseif(method_exists($file, 'existsOnDisk') && $file->existsOnDisk())
                                                         <span class="text-green-400"><i class="fas fa-check-circle mr-1"></i>Available</span>
                                                     @else
                                                         <span class="text-red-400"><i class="fas fa-exclamation-triangle mr-1"></i>Missing</span>
@@ -372,7 +374,7 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex space-x-2">
-                                            @if($file->existsOnDisk() && $file->file_type === 'file')
+                                            @if($file->file_type === 'file' && method_exists($file, 'existsOnDisk') && $file->existsOnDisk())
                                                 <button onclick="downloadFile('{{ $file->id }}')" class="text-blue-400 hover:text-blue-300" title="Download">
                                                     <i class="fas fa-download"></i>
                                                 </button>

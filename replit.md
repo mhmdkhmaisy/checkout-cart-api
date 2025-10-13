@@ -138,6 +138,11 @@ See: `CHUNKED_UPLOAD_IMPLEMENTATION.md` for complete documentation
 - File "bar.txt" in "foo": `relative_path = "foo"`
 - Folders shown as clickable items, navigating updates ?path= query parameter
 
+**Bug Fixes:**
+- Fixed `existsOnDisk()` method call error on virtual folders (stdClass objects)
+- Added method_exists() checks before calling model methods in view
+- Directories now show "Folder" status in list view instead of trying to check disk existence
+
 ## Project Structure
 
 ```
