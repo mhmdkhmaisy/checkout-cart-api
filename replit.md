@@ -24,7 +24,11 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
     - Implements a smart hashing strategy, using fast MD5 for new files and SHA256 only for duplicate detection, significantly improving upload speeds.
     - Includes robust security features: directory traversal protection, filename sanitization, path normalization, null byte filtering, and storage isolation.
     - The file manager supports full directory browsing, virtual folders, and path-based filtering.
-    - Corrected `relative_path` storage to ensure files are accurately identified and downloaded.
+    - **Critical Path Fix (Oct 13, 2025):** Corrected `relative_path` storage throughout the system to store ONLY directory paths (excluding filenames), preventing files from being misidentified as folders.
+    - **Extract Here Feature:** Preserves complete directory structure when extracting archives - files are stored in `cache_files/{directory_path}/{filename}` maintaining folder hierarchy.
+    - **Duplicate Detection:** Normalized to use directory paths only for accurate duplicate checking across all upload methods.
+    - **Drag & Drop:** Enhanced with folder detection to gracefully handle browser restrictions, directing users to "Browse Folders" button.
+    - **Cleanup Command:** `php artisan cache:fix-paths` safely repairs existing database records with incorrect paths using metadata validation.
 - **Multi-site Voting System:** Tracks votes and rewards.
 - **Client Management:** Facilitates the distribution and management of game client versions.
 
