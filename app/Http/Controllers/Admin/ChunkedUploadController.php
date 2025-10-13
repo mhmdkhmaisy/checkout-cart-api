@@ -73,8 +73,7 @@ class ChunkedUploadController extends Controller
 
         $response = $server->serve();
         
-        return response($response->getBody(), $response->getStatusCode())
-            ->withHeaders($response->getHeaders());
+        return $response->send();
     }
 
     public function status(Request $request)
