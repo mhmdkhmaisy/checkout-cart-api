@@ -20,7 +20,27 @@ class CacheFileController extends Controller
      */
     public function index(Request $request)
     {
+        $currentPath = $request->get('path', '');
+        $currentPath = trim($currentPath, '/');
+        
         $query = CacheFile::query();
+
+        // Path-based filtering for directory navigation
+        // Note: relative_path is the directory path, NOT including the filename
+        if (!$request->filled('search') && !$request->filled('type_filter')) {
+            if (empty($currentPath)) {
+                // At root: get all files (buildDirectoryView will filter to show only root-level items)
+                // No filtering needed here
+            } else {
+                // In a directory: get files in this directory or subdirectories
+                // Files in "foo" have relative_path = "foo" (direct children)
+                // Files in "foo/bar" have relative_path = "foo/bar" (nested)
+                $query->where(function($q) use ($currentPath) {
+                    $q->where('relative_path', $currentPath)
+                      ->orWhere('relative_path', 'LIKE', $currentPath . '/%');
+                });
+            }
+        }
 
         // Search functionality
         if ($request->filled('search')) {
@@ -45,18 +65,39 @@ class CacheFileController extends Controller
             }
         }
 
-        // Sorting
+        // Get all files for current path
+        $allFiles = $query->get();
+        
+        // Process files to show only current directory level
+        $filesAndFolders = $this->buildDirectoryView($allFiles, $currentPath);
+        
+        // Apply sorting
         $sortBy = $request->get('sort', 'filename');
         $sortDirection = $request->get('direction', 'asc');
         
-        $allowedSorts = ['filename', 'size', 'created_at', 'relative_path', 'file_type'];
-        if (in_array($sortBy, $allowedSorts)) {
-            $query->orderBy($sortBy, $sortDirection);
-        } else {
-            $query->orderBy('relative_path')->orderBy('filename');
-        }
+        $filesAndFolders = $filesAndFolders->sortBy(function($item) use ($sortBy) {
+            if ($sortBy === 'filename') {
+                return strtolower($item->filename);
+            } elseif ($sortBy === 'size') {
+                return $item->file_type === 'directory' ? 0 : ($item->size ?? 0);
+            } elseif ($sortBy === 'created_at') {
+                return $item->created_at;
+            } elseif ($sortBy === 'file_type') {
+                return $item->file_type === 'directory' ? 'a' : 'b';
+            }
+            return $item->filename;
+        }, SORT_REGULAR, $sortDirection === 'desc');
 
-        $files = $query->paginate(50)->appends($request->query());
+        // Paginate manually
+        $page = $request->get('page', 1);
+        $perPage = 50;
+        $files = new \Illuminate\Pagination\LengthAwarePaginator(
+            $filesAndFolders->forPage($page, $perPage),
+            $filesAndFolders->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         $totalSize = CacheFile::files()->sum('size');
         $totalFiles = CacheFile::files()->count();
@@ -71,7 +112,88 @@ class CacheFileController extends Controller
             ->sort()
             ->values();
 
-        return view('admin.cache.index', compact('files', 'totalSize', 'totalFiles', 'totalDirectories', 'fileExtensions'));
+        return view('admin.cache.index', compact('files', 'totalSize', 'totalFiles', 'totalDirectories', 'fileExtensions', 'currentPath'));
+    }
+    
+    /**
+     * Build directory view showing only items at current level
+     */
+    private function buildDirectoryView($allFiles, $currentPath)
+    {
+        $items = collect();
+        $seenFolders = [];
+        
+        foreach ($allFiles as $file) {
+            // relative_path is the directory path (NOT including filename)
+            $fileDirPath = $file->relative_path ?? '';
+            
+            // Handle real directory records (file_type='directory')
+            if ($file->file_type === 'directory') {
+                // Compute the full path for this directory
+                $dirFullPath = $fileDirPath ? $fileDirPath . '/' . $file->filename : $file->filename;
+                
+                // Check if this directory belongs at the current level
+                $dirParentPath = $fileDirPath;
+                if ($dirParentPath === $currentPath) {
+                    // This directory is a direct child of current path
+                    $file->navigation_path = $dirFullPath;
+                    $items->push($file);
+                    $seenFolders[$dirFullPath] = true;
+                }
+                continue;
+            }
+            
+            if (empty($currentPath)) {
+                // At root level - show files with no directory path and create virtual folders
+                if (empty($fileDirPath)) {
+                    // File at root level (relative_path is null or empty)
+                    $items->push($file);
+                } else {
+                    // File is in a subdirectory - create virtual folder entry for first segment
+                    $firstFolder = explode('/', $fileDirPath)[0];
+                    if (!isset($seenFolders[$firstFolder])) {
+                        $seenFolders[$firstFolder] = true;
+                        $folderItem = new \stdClass();
+                        $folderItem->id = 'folder_' . md5($firstFolder);
+                        $folderItem->filename = $firstFolder;
+                        $folderItem->relative_path = $firstFolder;
+                        $folderItem->navigation_path = $firstFolder;
+                        $folderItem->file_type = 'directory';
+                        $folderItem->size = 0;
+                        $folderItem->created_at = $file->created_at;
+                        $folderItem->updated_at = $file->updated_at;
+                        $items->push($folderItem);
+                    }
+                }
+            } else {
+                // In a subdirectory - show files in this directory and subfolders
+                if ($fileDirPath === $currentPath) {
+                    // File directly in current directory
+                    $items->push($file);
+                } elseif (strpos($fileDirPath, $currentPath . '/') === 0) {
+                    // File is in a subdirectory of current path
+                    $remainder = substr($fileDirPath, strlen($currentPath) + 1);
+                    $nextFolder = explode('/', $remainder)[0];
+                    $fullFolderPath = $currentPath . '/' . $nextFolder;
+                    
+                    if (!isset($seenFolders[$fullFolderPath])) {
+                        $seenFolders[$fullFolderPath] = true;
+                        $folderItem = new \stdClass();
+                        $folderItem->id = 'folder_' . md5($fullFolderPath);
+                        $folderItem->filename = $nextFolder;
+                        $folderItem->relative_path = $fullFolderPath;
+                        $folderItem->navigation_path = $fullFolderPath;
+                        $folderItem->file_type = 'directory';
+                        $folderItem->size = 0;
+                        $folderItem->created_at = $file->created_at;
+                        $folderItem->updated_at = $file->updated_at;
+                        $items->push($folderItem);
+                    }
+                }
+            }
+        }
+        
+        return $items;
     }
 
     /**

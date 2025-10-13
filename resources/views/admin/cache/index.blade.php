@@ -188,12 +188,29 @@
         <div id="file-browser" class="min-h-[400px]">
             <!-- Breadcrumb Navigation -->
             <div class="px-6 py-3 border-b border-dragon-border bg-dragon-black/10">
-                <nav class="flex items-center space-x-2 text-sm">
-                    <button onclick="navigateTo('/')" class="text-dragon-red hover:text-dragon-red-bright">
+                <nav class="flex items-center space-x-2 text-sm flex-wrap">
+                    <button onclick="navigateTo('')" class="text-dragon-red hover:text-dragon-red-bright transition-colors">
                         <i class="fas fa-home mr-1"></i>Root
                     </button>
-                    <span class="text-dragon-silver-dark">/</span>
-                    <span id="current-path" class="text-dragon-silver">cache</span>
+                    @if(!empty($currentPath))
+                        @php
+                            $pathParts = explode('/', $currentPath);
+                            $buildPath = '';
+                        @endphp
+                        @foreach($pathParts as $index => $part)
+                            <span class="text-dragon-silver-dark">/</span>
+                            @php
+                                $buildPath .= ($buildPath ? '/' : '') . $part;
+                            @endphp
+                            @if($index === count($pathParts) - 1)
+                                <span class="text-dragon-silver font-medium">{{ $part }}</span>
+                            @else
+                                <button onclick="navigateTo('{{ $buildPath }}')" class="text-blue-400 hover:text-blue-300 transition-colors">
+                                    {{ $part }}
+                                </button>
+                            @endif
+                        @endforeach
+                    @endif
                 </nav>
             </div>
 
@@ -215,6 +232,8 @@
                                  data-file-id="{{ $file->id }}" 
                                  data-file-name="{{ $file->filename }}" 
                                  data-file-type="{{ $file->file_type }}"
+                                 data-relative-path="{{ $file->relative_path ?? '' }}"
+                                 data-navigation-path="{{ $file->navigation_path ?? ($file->relative_path ?? '') }}"
                                  data-file-extension="{{ strtolower(pathinfo($file->filename, PATHINFO_EXTENSION)) }}"
                                  onclick="selectFile(this)"
                                  oncontextmenu="showContextMenu(event, this)"
@@ -310,6 +329,8 @@
                                     data-file-id="{{ $file->id }}"
                                     data-file-name="{{ $file->filename }}" 
                                     data-file-type="{{ $file->file_type }}"
+                                    data-relative-path="{{ $file->relative_path ?? '' }}"
+                                    data-navigation-path="{{ $file->navigation_path ?? ($file->relative_path ?? '') }}"
                                     data-file-extension="{{ strtolower(pathinfo($file->filename, PATHINFO_EXTENSION)) }}"
                                     onclick="selectFile(this)"
                                     oncontextmenu="showContextMenu(event, this)"
@@ -850,11 +871,11 @@ function hideContextMenu() {
 // File Operations
 function openFile(element) {
     const fileType = element.getAttribute('data-file-type');
-    const fileName = element.getAttribute('data-file-name');
     
     if (fileType === 'directory') {
-        // Navigate to directory
-        navigateTo(fileName);
+        // Navigate to directory using navigation path
+        const navigationPath = element.getAttribute('data-navigation-path') || element.getAttribute('data-relative-path');
+        navigateTo(navigationPath);
     } else {
         // Download file
         const fileId = element.getAttribute('data-file-id');
@@ -1027,14 +1048,17 @@ function renameSelectedFile() {
 
 // Navigation Functions
 function navigateTo(path) {
-    // Update current path display
-    document.getElementById('current-path').textContent = path === '/' ? 'cache' : `cache/${path}`;
+    // Clean up the path
+    path = (path || '').replace(/^\/+|\/+$/g, '');
     
-    // In a real implementation, this would reload the page with the new path
-    // For now, we'll just update the URL
+    // Reload page with new path parameter
     const url = new URL(window.location);
-    url.searchParams.set('path', path);
-    window.history.pushState({}, '', url);
+    if (path) {
+        url.searchParams.set('path', path);
+    } else {
+        url.searchParams.delete('path');
+    }
+    window.location.href = url.toString();
 }
 
 function refreshFiles() {
