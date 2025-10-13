@@ -115,6 +115,9 @@ class GenerateCacheManifest extends Command
             $backupPath = $manifestDir . '/cache_manifest_' . $manifest['version'] . '.json';
             copy($manifestPath, $backupPath);
 
+            // Clean up old manifest backups (keep only the last 10)
+            $this->cleanupOldManifests($manifestDir);
+
             $this->info("✅ Cache manifest generated successfully!");
             $this->info("📁 Files: {$totalFiles}");
             $this->info("📂 Directories: {$totalDirectories}");
@@ -275,5 +278,36 @@ class GenerateCacheManifest extends Command
         }
         
         return round($bytes, 2) . ' ' . $units[$i];
+    }
+
+    /**
+     * Clean up old manifest backups, keeping only the latest 10
+     */
+    private function cleanupOldManifests(string $manifestDir): void
+    {
+        $backupFiles = glob($manifestDir . '/cache_manifest_*.json');
+        
+        if (count($backupFiles) <= 10) {
+            return; // Keep all if 10 or fewer
+        }
+
+        // Sort by modification time (newest first)
+        usort($backupFiles, function($a, $b) {
+            return filemtime($b) - filemtime($a);
+        });
+
+        // Keep the 10 newest, delete the rest
+        $filesToDelete = array_slice($backupFiles, 10);
+        
+        foreach ($filesToDelete as $file) {
+            if (file_exists($file)) {
+                unlink($file);
+                $this->line("🗑️  Deleted old manifest backup: " . basename($file));
+            }
+        }
+        
+        if (count($filesToDelete) > 0) {
+            $this->info("✨ Cleaned up " . count($filesToDelete) . " old manifest backup(s)");
+        }
     }
 }
