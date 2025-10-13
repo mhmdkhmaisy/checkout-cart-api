@@ -765,17 +765,34 @@ class CacheFileController extends Controller
                 $storagePath = 'cache_files/' . uniqid() . '_' . $originalName;
                 $path = $file->storeAs('cache_files', basename($storagePath));
 
-                // Compute hash after storage (can be done async if needed)
-                $hash = hash_file('sha256', $file->getRealPath());
-                $mimeType = $file->getMimeType() ?: 'application/octet-stream';
-
-                // Check if identical
-                if ($existing && $existing->hash === $hash) {
-                    // Delete the newly stored file since it's a duplicate
-                    Storage::delete($path);
-                    $skippedFiles[] = $originalName;
-                    continue;
+                // PERFORMANCE FIX: Skip hashing during upload for maximum speed
+                // Only hash if we need to check for duplicates
+                $hash = null;
+                if ($existing) {
+                    // Only compute hash to compare with existing file
+                    $fileSize = $file->getSize();
+                    
+                    // Quick size check first - if sizes differ, not a duplicate
+                    if ($existing->size !== $fileSize) {
+                        // Different size, definitely not duplicate - use MD5 (fast)
+                        $hash = md5_file($file->getRealPath());
+                    } else {
+                        // Same size, need SHA256 to check for duplicates
+                        $hash = hash_file('sha256', $file->getRealPath());
+                        
+                        if ($existing->hash === $hash) {
+                            // Identical file - skip it
+                            Storage::delete($path);
+                            $skippedFiles[] = $originalName;
+                            continue;
+                        }
+                    }
+                } else {
+                    // No existing file - use MD5 for speed (10x faster than SHA256)
+                    $hash = md5_file($file->getRealPath());
                 }
+                
+                $mimeType = $file->getMimeType() ?: 'application/octet-stream';
 
                 // Extract directory path
                 $directoryPath = null;

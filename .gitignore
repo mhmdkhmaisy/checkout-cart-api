@@ -5,5 +5,7 @@
 /storage/framework/sessions
 /storage/framework/views
 .env
+.user.ini
 /bootstrap/cache
 /storage/app/public/clients
+database/database.sqlite
