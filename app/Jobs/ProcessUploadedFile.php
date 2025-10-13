@@ -155,17 +155,23 @@ class ProcessUploadedFile implements ShouldQueue
                 throw new \Exception('Failed to move file to final destination');
             }
 
+            // Extract directory path from relative path
+            // The relativePath from frontend may include the filename (e.g., "folder/file.txt")
+            // We need to store only the directory path (e.g., "folder")
             $directoryPath = null;
             if ($safePath) {
                 $pathParts = explode('/', $safePath);
-                array_pop($pathParts);
-                $directoryPath = implode('/', $pathParts);
+                // Check if the last part is the filename by comparing with the actual filename
+                if (end($pathParts) === $safeFilename) {
+                    array_pop($pathParts); // Remove filename from path
+                }
+                $directoryPath = !empty($pathParts) ? implode('/', $pathParts) : null;
             }
 
             CacheFile::updateOrCreate(
                 [
                     'filename' => $safeFilename,
-                    'relative_path' => $safePath
+                    'relative_path' => $directoryPath
                 ],
                 [
                     'path' => $storagePath,

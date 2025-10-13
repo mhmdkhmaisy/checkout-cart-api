@@ -760,17 +760,21 @@ class CacheFileController extends Controller
             foreach ($iterator as $fileInfo) {
                 if ($fileInfo->isFile()) {
                     try {
-                        // CRITICAL FIX: Preserve full directory structure for TAR files
+                        // CRITICAL FIX: Preserve directory structure, NOT including filename
+                        $directoryPath = null;
                         if ($preserveStructure) {
                             $fullPath = $fileInfo->getPathname();
-                            $relativePath = str_replace($extractPath . DIRECTORY_SEPARATOR, '', $fullPath);
-                            // Convert backslashes to forward slashes and ensure proper structure
-                            $relativePath = str_replace('\\', '/', $relativePath);
-                        } else {
-                            $relativePath = null;
+                            $fullRelativePath = str_replace($extractPath . DIRECTORY_SEPARATOR, '', $fullPath);
+                            // Convert backslashes to forward slashes
+                            $fullRelativePath = str_replace('\\', '/', $fullRelativePath);
+                            
+                            // Extract ONLY the directory path, excluding the filename
+                            $pathParts = explode('/', $fullRelativePath);
+                            array_pop($pathParts); // Remove filename
+                            $directoryPath = !empty($pathParts) ? implode('/', $pathParts) : null;
                         }
                         
-                        $result = $this->processExtractedFile($fileInfo, $relativePath);
+                        $result = $this->processExtractedFile($fileInfo, $directoryPath);
                         if ($result['success']) {
                             if ($result['skipped']) {
                                 $skippedFiles[] = $result['filename'];
@@ -1087,17 +1091,21 @@ class CacheFileController extends Controller
             foreach ($iterator as $fileInfo) {
                 if ($fileInfo->isFile()) {
                     try {
-                        // CRITICAL FIX: Preserve full directory structure
+                        // CRITICAL FIX: Preserve directory structure, NOT including filename
+                        $directoryPath = null;
                         if ($preserveStructure) {
                             $fullPath = $fileInfo->getPathname();
-                            $relativePath = str_replace($extractPath . DIRECTORY_SEPARATOR, '', $fullPath);
-                            // Convert backslashes to forward slashes and ensure proper structure
-                            $relativePath = str_replace('\\', '/', $relativePath);
-                        } else {
-                            $relativePath = null;
+                            $fullRelativePath = str_replace($extractPath . DIRECTORY_SEPARATOR, '', $fullPath);
+                            // Convert backslashes to forward slashes
+                            $fullRelativePath = str_replace('\\', '/', $fullRelativePath);
+                            
+                            // Extract ONLY the directory path, excluding the filename
+                            $pathParts = explode('/', $fullRelativePath);
+                            array_pop($pathParts); // Remove filename
+                            $directoryPath = !empty($pathParts) ? implode('/', $pathParts) : null;
                         }
                         
-                        $result = $this->processExtractedFile($fileInfo, $relativePath);
+                        $result = $this->processExtractedFile($fileInfo, $directoryPath);
                         if ($result['success']) {
                             if ($result['skipped']) {
                                 $skippedFiles[] = $result['filename'];
