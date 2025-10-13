@@ -21,6 +21,12 @@ class ChunkedUploadController extends Controller
         $server = new TusServer('file');
         $server->setApiPath('/admin/cache/chunked-upload')
                ->setUploadDir($uploadDir);
+        
+        \Log::info('TUS Request', [
+            'method' => $request->method(),
+            'path' => $request->path(),
+            'headers' => $request->headers->all(),
+        ]);
 
         $server->event()->addListener('tus-server.upload.created', function($event) {
             $fileMeta = $event->getFile()->details();
@@ -71,9 +77,7 @@ class ChunkedUploadController extends Controller
             }
         });
 
-        $response = $server->serve();
-        
-        return $response->send();
+        return $server->serve();
     }
 
     public function status(Request $request)
