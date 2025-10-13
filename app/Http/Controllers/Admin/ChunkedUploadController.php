@@ -33,16 +33,24 @@ class ChunkedUploadController extends Controller
         }
 
         $server->event()->addListener('tus-server.upload.created', function($event) {
-            $fileMeta = $event->getFile()->details();
+            $file = $event->getFile();
+            $fileMeta = $file->details();
             $metadata = $fileMeta['metadata'] ?? [];
+            $fileKey = $file->getKey();
+            
+            \Log::info('Upload created', [
+                'key' => $fileKey,
+                'metadata' => $metadata,
+                'details' => $fileMeta
+            ]);
             
             UploadSession::create([
-                'upload_key' => $fileMeta['id'],
+                'upload_key' => $fileKey,
                 'filename' => $metadata['filename'] ?? 'unknown',
                 'relative_path' => $metadata['relativePath'] ?? null,
                 'file_size' => $fileMeta['size'] ?? 0,
                 'uploaded_size' => 0,
-                'tus_id' => $fileMeta['id'],
+                'tus_id' => $fileKey,
                 'status' => 'uploading',
                 'metadata' => $metadata
             ]);
@@ -51,8 +59,9 @@ class ChunkedUploadController extends Controller
         $server->event()->addListener('tus-server.upload.progress', function($event) use ($request) {
             $file = $event->getFile();
             $fileMeta = $file->details();
+            $fileKey = $file->getKey();
             
-            $uploadSession = UploadSession::where('tus_id', $fileMeta['id'])->first();
+            $uploadSession = UploadSession::where('tus_id', $fileKey)->first();
             if ($uploadSession) {
                 $uploadSession->update([
                     'uploaded_size' => $fileMeta['offset'] ?? 0
@@ -63,7 +72,7 @@ class ChunkedUploadController extends Controller
         $server->event()->addListener('tus-server.upload.complete', function($event) {
             $file = $event->getFile();
             $fileMeta = $file->details();
-            $uploadKey = $fileMeta['id'];
+            $uploadKey = $file->getKey();
             
             $uploadSession = UploadSession::where('tus_id', $uploadKey)->first();
             
