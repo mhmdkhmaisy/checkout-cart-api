@@ -22,11 +22,15 @@ class ChunkedUploadController extends Controller
         $server->setApiPath('/admin/cache/chunked-upload')
                ->setUploadDir($uploadDir);
         
-        \Log::info('TUS Request', [
-            'method' => $request->method(),
-            'path' => $request->path(),
-            'headers' => $request->headers->all(),
-        ]);
+        try {
+            \Log::info('TUS Request', [
+                'method' => $request->method(),
+                'path' => $request->path(),
+                'headers' => $request->headers->all(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('TUS logging error: ' . $e->getMessage());
+        }
 
         $server->event()->addListener('tus-server.upload.created', function($event) {
             $fileMeta = $event->getFile()->details();

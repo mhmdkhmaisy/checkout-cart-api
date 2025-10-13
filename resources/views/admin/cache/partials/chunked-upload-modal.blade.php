@@ -102,7 +102,6 @@ function initializeUppy() {
         endpoint: '{{ route("admin.cache.chunked-upload") }}',
         chunkSize: 5 * 1024 * 1024, // 5MB chunks
         retryDelays: [0, 1000, 3000, 5000],
-        parallelUploads: 3,
         removeFingerprintOnSuccess: true,
         storeFingerprintForResuming: true,
     });
