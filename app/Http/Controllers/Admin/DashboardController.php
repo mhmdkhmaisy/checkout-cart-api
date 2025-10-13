@@ -41,8 +41,8 @@ class DashboardController extends Controller
         // Monthly revenue chart data
         $monthlyRevenue = Order::where('status', 'paid')
             ->select(
-                DB::raw('YEAR(created_at) as year'),
-                DB::raw('MONTH(created_at) as month'),
+                DB::raw("strftime('%Y', created_at) as year"),
+                DB::raw("strftime('%m', created_at) as month"),
                 DB::raw('SUM(amount) as revenue')
             )
             ->groupBy('year', 'month')
