@@ -110,6 +110,34 @@ See: `IMPORTANT_PHP_SETTINGS.md` for configuration instructions
 
 See: `CHUNKED_UPLOAD_IMPLEMENTATION.md` for complete documentation
 
+### Issue 4: Folder Navigation in File Manager (NEW - Oct 2025)
+
+**Implementation:** Full directory browsing with cPanel-like file manager
+
+**Features Added:**
+- 📁 **Folder Display**: Folders uploaded via standard upload now visible in file manager
+- 🔄 **Directory Navigation**: Double-click or right-click to open folders
+- 🍞 **Breadcrumb Navigation**: Clickable path showing current location (Root / folder1 / folder2)
+- 📂 **Virtual Folders**: Automatically creates folder entries from file paths
+- 🎯 **Level-Aware Display**: Shows only files/folders in current directory level
+
+**Implementation Details:**
+- Controller filters files by path and shows only current directory level
+- Virtual folder entries created from file `relative_path` for nested structures
+- Breadcrumb navigation with clickable parent folders
+- `navigation_path` attribute ensures correct folder drilling
+- Handles both real directory records and virtual folders
+
+**Components Modified:**
+- `app/Http/Controllers/Admin/CacheFileController.php` - Path-based filtering and directory view builder
+- `resources/views/admin/cache/index.blade.php` - Breadcrumb navigation and folder click handling
+
+**Data Structure:**
+- `relative_path`: Directory path (NOT including filename)
+- File "bar.txt" at root: `relative_path = null/empty`
+- File "bar.txt" in "foo": `relative_path = "foo"`
+- Folders shown as clickable items, navigating updates ?path= query parameter
+
 ## Project Structure
 
 ```
