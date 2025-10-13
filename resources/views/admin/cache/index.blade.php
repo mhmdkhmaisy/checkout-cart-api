@@ -865,7 +865,11 @@ function downloadFile(fileId) {
     // Find the file by ID and download it
     const file = @json($files->items()).find(f => f.id == fileId);
     if (file && file.file_type === 'file') {
-        window.open(`{{ url('/api/cache/file') }}/${file.filename}`, '_blank');
+        let downloadUrl = `{{ url('/api/cache/file') }}/${encodeURIComponent(file.filename)}`;
+        if (file.relative_path) {
+            downloadUrl += `?path=${encodeURIComponent(file.relative_path)}`;
+        }
+        window.open(downloadUrl, '_blank');
     }
 }
 
