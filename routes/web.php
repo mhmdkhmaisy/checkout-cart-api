@@ -91,6 +91,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/merge', [CacheFileController::class, 'mergePatches'])->name('merge');
             Route::delete('/{patch}', [CacheFileController::class, 'deletePatch'])->name('delete');
             Route::post('/clear-all', [CacheFileController::class, 'clearAllPatches'])->name('clear-all');
+            
+            // Patch insights & analysis routes
+            // SECURITY NOTE: These routes expose patch metadata, file hashes, and system info
+            // Ensure authentication middleware is added before production deployment
+            Route::get('/compare', [CacheFileController::class, 'comparePatches'])->name('compare');
+            Route::get('/{patch}/changelog', [CacheFileController::class, 'generateChangelog'])->name('changelog');
+            Route::get('/file-history', [CacheFileController::class, 'getFileHistory'])->name('file-history');
+            Route::get('/{patch}/verify', [CacheFileController::class, 'verifyIntegrity'])->name('verify');
         });
     });
 

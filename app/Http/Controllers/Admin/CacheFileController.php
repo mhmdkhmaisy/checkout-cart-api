@@ -1561,8 +1561,10 @@ class CacheFileController extends Controller
             $count = $patches->count();
 
             if ($count === 0) {
-                return redirect()->route('admin.cache.index')
-                    ->with('info', 'No patches to clear.');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No patches to clear.'
+                ]);
             }
 
             foreach ($patches as $patch) {
@@ -1575,12 +1577,241 @@ class CacheFileController extends Controller
             Storage::makeDirectory('cache/patches');
             Storage::makeDirectory('cache/manifests');
 
-            return redirect()->route('admin.cache.index')
-                ->with('success', "Successfully cleared all {$count} patches. Next upload will create a new base patch.");
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully cleared all {$count} patches. Next upload will create a new base patch.",
+                'cleared_count' => $count
+            ]);
 
         } catch (\Exception $e) {
-            return redirect()->route('admin.cache.index')
-                ->with('error', 'Failed to clear patches: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to clear patches: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Compare two patches and return differences
+     */
+    public function comparePatches(Request $request)
+    {
+        try {
+            $fromPatchId = $request->get('from');
+            $toPatchId = $request->get('to');
+            
+            if (!$fromPatchId || !$toPatchId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Both patch IDs are required'
+                ], 400);
+            }
+            
+            $fromPatch = CachePatch::find($fromPatchId);
+            $toPatch = CachePatch::find($toPatchId);
+            
+            if (!$fromPatch || !$toPatch) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'One or both patches not found'
+                ], 404);
+            }
+            
+            $fromManifest = $fromPatch->file_manifest ?? [];
+            $toManifest = $toPatch->file_manifest ?? [];
+            
+            // Calculate differences
+            $added = [];
+            $removed = [];
+            $modified = [];
+            
+            // Find added and modified files
+            foreach ($toManifest as $file => $hash) {
+                if (!isset($fromManifest[$file])) {
+                    $added[] = $file;
+                } elseif ($fromManifest[$file] !== $hash) {
+                    $modified[] = [
+                        'file' => $file,
+                        'old_hash' => $fromManifest[$file],
+                        'new_hash' => $hash
+                    ];
+                }
+            }
+            
+            // Find removed files
+            foreach ($fromManifest as $file => $hash) {
+                if (!isset($toManifest[$file])) {
+                    $removed[] = $file;
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'from_patch' => [
+                    'id' => $fromPatch->id,
+                    'version' => $fromPatch->version
+                ],
+                'to_patch' => [
+                    'id' => $toPatch->id,
+                    'version' => $toPatch->version
+                ],
+                'added' => $added,
+                'removed' => $removed,
+                'modified' => $modified
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate changelog for a patch
+     */
+    public function generateChangelog(CachePatch $patch)
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'version' => $patch->version,
+                'is_base' => $patch->is_base,
+                'base_version' => $patch->base_version,
+                'file_count' => $patch->file_count,
+                'file_manifest' => $patch->file_manifest ?? [],
+                'size' => $patch->size,
+                'created_at' => $patch->created_at->toISOString()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get file change history across all patches
+     */
+    public function getFileHistory(Request $request)
+    {
+        try {
+            $filePath = $request->get('path');
+            
+            if (!$filePath) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File path is required'
+                ], 400);
+            }
+            
+            $patches = CachePatch::latest()->get();
+            $history = [];
+            $previousHash = null;
+            
+            foreach ($patches as $patch) {
+                $manifest = $patch->file_manifest ?? [];
+                
+                if (isset($manifest[$filePath])) {
+                    $currentHash = $manifest[$filePath];
+                    $status = 'exists';
+                    
+                    if ($previousHash === null) {
+                        $status = 'added';
+                    } elseif ($previousHash !== $currentHash) {
+                        $status = 'modified';
+                    }
+                    
+                    $history[] = [
+                        'version' => $patch->version,
+                        'hash' => $currentHash,
+                        'status' => $status,
+                        'created_at' => $patch->created_at->toISOString()
+                    ];
+                    
+                    $previousHash = $currentHash;
+                }
+            }
+            
+            if (empty($history)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File not found in any patch'
+                ], 404);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'file' => $filePath,
+                'history' => array_reverse($history)
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify patch integrity by checking file checksums
+     */
+    public function verifyIntegrity(CachePatch $patch)
+    {
+        try {
+            $manifest = $patch->file_manifest ?? [];
+            $valid = 0;
+            $invalid = 0;
+            $missing = 0;
+            $invalidFiles = [];
+            $missingFiles = [];
+            
+            foreach ($manifest as $filePath => $expectedHash) {
+                // Check if file exists in cache_files table
+                $file = CacheFile::where(function($query) use ($filePath) {
+                    // Parse the file path
+                    $parts = explode('/', $filePath);
+                    $filename = array_pop($parts);
+                    $relativePath = implode('/', $parts);
+                    
+                    $query->where('filename', $filename);
+                    
+                    if (empty($relativePath)) {
+                        $query->whereNull('relative_path');
+                    } else {
+                        $query->where('relative_path', $relativePath);
+                    }
+                })->first();
+                
+                if (!$file) {
+                    $missing++;
+                    $missingFiles[] = $filePath;
+                } elseif ($file->hash !== $expectedHash) {
+                    $invalid++;
+                    $invalidFiles[] = $filePath;
+                } else {
+                    $valid++;
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'total' => count($manifest),
+                'valid' => $valid,
+                'invalid' => $invalid,
+                'missing' => $missing,
+                'invalid_files' => $invalidFiles,
+                'missing_files' => $missingFiles
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 }

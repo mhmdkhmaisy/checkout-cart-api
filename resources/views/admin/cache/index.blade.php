@@ -772,12 +772,16 @@ function showDeleteModal(fileId, fileName) {
 }
 
 function showDeleteAllModal() {
-    const totalFiles = {{ $totalFiles }};
+    const patchCount = {{ $patches->count() }};
+    if (patchCount === 0) {
+        alert('No patches to clear.');
+        return;
+    }
     showConfirmationModal(
-        'Delete All Files',
-        `Are you sure you want to delete ALL ${totalFiles} files? This action cannot be undone and will permanently remove all cache files.`,
-        () => deleteAllFiles(),
-        'Delete All'
+        'Clear All Patches',
+        `Are you sure you want to clear ALL ${patchCount} patches? This action cannot be undone and will permanently remove all patches and reset the system.`,
+        () => clearAllPatches(),
+        'Clear All'
     );
 }
 
@@ -800,42 +804,28 @@ function showDeleteContextModal() {
     hideContextMenu();
 }
 
-// Delete All Files Function
-async function deleteAllFiles() {
+// Clear All Patches Function
+async function clearAllPatches() {
     try {
-        const formData = new FormData();
-        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-        
-        const response = await fetch('{{ route("admin.cache.delete-all") }}', {
+        const response = await fetch('{{ route("admin.cache.patches.clear-all") }}', {
             method: 'POST',
-            body: formData
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
         });
         
         const result = await response.json();
         
         if (result.success) {
-            showConfirmationModal(
-                'Success',
-                `Successfully deleted ${result.deleted_count} files.`,
-                () => location.reload(),
-                'OK'
-            );
+            alert('Success: ' + result.message);
+            location.reload();
         } else {
-            showConfirmationModal(
-                'Error',
-                'Error: ' + result.message,
-                () => {},
-                'OK'
-            );
+            alert('Error: ' + (result.message || 'Failed to clear patches'));
         }
     } catch (error) {
-        showConfirmationModal(
-            'Network Error',
-            'Network error occurred while deleting all files.',
-            () => {},
-            'OK'
-        );
-        console.error('Delete all error:', error);
+        console.error('Clear all patches error:', error);
+        alert('Network error occurred while clearing patches');
     }
 }
 
