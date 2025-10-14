@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\CacheFile;
+use App\Models\CachePatch;
+use App\Services\CachePatchService;
 use Illuminate\Support\Facades\Storage;
 
 class GenerateCacheManifest extends Command
@@ -124,6 +126,37 @@ class GenerateCacheManifest extends Command
             $this->info("📦 Total Size: " . $this->formatBytes($totalSize));
             $this->info("🗂️  Manifest: {$manifestPath}");
             $this->info("💾 Backup: {$backupPath}");
+
+            // Generate patch after manifest creation
+            try {
+                $this->info('');
+                $this->info('🔄 Generating cache patch...');
+                
+                $patchService = new CachePatchService();
+                $patchData = $patchService->generatePatch('cache_files');
+                
+                CachePatch::create([
+                    'version' => $patchData['version'],
+                    'base_version' => $patchData['base_version'],
+                    'path' => $patchData['path'],
+                    'file_manifest' => $patchData['file_manifest'],
+                    'file_count' => $patchData['file_count'],
+                    'size' => $patchData['size'],
+                    'is_base' => $patchData['is_base'],
+                ]);
+                
+                $patchType = $patchData['is_base'] ? 'Base' : 'Delta';
+                $this->info("✅ {$patchType} patch v{$patchData['version']} generated successfully!");
+                $this->info("📦 Patch files: {$patchData['file_count']}");
+                $this->info("💾 Patch size: " . $this->formatBytes($patchData['size']));
+                
+                if ($patchService->shouldMergePatches()) {
+                    $this->warn('⚠️  Merge recommended: ' . CachePatch::patches()->count() . ' incremental patches exist.');
+                    $this->line('   Run: php artisan cache:merge-patches');
+                }
+            } catch (\Exception $e) {
+                $this->warn('⚠️  Patch generation failed: ' . $e->getMessage());
+            }
 
             return Command::SUCCESS;
 

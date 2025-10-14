@@ -329,29 +329,12 @@ class CacheFileController extends Controller
             }
         }
 
-        // OPTIMIZED: Regenerate manifest only ONCE at the end
+        // OPTIMIZED: Regenerate manifest only ONCE at the end (also generates patch)
         if (!empty($uploadedFiles)) {
             try {
                 Artisan::call('cache:generate-manifest');
-                
-                $patchService = new CachePatchService();
-                $patchData = $patchService->generatePatch('cache');
-                
-                CachePatch::create([
-                    'version' => $patchData['version'],
-                    'base_version' => $patchData['base_version'],
-                    'path' => $patchData['path'],
-                    'file_manifest' => $patchData['file_manifest'],
-                    'file_count' => $patchData['file_count'],
-                    'size' => $patchData['size'],
-                    'is_base' => $patchData['is_base'],
-                ]);
-                
-                if ($patchService->shouldMergePatches()) {
-                    $patchService->mergePatches();
-                }
             } catch (\Exception $e) {
-                $errors[] = "Files uploaded but manifest generation failed: " . $e->getMessage();
+                $errors[] = "Files uploaded but manifest/patch generation failed: " . $e->getMessage();
             }
         }
 
