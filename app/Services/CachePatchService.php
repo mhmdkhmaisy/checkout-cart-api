@@ -41,11 +41,29 @@ class CachePatchService
             }
         }
 
+        // Detect added/changed files
         $diff = [];
         foreach ($newFiles as $path => $hash) {
             if (!isset($oldManifest[$path]) || $oldManifest[$path] !== $hash) {
                 $diff[$path] = $hash;
             }
+        }
+
+        // Detect removed files
+        $removed = [];
+        foreach ($oldManifest as $path => $hash) {
+            if (!isset($newFiles[$path])) {
+                $removed[] = $path;
+            }
+        }
+
+        // If no changes detected (no additions, no modifications, no removals), skip patch creation
+        if (empty($diff) && empty($removed) && $currentVersion) {
+            return [
+                'no_changes' => true,
+                'version' => $currentVersion,
+                'message' => 'No changes detected - patch creation skipped'
+            ];
         }
 
         $isFirstPatch = !$currentVersion;

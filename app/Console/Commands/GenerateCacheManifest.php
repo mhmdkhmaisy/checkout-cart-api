@@ -130,29 +130,36 @@ class GenerateCacheManifest extends Command
             // Generate patch after manifest creation
             try {
                 $this->info('');
-                $this->info('🔄 Generating cache patch...');
+                $this->info('🔄 Checking for cache changes...');
                 
                 $patchService = new CachePatchService();
                 $patchData = $patchService->generatePatch('cache_files');
                 
-                CachePatch::create([
-                    'version' => $patchData['version'],
-                    'base_version' => $patchData['base_version'],
-                    'path' => $patchData['path'],
-                    'file_manifest' => $patchData['file_manifest'],
-                    'file_count' => $patchData['file_count'],
-                    'size' => $patchData['size'],
-                    'is_base' => $patchData['is_base'],
-                ]);
-                
-                $patchType = $patchData['is_base'] ? 'Base' : 'Delta';
-                $this->info("✅ {$patchType} patch v{$patchData['version']} generated successfully!");
-                $this->info("📦 Patch files: {$patchData['file_count']}");
-                $this->info("💾 Patch size: " . $this->formatBytes($patchData['size']));
-                
-                if ($patchService->shouldMergePatches()) {
-                    $this->warn('⚠️  Merge recommended: ' . CachePatch::patches()->count() . ' incremental patches exist.');
-                    $this->line('   Run: php artisan cache:merge-patches');
+                // Check if no changes were detected
+                if (isset($patchData['no_changes']) && $patchData['no_changes']) {
+                    $this->info('✅ ' . $patchData['message']);
+                    $this->info('📌 Current version: v' . $patchData['version']);
+                } else {
+                    // Create the patch
+                    CachePatch::create([
+                        'version' => $patchData['version'],
+                        'base_version' => $patchData['base_version'],
+                        'path' => $patchData['path'],
+                        'file_manifest' => $patchData['file_manifest'],
+                        'file_count' => $patchData['file_count'],
+                        'size' => $patchData['size'],
+                        'is_base' => $patchData['is_base'],
+                    ]);
+                    
+                    $patchType = $patchData['is_base'] ? 'Base' : 'Delta';
+                    $this->info("✅ {$patchType} patch v{$patchData['version']} generated successfully!");
+                    $this->info("📦 Patch files: {$patchData['file_count']}");
+                    $this->info("💾 Patch size: " . $this->formatBytes($patchData['size']));
+                    
+                    if ($patchService->shouldMergePatches()) {
+                        $this->warn('⚠️  Merge recommended: ' . CachePatch::patches()->count() . ' incremental patches exist.');
+                        $this->line('   Run: php artisan cache:merge-patches');
+                    }
                 }
             } catch (\Exception $e) {
                 $this->warn('⚠️  Patch generation failed: ' . $e->getMessage());

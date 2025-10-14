@@ -157,7 +157,7 @@ class ProcessUploadedFile implements ShouldQueue
                     ])
                 ]);
 
-                dispatch(new RegenerateCacheManifest());
+                // No need to regenerate manifest since no changes were made
                 return;
             }
 
