@@ -13,15 +13,14 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
 
 **UI/UX Decisions:**
 - The administration panel features a dark-themed dashboard for improved aesthetics and usability.
-- Uppy.js is integrated for a modern, drag-and-drop chunked upload interface with real-time progress tracking.
 - The file manager provides cPanel-like directory browsing with breadcrumb navigation and level-aware display.
+- Supports drag-and-drop file uploads, folder uploads, and archive extraction with preserved directory structure.
 
 **Technical Implementations & Feature Specifications:**
 - **Donation Management:** Supports PayPal and Coinbase Commerce integrations.
 - **Cache File Distribution:**
-    - Features a high-performance chunked upload system utilizing the TUS protocol, splitting files into 5MB chunks for parallel and resumable uploads.
-    - Asynchronous processing handles hash computation and manifest regeneration in background jobs.
-    - Implements a smart hashing strategy, using fast MD5 for new files and SHA256 only for duplicate detection, significantly improving upload speeds.
+    - Features a standard multi-file upload system with support for individual files, folders, and archive extraction (ZIP/TAR).
+    - Implements a smart hashing strategy, using SHA256 for file identification and duplicate detection.
     - Includes robust security features: directory traversal protection, filename sanitization, path normalization, null byte filtering, and storage isolation.
     - The file manager supports full directory browsing, virtual folders, and path-based filtering.
     - **Critical Path Fix (Oct 13, 2025):** Corrected `relative_path` storage throughout the system to store ONLY directory paths (excluding filenames), preventing files from being misidentified as folders.
@@ -60,10 +59,6 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
 - **Payment Gateways:**
     - PayPal
     - Coinbase Commerce
-- **File Upload Protocol:**
-    - TUS Protocol (via Uppy.js and a custom PHP library)
-- **Frontend Libraries:**
-    - Uppy.js (for chunked upload UI)
 - **Database:**
     - SQLite (development)
     - MySQL / PostgreSQL (recommended for production)
