@@ -10,12 +10,18 @@ class CachePatchService
 {
     const PATCH_THRESHOLD = 15;
 
-    public function generatePatch(string $newDir, ?string $baseVersion = null): array
+    public function generatePatchFromDatabase(?string $baseVersion = null): array
     {
         $currentVersion = CachePatch::getLatestVersion();
         $newVersion = CachePatch::incrementVersion($currentVersion);
 
-        $newFiles = $this->scanDir($newDir);
+        // Build new files list from database
+        $newFiles = [];
+        $cacheFiles = \App\Models\CacheFile::files()->get();
+        foreach ($cacheFiles as $file) {
+            $relativePath = $file->relative_path ? ($file->relative_path . '/' . $file->filename) : $file->filename;
+            $newFiles[$relativePath] = $file->hash;
+        }
         
         $oldManifest = [];
         if ($currentVersion) {
@@ -69,7 +75,7 @@ class CachePatchService
         $isFirstPatch = !$currentVersion;
         $zipPath = "cache/patches/{$newVersion}.zip";
         $filesToZip = $isFirstPatch ? $newFiles : $diff;
-        $this->createZip($newDir, array_keys($filesToZip), $zipPath);
+        $this->createZipFromDatabase(array_keys($filesToZip), $zipPath);
 
         $zipFullPath = Storage::path($zipPath);
         $zipSize = file_exists($zipFullPath) ? filesize($zipFullPath) : 0;
@@ -120,6 +126,41 @@ class CachePatchService
         return $result;
     }
 
+    public function createZipFromDatabase(array $relativePaths, string $zipPath): bool
+    {
+        $zip = new ZipArchive;
+        $fullPath = Storage::path($zipPath);
+        
+        $directory = dirname($fullPath);
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        if ($zip->open($fullPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+
+        foreach ($relativePaths as $relativePath) {
+            // Parse relative path to get directory and filename
+            $pathParts = explode('/', $relativePath);
+            $filename = array_pop($pathParts);
+            $directoryPath = !empty($pathParts) ? implode('/', $pathParts) : null;
+            
+            // Find file in database
+            $cacheFile = \App\Models\CacheFile::where('filename', $filename)
+                ->where('relative_path', $directoryPath)
+                ->first();
+            
+            if ($cacheFile && file_exists(storage_path('app/' . $cacheFile->path))) {
+                $sourceFile = storage_path('app/' . $cacheFile->path);
+                $zip->addFile($sourceFile, $relativePath);
+            }
+        }
+
+        $zip->close();
+        return true;
+    }
+    
     public function createZip(string $baseDir, array $files, string $zipPath): bool
     {
         $zip = new ZipArchive;

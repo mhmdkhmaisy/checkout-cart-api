@@ -928,7 +928,7 @@ class CacheFileController extends Controller
                 $key = $originalName . '|' . ($fullRelativePath ?? '');
                 $existing = $existingFiles->get($key);
 
-                // Store file first - preserve directory structure if provided
+                // Store file in temporary location for patch processing
                 if ($fullRelativePath) {
                     // Sanitize the relative path to prevent directory traversal
                     $safePath = str_replace(['..', '\\'], ['', '/'], $fullRelativePath);
@@ -940,24 +940,24 @@ class CacheFileController extends Controller
                     $directory = implode('/', $pathParts);
 
                     if ($directory) {
-                        $storagePath = 'cache_files/' . $directory . '/' . $originalName;
-                        $storageDir = 'cache_files/' . $directory;
+                        $storagePath = 'temp_uploads/' . $directory . '/' . $originalName;
+                        $storageDir = 'temp_uploads/' . $directory;
                     } else {
-                        $storagePath = 'cache_files/' . $originalName;
-                        $storageDir = 'cache_files';
+                        $storagePath = 'temp_uploads/' . $originalName;
+                        $storageDir = 'temp_uploads';
                     }
                     $path = $file->storeAs($storageDir, $originalName);
                 } elseif ($currentPath) {
                     // Upload to current directory
                     $safePath = str_replace(['..', '\\'], ['', '/'], $currentPath);
                     $safePath = trim($safePath, '/');
-                    $storagePath = 'cache_files/' . $safePath . '/' . $originalName;
-                    $storageDir = 'cache_files/' . $safePath;
+                    $storagePath = 'temp_uploads/' . $safePath . '/' . $originalName;
+                    $storageDir = 'temp_uploads/' . $safePath;
                     $path = $file->storeAs($storageDir, $originalName);
                 } else {
                     // Flat storage with unique ID
-                    $storagePath = 'cache_files/' . uniqid() . '_' . $originalName;
-                    $path = $file->storeAs('cache_files', basename($storagePath));
+                    $storagePath = 'temp_uploads/' . uniqid() . '_' . $originalName;
+                    $path = $file->storeAs('temp_uploads', basename($storagePath));
                 }
 
                 // PERFORMANCE FIX: Skip hashing during upload for maximum speed
@@ -1073,9 +1073,9 @@ class CacheFileController extends Controller
             ];
         }
 
-        // Enhanced storage path generation
-        $storagePath = 'cache_files/' . uniqid() . '_' . $originalName;
-        $path = $file->storeAs('cache_files', basename($storagePath));
+        // Store in temporary location for patch processing
+        $storagePath = 'temp_uploads/' . uniqid() . '_' . $originalName;
+        $path = $file->storeAs('temp_uploads', basename($storagePath));
 
         // Create or update database record with enhanced metadata (overwrite if hash differs)
         CacheFile::updateOrCreate(
@@ -1215,17 +1215,17 @@ class CacheFileController extends Controller
             ];
         }
 
-        // PRESERVE DIRECTORY STRUCTURE: Store files with their directory structure in cache_files
+        // PRESERVE DIRECTORY STRUCTURE: Store files temporarily for patch processing
         if ($directoryPath) {
             // Sanitize path to prevent directory traversal
             $safePath = str_replace(['..', '\\'], ['', '/'], $directoryPath);
             $safePath = trim($safePath, '/');
-            $storagePath = 'cache_files/' . $safePath . '/' . $filename;
-            $storageDir = 'cache_files/' . $safePath;
+            $storagePath = 'temp_uploads/' . $safePath . '/' . $filename;
+            $storageDir = 'temp_uploads/' . $safePath;
         } else {
             // Root level file
-            $storagePath = 'cache_files/' . $filename;
-            $storageDir = 'cache_files';
+            $storagePath = 'temp_uploads/' . $filename;
+            $storageDir = 'temp_uploads';
         }
         
         $destinationPath = storage_path('app/' . $storagePath);

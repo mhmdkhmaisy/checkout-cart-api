@@ -133,7 +133,7 @@ class GenerateCacheManifest extends Command
                 $this->info('🔄 Checking for cache changes...');
                 
                 $patchService = new CachePatchService();
-                $patchData = $patchService->generatePatch('cache_files');
+                $patchData = $patchService->generatePatchFromDatabase();
                 
                 // Check if no changes were detected
                 if (isset($patchData['no_changes']) && $patchData['no_changes']) {
@@ -160,6 +160,29 @@ class GenerateCacheManifest extends Command
                         $this->warn('⚠️  Merge recommended: ' . CachePatch::patches()->count() . ' incremental patches exist.');
                         $this->line('   Run: php artisan cache:merge-patches');
                     }
+                }
+                
+                // Clean up temporary upload files after patch creation (keep database records)
+                $this->info('');
+                $this->info('🧹 Cleaning up temporary files...');
+                $tempUploadPath = storage_path('app/temp_uploads');
+                if (is_dir($tempUploadPath)) {
+                    $deletedFiles = 0;
+                    $iterator = new \RecursiveIteratorIterator(
+                        new \RecursiveDirectoryIterator($tempUploadPath, \RecursiveDirectoryIterator::SKIP_DOTS),
+                        \RecursiveIteratorIterator::CHILD_FIRST
+                    );
+                    
+                    foreach ($iterator as $file) {
+                        if ($file->isDir()) {
+                            rmdir($file->getPathname());
+                        } else {
+                            unlink($file->getPathname());
+                            $deletedFiles++;
+                        }
+                    }
+                    rmdir($tempUploadPath);
+                    $this->info("✅ Cleaned up {$deletedFiles} temporary files (database records preserved)");
                 }
             } catch (\Exception $e) {
                 $this->warn('⚠️  Patch generation failed: ' . $e->getMessage());

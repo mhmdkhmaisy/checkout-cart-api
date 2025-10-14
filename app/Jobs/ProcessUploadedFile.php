@@ -162,13 +162,13 @@ class ProcessUploadedFile implements ShouldQueue
             }
 
             // SECURITY: Use sanitized filename with directory structure
-            // Store file with directory structure if present
+            // Store file in temporary location for patch processing
             if ($directoryPath) {
-                $storagePath = 'cache_files/' . $directoryPath . '/' . $safeFilename;
-                $storageDir = 'cache_files/' . $directoryPath;
+                $storagePath = 'temp_uploads/' . $directoryPath . '/' . $safeFilename;
+                $storageDir = 'temp_uploads/' . $directoryPath;
             } else {
-                $storagePath = 'cache_files/' . $safeFilename;
-                $storageDir = 'cache_files';
+                $storagePath = 'temp_uploads/' . $safeFilename;
+                $storageDir = 'temp_uploads';
             }
 
             $destinationPath = storage_path('app/' . $storagePath);
