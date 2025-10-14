@@ -110,6 +110,34 @@
             </div>
         </div>
 
+        <!-- Patch Comparison Tool -->
+        @if($patches->count() >= 2)
+        <div class="px-6 py-4 border-b border-dragon-border bg-dragon-black/20">
+            <div class="flex items-center gap-4 flex-wrap">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-code-compare text-purple-400"></i>
+                    <span class="text-dragon-silver font-medium">Compare Patches:</span>
+                </div>
+                <select id="compare-patch-from" class="bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none">
+                    <option value="">Select base patch...</option>
+                    @foreach($patches as $patch)
+                        <option value="{{ $patch->id }}">v{{ $patch->version }} ({{ $patch->is_base ? 'Base' : 'Delta' }})</option>
+                    @endforeach
+                </select>
+                <i class="fas fa-arrow-right text-dragon-silver-dark"></i>
+                <select id="compare-patch-to" class="bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 outline-none">
+                    <option value="">Select target patch...</option>
+                    @foreach($patches as $patch)
+                        <option value="{{ $patch->id }}">v{{ $patch->version }} ({{ $patch->is_base ? 'Base' : 'Delta' }})</option>
+                    @endforeach
+                </select>
+                <button onclick="comparePatchesAction()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+                    <i class="fas fa-code-compare mr-2"></i>Compare
+                </button>
+            </div>
+        </div>
+        @endif
+
         <!-- Patch History & Upload Zone -->
         <div id="patch-viewer" class="min-h-[400px]">
             <!-- Drop Zone for Drag & Drop -->
@@ -375,6 +403,12 @@
             <div class="flex justify-between items-center mb-3">
                 <h4 class="text-sm font-medium text-dragon-silver-dark">File Structure</h4>
                 <div class="flex gap-2">
+                    <button onclick="generateChangelog()" class="text-xs px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors">
+                        <i class="fas fa-list mr-1"></i>Changelog
+                    </button>
+                    <button onclick="verifyIntegrity()" class="text-xs px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors">
+                        <i class="fas fa-shield-alt mr-1"></i>Verify
+                    </button>
                     <button onclick="expandAllDirectories()" class="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">
                         <i class="fas fa-folder-open mr-1"></i>Expand All
                     </button>
@@ -385,6 +419,121 @@
             </div>
             <div id="patch-data-tree" class="flex-1 overflow-y-auto bg-dragon-black/30 rounded p-4 font-mono text-sm">
                 <!-- Directory tree will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patch Comparison/Diff Modal -->
+<div id="patch-diff-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-dragon-black border border-dragon-border rounded-lg p-8 max-w-7xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <h3 class="text-xl font-semibold text-dragon-silver">Patch Comparison</h3>
+                <span id="diff-patches-info" class="text-sm text-dragon-silver-dark"></span>
+            </div>
+            <button onclick="hidePatchDiffModal()" class="text-dragon-silver-dark hover:text-dragon-silver">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="glass-effect rounded-lg p-4 text-center">
+                <div class="text-2xl font-bold text-green-400" id="diff-added-count">0</div>
+                <div class="text-xs text-dragon-silver-dark mt-1">Added Files</div>
+            </div>
+            <div class="glass-effect rounded-lg p-4 text-center">
+                <div class="text-2xl font-bold text-red-400" id="diff-removed-count">0</div>
+                <div class="text-xs text-dragon-silver-dark mt-1">Removed Files</div>
+            </div>
+            <div class="glass-effect rounded-lg p-4 text-center">
+                <div class="text-2xl font-bold text-yellow-400" id="diff-modified-count">0</div>
+                <div class="text-xs text-dragon-silver-dark mt-1">Modified Files</div>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-hidden">
+            <div class="h-full overflow-y-auto bg-dragon-black/30 rounded p-4">
+                <div id="diff-results" class="space-y-2">
+                    <!-- Diff results will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Changelog Modal -->
+<div id="changelog-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-dragon-black border border-dragon-border rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <h3 class="text-xl font-semibold text-dragon-silver">Changelog</h3>
+                <span id="changelog-version" class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium"></span>
+            </div>
+            <button onclick="hideChangelogModal()" class="text-dragon-silver-dark hover:text-dragon-silver">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-hidden">
+            <div class="h-full overflow-y-auto bg-dragon-black/30 rounded p-4">
+                <div id="changelog-content" class="space-y-3">
+                    <!-- Changelog will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- File History Modal -->
+<div id="file-history-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-dragon-black border border-dragon-border rounded-lg p-8 max-w-5xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <h3 class="text-xl font-semibold text-dragon-silver">File Change History</h3>
+                <span id="file-history-name" class="text-sm text-dragon-silver-dark font-mono"></span>
+            </div>
+            <button onclick="hideFileHistoryModal()" class="text-dragon-silver-dark hover:text-dragon-silver">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-hidden">
+            <div class="h-full overflow-y-auto">
+                <div id="file-history-timeline" class="space-y-4">
+                    <!-- File history timeline will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Integrity Verification Modal -->
+<div id="integrity-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-dragon-black border border-dragon-border rounded-lg p-8 max-w-3xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <h3 class="text-xl font-semibold text-dragon-silver">Integrity Verification</h3>
+                <span id="integrity-version" class="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-medium"></span>
+            </div>
+            <button onclick="hideIntegrityModal()" class="text-dragon-silver-dark hover:text-dragon-silver">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div id="integrity-progress" class="mb-6 hidden">
+            <div class="flex items-center gap-3 mb-2">
+                <i class="fas fa-spinner fa-spin text-yellow-400"></i>
+                <span class="text-dragon-silver">Verifying checksums...</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2">
+                <div id="integrity-progress-bar" class="bg-yellow-400 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-hidden">
+            <div id="integrity-results" class="h-full overflow-y-auto bg-dragon-black/30 rounded p-4">
+                <!-- Integrity results will be populated here -->
             </div>
         </div>
     </div>
@@ -1911,6 +2060,9 @@ function mergePatches() {
 
 // Patch Data Modal Functions
 function viewPatchData(patch) {
+    // Store current patch for insights
+    currentPatchData = patch;
+    
     // Populate patch info
     document.getElementById('patch-data-version').textContent = 'v' + patch.version;
     document.getElementById('patch-data-type').innerHTML = patch.is_base 
@@ -1991,10 +2143,13 @@ function renderTree(node, path = '', level = 0) {
         const indent = '  '.repeat(level);
         
         if (data.isFile) {
-            // Render file
-            html += `<div class="text-dragon-silver hover:text-dragon-red transition-colors py-1 file-item" title="Hash: ${data.hash}">
+            // Render file (clickable to view history)
+            html += `<div class="text-dragon-silver hover:text-dragon-red transition-colors py-1 file-item cursor-pointer group" 
+                     title="Hash: ${data.hash}\nClick to view file history" 
+                     onclick="showFileHistory('${currentPath.replace(/'/g, "\\'")}')">
                 ${indent}<i class="fas fa-file text-blue-400 mr-2"></i>${name}
                 <span class="text-xs text-dragon-silver-dark ml-2">(${data.hash.substring(0, 8)}...)</span>
+                <i class="fas fa-history text-dragon-silver-dark opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-xs"></i>
             </div>`;
         } else {
             // Render directory
@@ -2050,6 +2205,310 @@ function collapseAllDirectories() {
         icon.classList.remove('fa-folder-open');
         icon.classList.add('fa-folder');
     });
+}
+
+// Store current patch for insights
+let currentPatchData = null;
+
+// Patch Comparison Functions
+function comparePatchesAction() {
+    const fromId = document.getElementById('compare-patch-from').value;
+    const toId = document.getElementById('compare-patch-to').value;
+    
+    if (!fromId || !toId) {
+        alert('Please select both patches to compare');
+        return;
+    }
+    
+    if (fromId === toId) {
+        alert('Please select different patches to compare');
+        return;
+    }
+    
+    fetch(`/admin/cache/patches/compare?from=${fromId}&to=${toId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showPatchDiff(data);
+            } else {
+                alert('Error: ' + (data.message || 'Failed to compare patches'));
+            }
+        })
+        .catch(error => {
+            console.error('Comparison error:', error);
+            alert('Network error occurred while comparing patches');
+        });
+}
+
+function showPatchDiff(data) {
+    const { from_patch, to_patch, added, removed, modified } = data;
+    
+    document.getElementById('diff-patches-info').textContent = 
+        `v${from_patch.version} → v${to_patch.version}`;
+    document.getElementById('diff-added-count').textContent = added.length;
+    document.getElementById('diff-removed-count').textContent = removed.length;
+    document.getElementById('diff-modified-count').textContent = modified.length;
+    
+    const resultsContainer = document.getElementById('diff-results');
+    let html = '';
+    
+    if (added.length > 0) {
+        html += '<div class="mb-4"><h4 class="text-green-400 font-semibold mb-2"><i class="fas fa-plus-circle mr-2"></i>Added Files</h4>';
+        added.forEach(file => {
+            html += `<div class="bg-green-500/10 border border-green-500/30 rounded p-2 mb-1 text-dragon-silver font-mono text-sm">
+                <i class="fas fa-file text-green-400 mr-2"></i>${file}
+            </div>`;
+        });
+        html += '</div>';
+    }
+    
+    if (removed.length > 0) {
+        html += '<div class="mb-4"><h4 class="text-red-400 font-semibold mb-2"><i class="fas fa-minus-circle mr-2"></i>Removed Files</h4>';
+        removed.forEach(file => {
+            html += `<div class="bg-red-500/10 border border-red-500/30 rounded p-2 mb-1 text-dragon-silver font-mono text-sm">
+                <i class="fas fa-file text-red-400 mr-2"></i>${file}
+            </div>`;
+        });
+        html += '</div>';
+    }
+    
+    if (modified.length > 0) {
+        html += '<div class="mb-4"><h4 class="text-yellow-400 font-semibold mb-2"><i class="fas fa-edit mr-2"></i>Modified Files</h4>';
+        modified.forEach(item => {
+            html += `<div class="bg-yellow-500/10 border border-yellow-500/30 rounded p-2 mb-1 text-dragon-silver font-mono text-sm">
+                <i class="fas fa-file text-yellow-400 mr-2"></i>${item.file}
+                <div class="text-xs text-dragon-silver-dark mt-1 ml-6">
+                    Hash: ${item.old_hash.substring(0, 12)}... → ${item.new_hash.substring(0, 12)}...
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+    
+    if (added.length === 0 && removed.length === 0 && modified.length === 0) {
+        html = '<p class="text-dragon-silver-dark text-center py-8">No differences found between these patches.</p>';
+    }
+    
+    resultsContainer.innerHTML = html;
+    document.getElementById('patch-diff-modal').classList.remove('hidden');
+}
+
+function hidePatchDiffModal() {
+    document.getElementById('patch-diff-modal').classList.add('hidden');
+}
+
+// Changelog Generation
+function generateChangelog() {
+    if (!currentPatchData) return;
+    
+    const patchId = currentPatchData.id;
+    
+    fetch(`/admin/cache/patches/${patchId}/changelog`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showChangelog(data);
+            } else {
+                alert('Error: ' + (data.message || 'Failed to generate changelog'));
+            }
+        })
+        .catch(error => {
+            console.error('Changelog error:', error);
+            alert('Network error occurred while generating changelog');
+        });
+}
+
+function showChangelog(data) {
+    document.getElementById('changelog-version').textContent = 'v' + data.version;
+    
+    const contentContainer = document.getElementById('changelog-content');
+    let html = '';
+    
+    if (data.is_base) {
+        html += `<div class="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 mb-4">
+            <div class="flex items-center gap-2 mb-2">
+                <i class="fas fa-cube text-purple-400"></i>
+                <h4 class="text-purple-400 font-semibold">Base Patch</h4>
+            </div>
+            <p class="text-dragon-silver-dark text-sm">This is a base patch containing ${data.file_count} files.</p>
+        </div>`;
+        
+        html += '<div class="mb-3"><h5 class="text-dragon-silver font-medium mb-2">Files Included:</h5>';
+        html += `<ul class="space-y-1">`;
+        Object.keys(data.file_manifest).slice(0, 10).forEach(file => {
+            html += `<li class="text-sm text-dragon-silver-dark font-mono"><i class="fas fa-file text-blue-400 mr-2"></i>${file}</li>`;
+        });
+        if (data.file_count > 10) {
+            html += `<li class="text-sm text-dragon-silver-dark italic">...and ${data.file_count - 10} more files</li>`;
+        }
+        html += '</ul></div>';
+    } else {
+        html += `<div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
+            <div class="flex items-center gap-2 mb-2">
+                <i class="fas fa-layer-group text-blue-400"></i>
+                <h4 class="text-blue-400 font-semibold">Delta Patch</h4>
+            </div>
+            <p class="text-dragon-silver-dark text-sm">Based on v${data.base_version}</p>
+        </div>`;
+        
+        html += `<div class="space-y-3">
+            <div>
+                <h5 class="text-green-400 font-medium mb-2"><i class="fas fa-plus-circle mr-2"></i>Changes (${data.file_count} files)</h5>
+                <ul class="space-y-1">`;
+        Object.keys(data.file_manifest).slice(0, 10).forEach(file => {
+            html += `<li class="text-sm text-dragon-silver-dark font-mono"><i class="fas fa-file text-green-400 mr-2"></i>${file}</li>`;
+        });
+        if (data.file_count > 10) {
+            html += `<li class="text-sm text-dragon-silver-dark italic">...and ${data.file_count - 10} more files</li>`;
+        }
+        html += '</ul></div></div>';
+    }
+    
+    html += `<div class="mt-4 pt-4 border-t border-dragon-border">
+        <p class="text-xs text-dragon-silver-dark">Created: ${new Date(data.created_at).toLocaleString()}</p>
+        <p class="text-xs text-dragon-silver-dark">Size: ${formatBytes(data.size)}</p>
+    </div>`;
+    
+    contentContainer.innerHTML = html;
+    document.getElementById('changelog-modal').classList.remove('hidden');
+}
+
+function hideChangelogModal() {
+    document.getElementById('changelog-modal').classList.add('hidden');
+}
+
+// File History Tracking
+function showFileHistory(filePath) {
+    fetch(`/admin/cache/patches/file-history?path=${encodeURIComponent(filePath)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayFileHistory(filePath, data.history);
+            } else {
+                alert('Error: ' + (data.message || 'Failed to load file history'));
+            }
+        })
+        .catch(error => {
+            console.error('File history error:', error);
+            alert('Network error occurred while loading file history');
+        });
+}
+
+function displayFileHistory(filePath, history) {
+    document.getElementById('file-history-name').textContent = filePath;
+    
+    const timeline = document.getElementById('file-history-timeline');
+    let html = '';
+    
+    history.forEach((item, index) => {
+        const isLast = index === history.length - 1;
+        html += `<div class="flex gap-4">
+            <div class="flex flex-col items-center">
+                <div class="w-4 h-4 rounded-full ${item.status === 'added' ? 'bg-green-400' : item.status === 'modified' ? 'bg-yellow-400' : 'bg-blue-400'}"></div>
+                ${!isLast ? '<div class="w-0.5 h-full bg-dragon-border"></div>' : ''}
+            </div>
+            <div class="flex-1 pb-6">
+                <div class="glass-effect rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-dragon-silver font-medium">v${item.version}</span>
+                        <span class="text-xs px-2 py-1 rounded ${item.status === 'added' ? 'bg-green-500/20 text-green-400' : item.status === 'modified' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-blue-500/20 text-blue-400'}">
+                            ${item.status.toUpperCase()}
+                        </span>
+                    </div>
+                    <p class="text-xs text-dragon-silver-dark mb-2">${new Date(item.created_at).toLocaleString()}</p>
+                    <p class="text-xs text-dragon-silver-dark font-mono">Hash: ${item.hash}</p>
+                </div>
+            </div>
+        </div>`;
+    });
+    
+    timeline.innerHTML = html;
+    document.getElementById('file-history-modal').classList.remove('hidden');
+}
+
+function hideFileHistoryModal() {
+    document.getElementById('file-history-modal').classList.add('hidden');
+}
+
+// Integrity Verification
+function verifyIntegrity() {
+    if (!currentPatchData) return;
+    
+    const patchId = currentPatchData.id;
+    document.getElementById('integrity-version').textContent = 'v' + currentPatchData.version;
+    document.getElementById('integrity-modal').classList.remove('hidden');
+    document.getElementById('integrity-progress').classList.remove('hidden');
+    document.getElementById('integrity-results').innerHTML = '<p class="text-dragon-silver-dark">Starting verification...</p>';
+    
+    fetch(`/admin/cache/patches/${patchId}/verify`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('integrity-progress').classList.add('hidden');
+            
+            if (data.success) {
+                showIntegrityResults(data);
+            } else {
+                document.getElementById('integrity-results').innerHTML = 
+                    `<p class="text-red-400">Verification failed: ${data.message}</p>`;
+            }
+        })
+        .catch(error => {
+            console.error('Verification error:', error);
+            document.getElementById('integrity-progress').classList.add('hidden');
+            document.getElementById('integrity-results').innerHTML = 
+                '<p class="text-red-400">Network error occurred during verification</p>';
+        });
+}
+
+function showIntegrityResults(data) {
+    const { valid, invalid, missing, total } = data;
+    
+    let html = `<div class="space-y-4">
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-green-400">${valid}</div>
+                <div class="text-xs text-dragon-silver-dark">Valid</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-red-400">${invalid}</div>
+                <div class="text-xs text-dragon-silver-dark">Invalid</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-yellow-400">${missing}</div>
+                <div class="text-xs text-dragon-silver-dark">Missing</div>
+            </div>
+        </div>`;
+    
+    if (invalid === 0 && missing === 0) {
+        html += `<div class="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center">
+            <i class="fas fa-check-circle text-green-400 text-3xl mb-2"></i>
+            <p class="text-green-400 font-semibold">All checksums verified successfully!</p>
+            <p class="text-dragon-silver-dark text-sm mt-1">All ${total} files passed integrity check.</p>
+        </div>`;
+    } else {
+        if (data.invalid_files && data.invalid_files.length > 0) {
+            html += '<div class="mb-3"><h5 class="text-red-400 font-medium mb-2">Invalid Checksums:</h5><ul class="space-y-1">';
+            data.invalid_files.forEach(file => {
+                html += `<li class="text-sm text-red-400 font-mono">${file}</li>`;
+            });
+            html += '</ul></div>';
+        }
+        
+        if (data.missing_files && data.missing_files.length > 0) {
+            html += '<div><h5 class="text-yellow-400 font-medium mb-2">Missing Files:</h5><ul class="space-y-1">';
+            data.missing_files.forEach(file => {
+                html += `<li class="text-sm text-yellow-400 font-mono">${file}</li>`;
+            });
+            html += '</ul></div>';
+        }
+    }
+    
+    html += '</div>';
+    document.getElementById('integrity-results').innerHTML = html;
+}
+
+function hideIntegrityModal() {
+    document.getElementById('integrity-modal').classList.add('hidden');
 }
 </script>
 @endpush
