@@ -204,17 +204,23 @@
                                                     title="View Data">
                                                 <i class="fas fa-folder-tree"></i>
                                             </button>
-                                            <button onclick="downloadPatch('{{ $patch->version }}')" 
-                                                    class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors" 
-                                                    title="Download Patch">
+                                            <a href="{{ route('admin.cache.patches.download', $patch) }}" 
+                                               class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors inline-flex items-center justify-center" 
+                                               title="Download Patch">
                                                 <i class="fas fa-download"></i>
-                                            </button>
+                                            </a>
                                             @if(!$patch->is_base)
-                                                <button onclick="deletePatch('{{ $patch->version }}')" 
-                                                        class="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors" 
-                                                        title="Delete Patch">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
+                                                <form method="POST" action="{{ route('admin.cache.patches.delete', $patch) }}" 
+                                                      onsubmit="return confirm('Are you sure you want to delete patch v{{ $patch->version }}?\n\nThis action cannot be undone.')" 
+                                                      class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" 
+                                                            class="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors" 
+                                                            title="Delete Patch">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
                                             @endif
                                         </div>
                                     </div>
