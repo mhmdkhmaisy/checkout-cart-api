@@ -55,99 +55,23 @@
         </div>
     </div>
 
-    <!-- Search and Filter Bar -->
-    <div class="glass-effect rounded-lg p-6">
-        <form method="GET" action="{{ route('admin.cache.index') }}" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <!-- Search Input -->
-                <div class="md:col-span-2">
-                    <label for="search" class="block text-sm font-medium text-dragon-silver mb-2">Search Files</label>
-                    <div class="relative">
-                        <input type="text" 
-                               id="search" 
-                               name="search" 
-                               value="{{ request('search') }}"
-                               placeholder="Search by filename, path, or type..."
-                               class="w-full px-4 py-2 bg-dragon-black/50 border border-dragon-border rounded-lg text-dragon-silver placeholder-dragon-silver-dark focus:border-dragon-red focus:outline-none">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                            <i class="fas fa-search text-dragon-silver-dark"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Type Filter -->
-                <div>
-                    <label for="type_filter" class="block text-sm font-medium text-dragon-silver mb-2">Filter by Type</label>
-                    <select id="type_filter" 
-                            name="type_filter" 
-                            class="w-full px-4 py-2 bg-dragon-black/50 border border-dragon-border rounded-lg text-dragon-silver focus:border-dragon-red focus:outline-none">
-                        <option value="">All Types</option>
-                        <option value="files" {{ request('type_filter') === 'files' ? 'selected' : '' }}>Files Only</option>
-                        <option value="directories" {{ request('type_filter') === 'directories' ? 'selected' : '' }}>Directories Only</option>
-                        @foreach($fileExtensions as $ext)
-                            <option value="{{ $ext }}" {{ request('type_filter') === $ext ? 'selected' : '' }}>
-                                .{{ $ext }} files
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Sort Options -->
-                <div>
-                    <label for="sort" class="block text-sm font-medium text-dragon-silver mb-2">Sort By</label>
-                    <div class="flex gap-2">
-                        <select id="sort" 
-                                name="sort" 
-                                class="flex-1 px-4 py-2 bg-dragon-black/50 border border-dragon-border rounded-lg text-dragon-silver focus:border-dragon-red focus:outline-none">
-                            <option value="filename" {{ request('sort') === 'filename' ? 'selected' : '' }}>Name</option>
-                            <option value="size" {{ request('sort') === 'size' ? 'selected' : '' }}>Size</option>
-                            <option value="created_at" {{ request('sort') === 'created_at' ? 'selected' : '' }}>Date</option>
-                            <option value="file_type" {{ request('sort') === 'file_type' ? 'selected' : '' }}>Type</option>
-                        </select>
-                        <select name="direction" class="px-3 py-2 bg-dragon-black/50 border border-dragon-border rounded-lg text-dragon-silver focus:border-dragon-red focus:outline-none">
-                            <option value="asc" {{ request('direction') === 'asc' ? 'selected' : '' }}>↑</option>
-                            <option value="desc" {{ request('direction') === 'desc' ? 'selected' : '' }}>↓</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex justify-between items-center">
-                <div class="flex gap-3">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                        <i class="fas fa-search mr-2"></i>Apply Filters
-                    </button>
-                    <a href="{{ route('admin.cache.index') }}" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
-                        <i class="fas fa-times mr-2"></i>Clear
-                    </a>
-                </div>
-                <div class="text-sm text-dragon-silver-dark">
-                    Showing {{ $files->count() }} of {{ $files->total() }} files
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- cPanel-like File Manager -->
+    <!-- Patch Management Interface -->
     <div class="glass-effect rounded-lg overflow-hidden">
         <!-- Toolbar -->
         <div class="px-6 py-4 border-b border-dragon-border bg-dragon-black/30">
             <div class="flex justify-between items-center">
                 <div class="flex items-center gap-4">
-                    <h3 class="text-lg font-semibold text-dragon-silver">File Manager</h3>
-                    <div class="flex gap-2">
-                        <button onclick="toggleView('grid')" id="grid-view-btn" class="p-2 rounded bg-dragon-red/20 text-dragon-red">
-                            <i class="fas fa-th"></i>
-                        </button>
-                        <button onclick="toggleView('list')" id="list-view-btn" class="p-2 rounded hover:bg-dragon-red/20 text-dragon-silver-dark">
-                            <i class="fas fa-list"></i>
-                        </button>
-                    </div>
+                    <h3 class="text-lg font-semibold text-dragon-silver">Patch Management</h3>
+                    @if($latestVersion)
+                        <span class="px-3 py-1 bg-dragon-red/20 text-dragon-red rounded-full text-sm font-medium">
+                            <i class="fas fa-code-branch mr-1"></i>v{{ $latestVersion }}
+                        </span>
+                    @endif
                 </div>
                 <div class="flex gap-3">
                     <div class="relative inline-block">
                         <button onclick="toggleUploadMenu()" id="upload-menu-btn" class="px-4 py-2 bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver rounded-lg transition-colors flex items-center">
-                            <i class="fas fa-upload mr-2"></i>Upload
+                            <i class="fas fa-upload mr-2"></i>Upload Files
                             <i class="fas fa-chevron-down ml-2 text-xs"></i>
                         </button>
                         <div id="upload-menu" class="hidden absolute left-0 mt-2 w-72 bg-dragon-black border border-dragon-border rounded-lg shadow-xl z-50">
@@ -171,49 +95,23 @@
                             </button>
                         </div>
                     </div>
-                    <button onclick="createFolder()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                        <i class="fas fa-folder-plus mr-2"></i>New Folder
-                    </button>
+                    @if($canMerge)
+                        <button onclick="mergePatches()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+                            <i class="fas fa-object-group mr-2"></i>Merge Patches
+                        </button>
+                    @endif
                     <button onclick="showDeleteAllModal()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
-                        <i class="fas fa-trash mr-2"></i>Delete All
+                        <i class="fas fa-trash mr-2"></i>Clear All
                     </button>
-                    <button onclick="refreshFiles()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                    <button onclick="location.reload()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
                         <i class="fas fa-sync-alt mr-2"></i>Refresh
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- File Browser Area -->
-        <div id="file-browser" class="min-h-[400px]">
-            <!-- Breadcrumb Navigation -->
-            <div class="px-6 py-3 border-b border-dragon-border bg-dragon-black/10">
-                <nav class="flex items-center space-x-2 text-sm flex-wrap">
-                    <button onclick="navigateTo('')" class="text-dragon-red hover:text-dragon-red-bright transition-colors">
-                        <i class="fas fa-home mr-1"></i>Root
-                    </button>
-                    @if(!empty($currentPath))
-                        @php
-                            $pathParts = explode('/', $currentPath);
-                            $buildPath = '';
-                        @endphp
-                        @foreach($pathParts as $index => $part)
-                            <span class="text-dragon-silver-dark">/</span>
-                            @php
-                                $buildPath .= ($buildPath ? '/' : '') . $part;
-                            @endphp
-                            @if($index === count($pathParts) - 1)
-                                <span class="text-dragon-silver font-medium">{{ $part }}</span>
-                            @else
-                                <button onclick="navigateTo('{{ $buildPath }}')" class="text-blue-400 hover:text-blue-300 transition-colors">
-                                    {{ $part }}
-                                </button>
-                            @endif
-                        @endforeach
-                    @endif
-                </nav>
-            </div>
-
+        <!-- Patch History & Upload Zone -->
+        <div id="patch-viewer" class="min-h-[400px]">
             <!-- Drop Zone for Drag & Drop -->
             <div id="drop-zone" class="relative">
                 <div id="drop-overlay" class="absolute inset-0 bg-dragon-red/20 border-2 border-dashed border-dragon-red rounded-lg flex items-center justify-center z-10 hidden">
@@ -224,258 +122,121 @@
                     </div>
                 </div>
 
-                <!-- Grid View -->
-                <div id="grid-view" class="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-                    @if($files->count() > 0)
-                        @foreach($files as $file)
-                            <div class="file-item group relative bg-dragon-black/20 rounded-lg p-4 hover:bg-dragon-black/40 transition-colors cursor-pointer" 
-                                 data-file-id="{{ $file->id }}" 
-                                 data-file-name="{{ $file->filename }}" 
-                                 data-file-type="{{ $file->file_type }}"
-                                 data-relative-path="{{ $file->relative_path ?? '' }}"
-                                 data-navigation-path="{{ $file->navigation_path ?? ($file->relative_path ?? '') }}"
-                                 data-file-extension="{{ strtolower(pathinfo($file->filename, PATHINFO_EXTENSION)) }}"
-                                 onclick="selectFile(this)"
-                                 oncontextmenu="showContextMenu(event, this)"
-                                 ondblclick="openFile(this)">
-                                
-                                <!-- File Icon -->
-                                <div class="flex flex-col items-center">
-                                    <div class="w-12 h-12 flex items-center justify-center rounded-lg mb-2 {{ $file->file_type === 'directory' ? 'bg-blue-500/20' : 'bg-dragon-red/20' }}">
-                                        @if($file->file_type === 'directory')
-                                            <i class="fas fa-folder text-2xl text-blue-400"></i>
-                                        @else
-                                            @php
-                                                $extension = strtolower(pathinfo($file->filename, PATHINFO_EXTENSION));
-                                                $iconClass = match($extension) {
-                                                    'dat', 'idx', 'mid' => 'fas fa-file-archive text-dragon-red',
-                                                    'zip', 'tar', 'gz', 'rar', '7z' => 'fas fa-file-archive text-purple-400',
-                                                    'txt', 'log' => 'fas fa-file-alt text-green-400',
-                                                    'jpg', 'png', 'gif', 'bmp' => 'fas fa-file-image text-blue-400',
-                                                    'mp3', 'wav', 'ogg' => 'fas fa-file-audio text-yellow-400',
-                                                    'mp4', 'avi', 'mov' => 'fas fa-file-video text-red-400',
-                                                    'pdf' => 'fas fa-file-pdf text-red-500',
-                                                    'doc', 'docx' => 'fas fa-file-word text-blue-600',
-                                                    'xls', 'xlsx' => 'fas fa-file-excel text-green-600',
-                                                    'js' => 'fab fa-js-square text-yellow-500',
-                                                    'html', 'htm' => 'fab fa-html5 text-orange-500',
-                                                    'css' => 'fab fa-css3-alt text-blue-500',
-                                                    'php' => 'fab fa-php text-purple-500',
-                                                    'java' => 'fab fa-java text-red-600',
-                                                    'py' => 'fab fa-python text-blue-500',
-                                                    default => 'fas fa-file text-dragon-silver-dark'
-                                                };
-                                            @endphp
-                                            <i class="{{ $iconClass }} text-2xl"></i>
-                                        @endif
+                <!-- Patch History Timeline -->
+                <div class="p-6">
+                    @if($patches->count() > 0)
+                        <div class="space-y-4">
+                            @foreach($patches as $patch)
+                                @php
+                                    $bytes = $patch->size;
+                                    $units = ['B', 'KB', 'MB', 'GB'];
+                                    for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+                                        $bytes /= 1024;
+                                    }
+                                    $formattedSize = round($bytes, 2) . ' ' . $units[$i];
+                                @endphp
+                                <div class="bg-dragon-black/20 rounded-lg p-5 hover:bg-dragon-black/40 transition-colors border border-dragon-border">
+                                    <div class="flex items-start justify-between">
+                                        <!-- Patch Info -->
+                                        <div class="flex items-start gap-4 flex-1">
+                                            <!-- Version Badge -->
+                                            <div class="flex-shrink-0">
+                                                @if($patch->is_base)
+                                                    <div class="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                                        <i class="fas fa-cube text-2xl text-purple-400"></i>
+                                                    </div>
+                                                @else
+                                                    <div class="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                                        <i class="fas fa-layer-group text-2xl text-blue-400"></i>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            
+                                            <!-- Details -->
+                                            <div class="flex-1">
+                                                <div class="flex items-center gap-3 mb-2">
+                                                    <h4 class="text-lg font-semibold text-dragon-silver">
+                                                        v{{ $patch->version }}
+                                                    </h4>
+                                                    @if($patch->is_base)
+                                                        <span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs font-medium">
+                                                            BASE PATCH
+                                                        </span>
+                                                    @else
+                                                        <span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-medium">
+                                                            DELTA PATCH
+                                                        </span>
+                                                    @endif
+                                                    @if($patch->version === $latestVersion)
+                                                        <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-medium">
+                                                            <i class="fas fa-check-circle mr-1"></i>CURRENT
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                
+                                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                                    <div>
+                                                        <span class="text-dragon-silver-dark">Files:</span>
+                                                        <span class="text-dragon-silver ml-1 font-medium">{{ $patch->file_count }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-dragon-silver-dark">Size:</span>
+                                                        <span class="text-dragon-silver ml-1 font-medium">{{ $formattedSize }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-dragon-silver-dark">Created:</span>
+                                                        <span class="text-dragon-silver ml-1 font-medium">{{ $patch->created_at->diffForHumans() }}</span>
+                                                    </div>
+                                                    @if(!$patch->is_base && $patch->base_version)
+                                                        <div>
+                                                            <span class="text-dragon-silver-dark">Based on:</span>
+                                                            <span class="text-dragon-silver ml-1 font-medium">v{{ $patch->base_version }}</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Actions -->
+                                        <div class="flex gap-2 ml-4">
+                                            <button onclick="downloadPatch('{{ $patch->version }}')" 
+                                                    class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors" 
+                                                    title="Download Patch">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            @if(!$patch->is_base)
+                                                <button onclick="deletePatch('{{ $patch->version }}')" 
+                                                        class="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors" 
+                                                        title="Delete Patch">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            @endif
+                                        </div>
                                     </div>
-                                    
-                                    <!-- File Name -->
-                                    <p class="text-xs text-center text-dragon-silver truncate w-full" title="{{ $file->filename }}">
-                                        {{ Str::limit($file->filename, 12) }}
-                                    </p>
-                                    
-                                    <!-- File Size -->
-                                    @if($file->file_type === 'file')
-                                        <p class="text-xs text-dragon-silver-dark">{{ $file->formatted_size }}</p>
-                                    @endif
                                 </div>
-                                
-                                <!-- Selection Checkbox -->
-                                <div class="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <input type="checkbox" class="file-checkbox" value="{{ $file->id }}" onclick="event.stopPropagation(); updateBulkActions();">
-                                </div>
-                                
-                                <!-- Status Indicator -->
-                                <div class="absolute top-2 right-2">
-                                    @if($file->file_type === 'directory' || (method_exists($file, 'existsOnDisk') && $file->existsOnDisk()))
-                                        <i class="fas fa-check-circle text-green-400 text-xs"></i>
-                                    @elseif($file->file_type === 'file')
-                                        <i class="fas fa-exclamation-triangle text-red-400 text-xs"></i>
-                                    @endif
-                                </div>
-                            </div>
-                        @endforeach
+                            @endforeach
+                        </div>
                     @else
-                        <div class="col-span-full text-center py-12">
-                            <i class="fas fa-folder-open text-6xl text-dragon-silver-dark mb-4"></i>
-                            <h3 class="text-xl font-medium text-dragon-silver mb-2">No files found</h3>
-                            <p class="text-dragon-silver-dark mb-6">This directory is empty or no files match your filters.</p>
-                            <button onclick="showUploadModal()" class="px-6 py-2 bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver rounded-lg transition-colors">
-                                <i class="fas fa-upload mr-2"></i>Upload Files
+                        <!-- Empty State -->
+                        <div class="text-center py-16">
+                            <div class="w-24 h-24 mx-auto bg-dragon-red/20 rounded-full flex items-center justify-center mb-6">
+                                <i class="fas fa-code-branch text-5xl text-dragon-red"></i>
+                            </div>
+                            <h3 class="text-2xl font-semibold text-dragon-silver mb-3">No Patches Available</h3>
+                            <p class="text-dragon-silver-dark mb-8 max-w-md mx-auto">
+                                Upload cache files to automatically generate your first patch. The system will create base patches and incremental updates as you upload new content.
+                            </p>
+                            <button onclick="showUploadModal()" class="px-8 py-3 bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver rounded-lg transition-colors font-medium">
+                                <i class="fas fa-upload mr-2"></i>Upload Your First Files
                             </button>
                         </div>
                     @endif
                 </div>
-
-                <!-- List View (Hidden by default) -->
-                <div id="list-view" class="hidden">
-                    <table class="w-full">
-                        <thead class="bg-dragon-black/50">
-                            <tr>
-                                <th class="px-6 py-3 text-left w-8">
-                                    <input type="checkbox" id="select-all" onchange="toggleSelectAll()">
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-dragon-silver-dark uppercase tracking-wider">Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-dragon-silver-dark uppercase tracking-wider">Size</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-dragon-silver-dark uppercase tracking-wider">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-dragon-silver-dark uppercase tracking-wider">Modified</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-dragon-silver-dark uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-dragon-border">
-                            @foreach($files as $file)
-                                <tr class="hover:bg-dragon-black/30 cursor-pointer" 
-                                    data-file-id="{{ $file->id }}"
-                                    data-file-name="{{ $file->filename }}" 
-                                    data-file-type="{{ $file->file_type }}"
-                                    data-relative-path="{{ $file->relative_path ?? '' }}"
-                                    data-navigation-path="{{ $file->navigation_path ?? ($file->relative_path ?? '') }}"
-                                    data-file-extension="{{ strtolower(pathinfo($file->filename, PATHINFO_EXTENSION)) }}"
-                                    onclick="selectFile(this)"
-                                    oncontextmenu="showContextMenu(event, this)"
-                                    ondblclick="openFile(this)">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <input type="checkbox" class="file-checkbox" value="{{ $file->id }}" onclick="event.stopPropagation(); updateBulkActions();">
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-8 w-8">
-                                                <div class="h-8 w-8 rounded-full {{ $file->file_type === 'directory' ? 'bg-blue-500/20' : 'bg-dragon-red/20' }} flex items-center justify-center">
-                                                    @if($file->file_type === 'directory')
-                                                        <i class="fas fa-folder text-blue-400 text-sm"></i>
-                                                    @else
-                                                        <i class="fas fa-file text-dragon-silver-dark text-sm"></i>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-medium text-dragon-silver">{{ $file->filename }}</div>
-                                                <div class="text-sm text-dragon-silver-dark">
-                                                    @if($file->file_type === 'directory')
-                                                        <span class="text-blue-400"><i class="fas fa-folder mr-1"></i>Folder</span>
-                                                    @elseif(method_exists($file, 'existsOnDisk') && $file->existsOnDisk())
-                                                        <span class="text-green-400"><i class="fas fa-check-circle mr-1"></i>Available</span>
-                                                    @else
-                                                        <span class="text-red-400"><i class="fas fa-exclamation-triangle mr-1"></i>Missing</span>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-dragon-silver">
-                                        {{ $file->file_type === 'file' ? $file->formatted_size : '--' }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-dragon-silver-dark">
-                                        {{ ucfirst($file->file_type) }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-dragon-silver-dark">
-                                        {{ $file->created_at->format('M j, Y g:i A') }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div class="flex space-x-2">
-                                            @if($file->file_type === 'file' && method_exists($file, 'existsOnDisk') && $file->existsOnDisk())
-                                                <button onclick="downloadFile('{{ $file->id }}')" class="text-blue-400 hover:text-blue-300" title="Download">
-                                                    <i class="fas fa-download"></i>
-                                                </button>
-                                            @endif
-                                            <button onclick="showDeleteModal('{{ $file->id }}', '{{ $file->filename }}')" class="text-red-400 hover:text-red-300" title="Delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pagination -->
-        @if($files->hasPages())
-            <div class="px-6 py-4 border-t border-dragon-border">
-                {{ $files->links() }}
-            </div>
-        @endif
-    </div>
-
-    <!-- Selected Items Actions -->
-    <div id="bulk-actions" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-dragon-black border border-dragon-border rounded-lg p-4 shadow-lg hidden">
-        <div class="flex items-center gap-4">
-            <span class="text-dragon-silver">
-                <span id="selected-count">0</span> items selected
-            </span>
-            <div class="flex gap-2">
-                <button onclick="downloadSelected()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                    <i class="fas fa-download mr-2"></i>Download
-                </button>
-                <button onclick="showDeleteSelectedModal()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
-                    <i class="fas fa-trash mr-2"></i>Delete
-                </button>
-                <button onclick="clearSelection()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
-                    <i class="fas fa-times mr-2"></i>Clear
-                </button>
             </div>
         </div>
     </div>
 
-    <!-- Patch System Section -->
-    <div class="glass-effect rounded-lg overflow-hidden">
-        <div class="px-6 py-4 border-b border-dragon-border">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="text-lg font-semibold text-dragon-silver">Delta Patch System</h3>
-                    <p class="text-dragon-silver-dark text-sm">Incremental cache updates using patch-based versioning</p>
-                </div>
-                <div class="flex items-center gap-3">
-                    @if($latestVersion)
-                        <span class="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium">
-                            v{{ $latestVersion }}
-                        </span>
-                    @endif
-                    @if($patches->count() > 0)
-                        <form method="POST" action="{{ route('admin.cache.patches.clear-all') }}" class="inline">
-                            @csrf
-                            <button type="submit" 
-                                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
-                                    onclick="return confirm('⚠️ Clear all patches including base patches?\n\nThis will:\n• Delete all {{ $patches->count() }} patches\n• Reset the patch system\n• Next upload will create a new base patch (v1.0.0)\n\nThis action cannot be undone!')">
-                                <i class="fas fa-broom mr-2"></i>Clear All Patches
-                            </button>
-                        </form>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-dragon-black/30 rounded-lg p-4">
-                    <div class="text-sm text-dragon-silver-dark">Latest Version</div>
-                    <div class="text-xl font-semibold text-dragon-silver">{{ $latestVersion ?? 'None' }}</div>
-                </div>
-                <div class="bg-dragon-black/30 rounded-lg p-4">
-                    <div class="text-sm text-dragon-silver-dark">Base Patches</div>
-                    <div class="text-xl font-semibold text-dragon-silver">{{ $basePatches }}</div>
-                </div>
-                <div class="bg-dragon-black/30 rounded-lg p-4">
-                    <div class="text-sm text-dragon-silver-dark">Incremental Patches</div>
-                    <div class="text-xl font-semibold text-dragon-silver">{{ $incrementalPatches }}</div>
-                </div>
-                <div class="bg-dragon-black/30 rounded-lg p-4">
-                    <div class="text-sm text-dragon-silver-dark">Total Patch Size</div>
-                    <div class="text-xl font-semibold text-dragon-silver">
-                        @php
-                            $bytes = $totalPatchSize;
-                            $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-                            for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
-                                $bytes /= 1024;
-                            }
-                            echo round($bytes, 2) . ' ' . $units[$i];
-                        @endphp
-                    </div>
-                </div>
-            </div>
+    <!-- Patch System Stats -->
 
             @if($canMerge)
                 <div class="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
@@ -2003,6 +1764,69 @@ document.addEventListener('click', function(e) {
         hideUploadMenu();
     }
 });
+
+// Patch Management Functions
+function downloadPatch(version) {
+    window.location.href = `/admin/cache/patches/${version}/download`;
+}
+
+function deletePatch(version) {
+    if (confirm(`Are you sure you want to delete patch v${version}?\n\nThis action cannot be undone.`)) {
+        fetch(`/admin/cache/patches/${version}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Successfully deleted patch v${version}`);
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Failed to delete patch'));
+            }
+        })
+        .catch(error => {
+            console.error('Delete patch error:', error);
+            alert('Network error occurred while deleting patch');
+        });
+    }
+}
+
+function mergePatches() {
+    if (confirm('Merge all incremental patches into a new base patch?\n\nThis will:\n• Create a new consolidated base patch\n• Delete old incremental patches\n• Optimize patch downloads\n\nProceed with merge?')) {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Merging...';
+        
+        fetch('/admin/cache/patches/merge', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Successfully merged patches!\n\nNew base version: v${data.new_version || 'unknown'}`);
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Failed to merge patches'));
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-object-group mr-2"></i>Merge Patches';
+            }
+        })
+        .catch(error => {
+            console.error('Merge patches error:', error);
+            alert('Network error occurred while merging patches');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-object-group mr-2"></i>Merge Patches';
+        });
+    }
+}
 </script>
 @endpush
 
