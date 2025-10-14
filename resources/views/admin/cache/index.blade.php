@@ -419,6 +419,123 @@
             </div>
         </div>
     </div>
+
+    <!-- Patch System Section -->
+    <div class="glass-effect rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-dragon-border">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-semibold text-dragon-silver">Delta Patch System</h3>
+                    <p class="text-dragon-silver-dark text-sm">Incremental cache updates using patch-based versioning</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    @if($latestVersion)
+                        <span class="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium">
+                            v{{ $latestVersion }}
+                        </span>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-dragon-black/30 rounded-lg p-4">
+                    <div class="text-sm text-dragon-silver-dark">Latest Version</div>
+                    <div class="text-xl font-semibold text-dragon-silver">{{ $latestVersion ?? 'None' }}</div>
+                </div>
+                <div class="bg-dragon-black/30 rounded-lg p-4">
+                    <div class="text-sm text-dragon-silver-dark">Base Patches</div>
+                    <div class="text-xl font-semibold text-dragon-silver">{{ $basePatches }}</div>
+                </div>
+                <div class="bg-dragon-black/30 rounded-lg p-4">
+                    <div class="text-sm text-dragon-silver-dark">Incremental Patches</div>
+                    <div class="text-xl font-semibold text-dragon-silver">{{ $incrementalPatches }}</div>
+                </div>
+                <div class="bg-dragon-black/30 rounded-lg p-4">
+                    <div class="text-sm text-dragon-silver-dark">Total Patch Size</div>
+                    <div class="text-xl font-semibold text-dragon-silver">
+                        @php
+                            $bytes = $totalPatchSize;
+                            $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                            for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+                                $bytes /= 1024;
+                            }
+                            echo round($bytes, 2) . ' ' . $units[$i];
+                        @endphp
+                    </div>
+                </div>
+            </div>
+
+            @if($canMerge)
+                <div class="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-yellow-400 mt-1 mr-3"></i>
+                        <div class="flex-1">
+                            <p class="text-yellow-400 font-medium">Merge Recommended</p>
+                            <p class="text-dragon-silver-dark text-sm mt-1">
+                                You have {{ $incrementalPatches }} incremental patches. Consider merging them into a new base version for optimal performance.
+                            </p>
+                        </div>
+                        <form method="POST" action="{{ route('admin.cache.patches.merge') }}" class="ml-3">
+                            @csrf
+                            <button type="submit" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors text-sm"
+                                    onclick="return confirm('Merge all patches into a new base version?')">
+                                <i class="fas fa-compress mr-2"></i>Merge Now
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            @endif
+
+            @if($patches->count() > 0)
+                <div class="space-y-2">
+                    <h4 class="text-sm font-medium text-dragon-silver-dark mb-3">Patch Chain</h4>
+                    @foreach($patches as $patch)
+                        <div class="flex items-center justify-between p-3 bg-dragon-black/30 rounded-lg hover:bg-dragon-black/50 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full {{ $patch->is_base ? 'bg-green-400' : 'bg-blue-400' }}"></div>
+                                <div>
+                                    <div class="text-sm font-medium text-dragon-silver">
+                                        v{{ $patch->version }}
+                                        @if($patch->is_base)
+                                            <span class="ml-2 px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">Base</span>
+                                        @else
+                                            <span class="ml-2 px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">Delta</span>
+                                        @endif
+                                    </div>
+                                    <div class="text-xs text-dragon-silver-dark">
+                                        {{ $patch->file_count }} files · {{ $patch->formatted_size }} · {{ $patch->created_at->diffForHumans() }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('admin.cache.patches.download', $patch) }}" 
+                                   class="text-blue-400 hover:text-blue-300 p-2" title="Download Patch">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                @if(!$patch->is_base)
+                                    <form method="POST" action="{{ route('admin.cache.patches.delete', $patch) }}" 
+                                          onsubmit="return confirm('Delete this patch?')" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-400 hover:text-red-300 p-2" title="Delete Patch">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="text-center py-8">
+                    <i class="fas fa-code-branch text-4xl text-dragon-silver-dark mb-3"></i>
+                    <p class="text-dragon-silver-dark">No patches created yet. Upload files to create the first patch.</p>
+                </div>
+            @endif
+        </div>
+    </div>
 </div>
 
 <!-- Custom Confirmation Modal -->

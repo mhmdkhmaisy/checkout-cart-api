@@ -89,23 +89,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/chunked-upload-status', [ChunkedUploadController::class, 'status'])->name('chunked-upload-status');
         Route::get('/chunked-upload-sessions', [ChunkedUploadController::class, 'sessions'])->name('chunked-upload-sessions');
         
-        // Bundle management routes
-        Route::prefix('bundles')->name('bundles.')->group(function () {
-            Route::get('/', [CacheBundleController::class, 'index'])->name('index');
-            Route::delete('/{bundle}', [CacheBundleController::class, 'destroy'])->name('destroy');
-            Route::post('/clear-expired', [CacheBundleController::class, 'clearExpired'])->name('clear-expired');
-            Route::post('/clear-all', [CacheBundleController::class, 'clearAll'])->name('clear-all');
-            Route::get('/{bundle}/download', [CacheBundleController::class, 'download'])->name('download');
-        });
-        
-        // Patch management routes
+        // Patch management routes (integrated with file manager)
         Route::prefix('patches')->name('patches.')->group(function () {
-            Route::get('/latest', [CacheBundleController::class, 'getLatestVersion'])->name('latest');
-            Route::post('/check-updates', [CacheBundleController::class, 'checkForUpdates'])->name('check-updates');
-            Route::get('/{patch}/download', [CacheBundleController::class, 'downloadPatch'])->name('download');
-            Route::post('/download-combined', [CacheBundleController::class, 'downloadCombinedPatches'])->name('download-combined');
-            Route::post('/merge', [CacheBundleController::class, 'mergePatches'])->name('merge');
-            Route::delete('/{patch}', [CacheBundleController::class, 'deletePatch'])->name('delete');
+            Route::get('/latest', [CacheFileController::class, 'getLatestVersion'])->name('latest');
+            Route::post('/check-updates', [CacheFileController::class, 'checkForUpdates'])->name('check-updates');
+            Route::get('/{patch}/download', [CacheFileController::class, 'downloadPatch'])->name('download');
+            Route::post('/download-combined', [CacheFileController::class, 'downloadCombinedPatches'])->name('download-combined');
+            Route::post('/merge', [CacheFileController::class, 'mergePatches'])->name('merge');
+            Route::delete('/{patch}', [CacheFileController::class, 'deletePatch'])->name('delete');
         });
     });
 
