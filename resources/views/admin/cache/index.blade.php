@@ -199,6 +199,11 @@
                                         
                                         <!-- Actions -->
                                         <div class="flex gap-2 ml-4">
+                                            <button onclick="viewPatchData({{ json_encode($patch) }})" 
+                                                    class="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors" 
+                                                    title="View Data">
+                                                <i class="fas fa-folder-tree"></i>
+                                            </button>
                                             <button onclick="downloadPatch('{{ $patch->version }}')" 
                                                     class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors" 
                                                     title="Download Patch">
@@ -305,6 +310,76 @@
                     <p class="text-dragon-silver-dark">No patches created yet. Upload files to create the first patch.</p>
                 </div>
             @endif
+        </div>
+    </div>
+</div>
+
+<!-- Patch Data Modal -->
+<div id="patch-data-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-dragon-black border border-dragon-border rounded-lg p-8 max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <h3 class="text-xl font-semibold text-dragon-silver">Patch Data</h3>
+                <span id="patch-data-version" class="px-3 py-1 bg-dragon-red/20 text-dragon-red rounded-full text-sm font-medium"></span>
+            </div>
+            <button onclick="hidePatchDataModal()" class="text-dragon-silver-dark hover:text-dragon-silver">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="glass-effect rounded-lg p-4">
+                <h4 class="text-sm font-medium text-dragon-silver-dark mb-3">Patch Information</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-dragon-silver-dark">Type:</span>
+                        <span id="patch-data-type" class="text-dragon-silver font-medium"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-dragon-silver-dark">File Count:</span>
+                        <span id="patch-data-file-count" class="text-dragon-silver font-medium"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-dragon-silver-dark">Size:</span>
+                        <span id="patch-data-size" class="text-dragon-silver font-medium"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-dragon-silver-dark">Created:</span>
+                        <span id="patch-data-created" class="text-dragon-silver font-medium"></span>
+                    </div>
+                    <div class="flex justify-between" id="patch-data-base-version-container">
+                        <span class="text-dragon-silver-dark">Based on:</span>
+                        <span id="patch-data-base-version" class="text-dragon-silver font-medium"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-effect rounded-lg p-4">
+                <h4 class="text-sm font-medium text-dragon-silver-dark mb-3">Storage</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-dragon-silver-dark">Path:</span>
+                        <span id="patch-data-path" class="text-dragon-silver font-medium text-xs truncate max-w-xs" title=""></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-effect rounded-lg p-4 flex-1 overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center mb-3">
+                <h4 class="text-sm font-medium text-dragon-silver-dark">File Structure</h4>
+                <div class="flex gap-2">
+                    <button onclick="expandAllDirectories()" class="text-xs px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">
+                        <i class="fas fa-folder-open mr-1"></i>Expand All
+                    </button>
+                    <button onclick="collapseAllDirectories()" class="text-xs px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors">
+                        <i class="fas fa-folder mr-1"></i>Collapse All
+                    </button>
+                </div>
+            </div>
+            <div id="patch-data-tree" class="flex-1 overflow-y-auto bg-dragon-black/30 rounded p-4 font-mono text-sm">
+                <!-- Directory tree will be populated here -->
+            </div>
         </div>
     </div>
 </div>
@@ -1826,6 +1901,149 @@ function mergePatches() {
             btn.innerHTML = '<i class="fas fa-object-group mr-2"></i>Merge Patches';
         });
     }
+}
+
+// Patch Data Modal Functions
+function viewPatchData(patch) {
+    // Populate patch info
+    document.getElementById('patch-data-version').textContent = 'v' + patch.version;
+    document.getElementById('patch-data-type').innerHTML = patch.is_base 
+        ? '<span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs">BASE PATCH</span>'
+        : '<span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">DELTA PATCH</span>';
+    document.getElementById('patch-data-file-count').textContent = patch.file_count;
+    document.getElementById('patch-data-size').textContent = formatBytes(patch.size);
+    document.getElementById('patch-data-created').textContent = new Date(patch.created_at).toLocaleString();
+    document.getElementById('patch-data-path').textContent = patch.path;
+    document.getElementById('patch-data-path').title = patch.path;
+    
+    // Show/hide base version
+    const baseVersionContainer = document.getElementById('patch-data-base-version-container');
+    if (!patch.is_base && patch.base_version) {
+        baseVersionContainer.classList.remove('hidden');
+        document.getElementById('patch-data-base-version').textContent = 'v' + patch.base_version;
+    } else {
+        baseVersionContainer.classList.add('hidden');
+    }
+    
+    // Build directory tree from file_manifest
+    buildDirectoryTree(patch.file_manifest);
+    
+    // Show modal
+    document.getElementById('patch-data-modal').classList.remove('hidden');
+}
+
+function hidePatchDataModal() {
+    document.getElementById('patch-data-modal').classList.add('hidden');
+}
+
+function buildDirectoryTree(fileManifest) {
+    const treeContainer = document.getElementById('patch-data-tree');
+    
+    if (!fileManifest || Object.keys(fileManifest).length === 0) {
+        treeContainer.innerHTML = '<p class="text-dragon-silver-dark">No files in this patch.</p>';
+        return;
+    }
+    
+    // Build tree structure from flat file list
+    const tree = {};
+    const filePaths = Object.keys(fileManifest);
+    
+    filePaths.forEach(filePath => {
+        const hash = fileManifest[filePath];
+        const parts = filePath.split('/');
+        let currentLevel = tree;
+        
+        parts.forEach((part, index) => {
+            if (!currentLevel[part]) {
+                currentLevel[part] = {
+                    isFile: index === parts.length - 1,
+                    hash: index === parts.length - 1 ? hash : null,
+                    children: {}
+                };
+            }
+            currentLevel = currentLevel[part].children;
+        });
+    });
+    
+    // Render tree
+    treeContainer.innerHTML = renderTree(tree, '');
+}
+
+function renderTree(node, path = '', level = 0) {
+    let html = '';
+    const entries = Object.entries(node).sort((a, b) => {
+        // Directories first, then files
+        const aIsDir = !a[1].isFile;
+        const bIsDir = !b[1].isFile;
+        if (aIsDir && !bIsDir) return -1;
+        if (!aIsDir && bIsDir) return 1;
+        return a[0].localeCompare(b[0]);
+    });
+    
+    entries.forEach(([name, data]) => {
+        const currentPath = path ? `${path}/${name}` : name;
+        const indent = '  '.repeat(level);
+        
+        if (data.isFile) {
+            // Render file
+            html += `<div class="text-dragon-silver hover:text-dragon-red transition-colors py-1 file-item" title="Hash: ${data.hash}">
+                ${indent}<i class="fas fa-file text-blue-400 mr-2"></i>${name}
+                <span class="text-xs text-dragon-silver-dark ml-2">(${data.hash.substring(0, 8)}...)</span>
+            </div>`;
+        } else {
+            // Render directory
+            const hasChildren = Object.keys(data.children).length > 0;
+            const dirId = 'dir-' + currentPath.replace(/[^a-zA-Z0-9]/g, '-');
+            
+            html += `<div class="py-1">
+                <div class="text-dragon-silver hover:text-dragon-red transition-colors cursor-pointer directory-toggle" 
+                     onclick="toggleDirectory('${dirId}')" 
+                     data-dir-id="${dirId}">
+                    ${indent}<i class="fas fa-folder text-yellow-400 mr-2 folder-icon" id="icon-${dirId}"></i>${name}/
+                </div>
+                <div id="${dirId}" class="directory-content">
+                    ${hasChildren ? renderTree(data.children, currentPath, level + 1) : ''}
+                </div>
+            </div>`;
+        }
+    });
+    
+    return html;
+}
+
+function toggleDirectory(dirId) {
+    const dirContent = document.getElementById(dirId);
+    const icon = document.getElementById('icon-' + dirId);
+    
+    if (dirContent.style.display === 'none') {
+        dirContent.style.display = 'block';
+        icon.classList.remove('fa-folder');
+        icon.classList.add('fa-folder-open');
+    } else {
+        dirContent.style.display = 'none';
+        icon.classList.remove('fa-folder-open');
+        icon.classList.add('fa-folder');
+    }
+}
+
+function expandAllDirectories() {
+    document.querySelectorAll('.directory-content').forEach(dir => {
+        dir.style.display = 'block';
+    });
+    document.querySelectorAll('.folder-icon').forEach(icon => {
+        icon.classList.remove('fa-folder');
+        icon.classList.add('fa-folder-open');
+    });
+}
+
+function collapseAllDirectories() {
+    document.querySelectorAll('.directory-content').forEach(dir => {
+        dir.style.display = 'none';
+    });
+    document.querySelectorAll('.folder-icon').forEach(icon => {
+        icon.classList.remove('fa-folder-open');
+        icon.classList.add('fa-folder');
+    });
 }
 </script>
 @endpush
