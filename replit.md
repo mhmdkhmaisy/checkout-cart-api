@@ -46,6 +46,11 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
         - **Incremental Detection:** Patch system compares database state against previous manifest to identify only new/changed files
         - **Example Flow:** Upload base → DB records → Patch v1.0.0 created → Temp cleanup → Upload sprites → DB updated → Compare vs v1.0.0 → Patch v1.0.1 (sprites only) → Cleanup
         - **Zero Duplication:** Eliminates previous issue where files were stored both as originals in `cache_files/` AND in patch ZIPs
+    - **Batch Upload Fixes (Oct 14, 2025):** Resolved critical issues with "Browse Directory" uploads:
+        - **Single Patch Per Upload:** Fixed multiple patch generation by deferring manifest/patch creation until all batches complete via new `finalizeUpload()` endpoint
+        - **Missing Files Fix:** Reduced batch sizes from 50/20 to 15/15 files to respect PHP `max_file_uploads=20` limit, preventing silent file drops
+        - **Batch Flow:** Individual batch uploads skip manifest → All batches complete → Single finalize call → One patch created
+        - **PHP Limit Awareness:** Batch sizes now safely stay below default PHP upload limits with margin for error
 - **Multi-site Voting System:** Tracks votes and rewards.
 - **Client Management:** Facilitates the distribution and management of game client versions.
 
