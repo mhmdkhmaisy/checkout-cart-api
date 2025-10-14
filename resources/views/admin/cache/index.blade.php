@@ -434,6 +434,16 @@
                             v{{ $latestVersion }}
                         </span>
                     @endif
+                    @if($patches->count() > 0)
+                        <form method="POST" action="{{ route('admin.cache.patches.clear-all') }}" class="inline">
+                            @csrf
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+                                    onclick="return confirm('⚠️ Clear all patches including base patches?\n\nThis will:\n• Delete all {{ $patches->count() }} patches\n• Reset the patch system\n• Next upload will create a new base patch (v1.0.0)\n\nThis action cannot be undone!')">
+                                <i class="fas fa-broom mr-2"></i>Clear All Patches
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>

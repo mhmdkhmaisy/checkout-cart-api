@@ -1530,4 +1530,34 @@ class CacheFileController extends Controller
                 ->with('error', 'Failed to delete patch: ' . $e->getMessage());
         }
     }
+
+    public function clearAllPatches()
+    {
+        try {
+            $patches = CachePatch::all();
+            $count = $patches->count();
+
+            if ($count === 0) {
+                return redirect()->route('admin.cache.index')
+                    ->with('info', 'No patches to clear.');
+            }
+
+            foreach ($patches as $patch) {
+                $patch->deleteFile();
+                $patch->delete();
+            }
+
+            Storage::deleteDirectory('cache/patches');
+            Storage::deleteDirectory('cache/manifests');
+            Storage::makeDirectory('cache/patches');
+            Storage::makeDirectory('cache/manifests');
+
+            return redirect()->route('admin.cache.index')
+                ->with('success', "Successfully cleared all {$count} patches. Next upload will create a new base patch.");
+
+        } catch (\Exception $e) {
+            return redirect()->route('admin.cache.index')
+                ->with('error', 'Failed to clear patches: ' . $e->getMessage());
+        }
+    }
 }
