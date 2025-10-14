@@ -70,6 +70,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [CacheFileController::class, 'index'])->name('index');
         Route::get('/create', [CacheFileController::class, 'create'])->name('create');
         Route::post('/', [CacheFileController::class, 'store'])->name('store');
+        Route::post('/finalize-upload', [CacheFileController::class, 'finalizeUpload'])->name('finalize-upload');
         Route::post('/check-duplicates', [CacheFileController::class, 'checkDuplicates'])->name('check-duplicates');
         Route::post('/store-tar', [CacheFileController::class, 'storeTar'])->name('store-tar');
         Route::post('/extract-file', [CacheFileController::class, 'extractFile'])->name('extract-file');

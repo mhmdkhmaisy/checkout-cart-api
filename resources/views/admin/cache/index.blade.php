@@ -1538,15 +1538,18 @@ async function startBatchUpload() {
     }
     
     // OPTIMIZED: Upload regular files with larger batches for better speed
+    // NOTE: Batch size must respect PHP max_file_uploads limit (default 20)
+    // Setting batch size to 15 ensures we stay below the limit with margin for error
+    // If PHP max_file_uploads is increased in php.ini, these values can be adjusted upward
     if (regularFiles.length > 0) {
         // Determine optimal batch size based on average file size
         const avgFileSize = regularFiles.reduce((sum, file) => sum + file.size, 0) / regularFiles.length;
         let batchSize;
 
         if (avgFileSize < 1024 * 1024) { // < 1MB files
-            batchSize = 50; // Much larger batches for small files
+            batchSize = 15; // Safe batch size respecting PHP max_file_uploads limit (default 20)
         } else if (avgFileSize < 10 * 1024 * 1024) { // < 10MB files
-            batchSize = 20; // Larger batch size for medium files
+            batchSize = 15; // Safe batch size for medium files
         } else if (avgFileSize < 50 * 1024 * 1024) { // < 50MB files
             batchSize = 10; // Medium batch size
         } else {
@@ -1564,9 +1567,25 @@ async function startBatchUpload() {
         }
     }
     
-    // All uploads completed
+    // All uploads completed - finalize to generate single manifest/patch
     uploadCompleted = true;
     isUploading = false;
+    
+    // Call finalize endpoint to generate manifest/patch once
+    try {
+        const response = await fetch('{{ route("admin.cache.finalize-upload") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await response.json();
+        console.log('Upload finalized:', data);
+    } catch (error) {
+        console.error('Failed to finalize upload:', error);
+    }
     
     setTimeout(() => {
         hideUploadModal();

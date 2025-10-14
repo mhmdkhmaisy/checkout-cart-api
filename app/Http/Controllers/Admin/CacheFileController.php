@@ -329,8 +329,12 @@ class CacheFileController extends Controller
             }
         }
 
-        // OPTIMIZED: Regenerate manifest only ONCE at the end (also generates patch)
-        if (!empty($uploadedFiles)) {
+        // OPTIMIZED: Skip manifest generation during batch uploads to prevent multiple patches
+        // Frontend will call finalizeUpload() once all batches are complete
+        // Only auto-regenerate if this is NOT a batch upload (no relative_paths parameter)
+        $isBatchUpload = $request->has('relative_paths');
+        
+        if (!empty($uploadedFiles) && !$isBatchUpload) {
             try {
                 Artisan::call('cache:generate-manifest');
             } catch (\Exception $e) {
@@ -360,6 +364,25 @@ class CacheFileController extends Controller
             'skipped_count' => count($skippedFiles),
             'error_count' => count($errors)
         ]);
+    }
+
+    /**
+     * Finalize batch upload - generate manifest/patch once after all batches complete
+     */
+    public function finalizeUpload(Request $request)
+    {
+        try {
+            Artisan::call('cache:generate-manifest');
+            return response()->json([
+                'success' => true,
+                'message' => 'Upload finalized and manifest/patch generated successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate manifest/patch: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
