@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CacheFile;
+use App\Models\CachePatch;
+use App\Services\CachePatchService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Artisan;
@@ -318,6 +320,23 @@ class CacheFileController extends Controller
         if (!empty($uploadedFiles)) {
             try {
                 Artisan::call('cache:generate-manifest');
+                
+                $patchService = new CachePatchService();
+                $patchData = $patchService->generatePatch('cache');
+                
+                CachePatch::create([
+                    'version' => $patchData['version'],
+                    'base_version' => $patchData['base_version'],
+                    'path' => $patchData['path'],
+                    'file_manifest' => $patchData['file_manifest'],
+                    'file_count' => $patchData['file_count'],
+                    'size' => $patchData['size'],
+                    'is_base' => $patchData['is_base'],
+                ]);
+                
+                if ($patchService->shouldMergePatches()) {
+                    $patchService->mergePatches();
+                }
             } catch (\Exception $e) {
                 $errors[] = "Files uploaded but manifest generation failed: " . $e->getMessage();
             }

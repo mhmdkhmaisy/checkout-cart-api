@@ -97,6 +97,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/clear-all', [CacheBundleController::class, 'clearAll'])->name('clear-all');
             Route::get('/{bundle}/download', [CacheBundleController::class, 'download'])->name('download');
         });
+        
+        // Patch management routes
+        Route::prefix('patches')->name('patches.')->group(function () {
+            Route::get('/latest', [CacheBundleController::class, 'getLatestVersion'])->name('latest');
+            Route::post('/check-updates', [CacheBundleController::class, 'checkForUpdates'])->name('check-updates');
+            Route::get('/{patch}/download', [CacheBundleController::class, 'downloadPatch'])->name('download');
+            Route::post('/download-combined', [CacheBundleController::class, 'downloadCombinedPatches'])->name('download-combined');
+            Route::post('/merge', [CacheBundleController::class, 'mergePatches'])->name('merge');
+            Route::delete('/{patch}', [CacheBundleController::class, 'deletePatch'])->name('delete');
+        });
     });
 
 
