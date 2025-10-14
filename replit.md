@@ -29,6 +29,16 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
     - **Duplicate Detection:** Normalized to use directory paths only for accurate duplicate checking across all upload methods.
     - **Drag & Drop:** Enhanced with folder detection to gracefully handle browser restrictions, directing users to "Browse Folders" button.
     - **Cleanup Command:** `php artisan cache:fix-paths` safely repairs existing database records with incorrect paths using metadata validation.
+    - **Delta Patch System (Oct 14, 2025):** Implemented intelligent incremental patch system for efficient cache updates:
+        - **Semantic Versioning:** Automatic version management (1.0.0, 1.0.1, etc.) with proper semantic version comparison
+        - **Incremental Patches:** Only changed/new files are packaged in delta patches, drastically reducing download sizes
+        - **Base Patches:** Full cache snapshots serve as foundation for delta chains
+        - **Auto-Merge:** Automatically consolidates 15+ incremental patches into new base version for optimal performance
+        - **Manifest System:** Dual manifest storage - JSON files for full state tracking, database records for delta diffs
+        - **Smart Diffing:** MD5 hashing compares against previous full state to accurately detect changes
+        - **API Endpoints:** Client can check for updates, download individual patches, or get combined patch bundles
+        - **Artifact Exclusion:** scanDir() explicitly filters out patch system directories to prevent corruption
+        - **Storage Paths:** Patches stored in `cache/patches/`, manifests in `cache/manifests/`, combined downloads in `cache/combined/`
 - **Multi-site Voting System:** Tracks votes and rewards.
 - **Client Management:** Facilitates the distribution and management of game client versions.
 
