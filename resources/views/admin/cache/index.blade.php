@@ -1987,7 +1987,4 @@ document.addEventListener('click', function(e) {
 </script>
 @endpush
 
-<!-- Include Chunked Upload Modal -->
-@include('admin.cache.partials.chunked-upload-modal')
-
 @endsection
