@@ -39,6 +39,14 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
         - **API Endpoints:** Client can check for updates, download individual patches, or get combined patch bundles
         - **Artifact Exclusion:** scanDir() explicitly filters out patch system directories to prevent corruption
         - **Storage Paths:** Patches stored in `cache/patches/`, manifests in `cache/manifests/`, combined downloads in `cache/combined/`
+    - **Optimized Storage Architecture (Oct 14, 2025):** Refactored to eliminate duplicate storage and optimize disk usage:
+        - **Temporary Upload Processing:** Files are uploaded to `temp_uploads/` directory for processing only
+        - **Database as Authority:** Database maintains authoritative file records (metadata, hashes, paths) - not filesystem
+        - **Patch-Only Storage:** Only compressed patch ZIPs are permanently stored, original uploads are deleted after patch creation
+        - **Smart Cleanup:** Temporary files automatically deleted after patch generation, database records preserved
+        - **Incremental Detection:** Patch system compares database state against previous manifest to identify only new/changed files
+        - **Example Flow:** Upload base → DB records → Patch v1.0.0 created → Temp cleanup → Upload sprites → DB updated → Compare vs v1.0.0 → Patch v1.0.1 (sprites only) → Cleanup
+        - **Zero Duplication:** Eliminates previous issue where files were stored both as originals in `cache_files/` AND in patch ZIPs
 - **Multi-site Voting System:** Tracks votes and rewards.
 - **Client Management:** Facilitates the distribution and management of game client versions.
 
