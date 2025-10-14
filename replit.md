@@ -51,6 +51,13 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
         - **Missing Files Fix:** Reduced batch sizes from 50/20 to 15/15 files to respect PHP `max_file_uploads=20` limit, preventing silent file drops
         - **Batch Flow:** Individual batch uploads skip manifest → All batches complete → Single finalize call → One patch created
         - **PHP Limit Awareness:** Batch sizes now safely stay below default PHP upload limits with margin for error
+    - **Patch Analysis & Insights (Oct 14, 2025):** Advanced patch management tools for monitoring and debugging:
+        - **Patch Comparison:** Side-by-side diff viewer shows added, removed, and modified files between any two patch versions with color-coded visual indicators
+        - **Changelog Generation:** Automatically creates human-readable changelogs from patch metadata, listing all file changes with timestamps
+        - **File History Tracking:** Traces individual file modifications across all patches with interactive directory tree navigation
+        - **Integrity Verification:** Validates patch checksums against database records to detect corruption or tampering
+        - **View Data Modal:** Interactive collapsible directory tree showing patch contents with file paths and hashes
+        - **Security Note:** Admin routes currently lack authentication middleware (intentional for development) - must add auth before production
 - **Multi-site Voting System:** Tracks votes and rewards.
 - **Client Management:** Facilitates the distribution and management of game client versions.
 
