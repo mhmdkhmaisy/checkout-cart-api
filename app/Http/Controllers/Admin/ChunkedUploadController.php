@@ -36,7 +36,9 @@ class ChunkedUploadController extends Controller
                 'uploaded_size' => 0,
                 'tus_id' => $fileKey,
                 'status' => 'uploading',
-                'metadata' => $metadata
+                'metadata' => array_merge($metadata, [
+                    'current_path' => $metadata['currentPath'] ?? ''
+                ])
             ]);
         });
 
@@ -69,7 +71,9 @@ class ChunkedUploadController extends Controller
                     $tempPath,
                     $metadata['filename'] ?? $uploadSession->filename,
                     $metadata['relativePath'] ?? $uploadSession->relative_path,
-                    $metadata
+                    array_merge($metadata, [
+                        'current_path' => $metadata['currentPath'] ?? ($uploadSession->metadata['current_path'] ?? '')
+                    ])
                 ));
             }
         });

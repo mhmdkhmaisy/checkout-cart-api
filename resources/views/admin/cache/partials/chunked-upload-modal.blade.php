@@ -82,7 +82,8 @@ function initializeUppy() {
                 ...currentFile,
                 meta: {
                     ...currentFile.meta,
-                    relativePath: currentFile.meta.relativePath || currentFile.meta.webkitRelativePath || null
+                    relativePath: currentFile.meta.relativePath || currentFile.meta.webkitRelativePath || null,
+                    currentPath: currentNavigationPath || ''
                 }
             };
             return modifiedFile;

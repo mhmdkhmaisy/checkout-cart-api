@@ -120,9 +120,29 @@ class ProcessUploadedFile implements ShouldQueue
             // SECURITY: Use sanitized values for database queries
             $safeFilename = $this->sanitizeFilename($this->filename);
             $safePath = $this->sanitizePath($this->relativePath);
-            
+            $currentPath = $this->sanitizePath($this->metadata['current_path'] ?? '');
+
+            // Combine current path with relative path for final directory
+            $finalPath = $safePath;
+            if ($currentPath && $safePath) {
+                $finalPath = $currentPath . '/' . $safePath;
+            } elseif ($currentPath) {
+                $finalPath = $currentPath;
+            }
+
+            // Extract directory path (excluding filename)
+            $directoryPath = null;
+            if ($finalPath) {
+                $pathParts = explode('/', $finalPath);
+                // Check if the last part is the filename
+                if (end($pathParts) === $safeFilename) {
+                    array_pop($pathParts); // Remove filename from path
+                }
+                $directoryPath = !empty($pathParts) ? implode('/', $pathParts) : null;
+            }
+
             $existing = CacheFile::where('filename', $safeFilename)
-                ->where('relative_path', $safePath)
+                ->where('relative_path', $directoryPath)
                 ->first();
 
             if ($existing && $existing->hash === $hash) {
@@ -141,11 +161,18 @@ class ProcessUploadedFile implements ShouldQueue
                 return;
             }
 
-            // SECURITY: Use sanitized filename with unique prefix to prevent collisions
-            $safeFilename = $this->sanitizeFilename($this->filename);
-            $storagePath = 'cache_files/' . uniqid() . '_' . $safeFilename;
+            // SECURITY: Use sanitized filename with directory structure
+            // Store file with directory structure if present
+            if ($directoryPath) {
+                $storagePath = 'cache_files/' . $directoryPath . '/' . $safeFilename;
+                $storageDir = 'cache_files/' . $directoryPath;
+            } else {
+                $storagePath = 'cache_files/' . $safeFilename;
+                $storageDir = 'cache_files';
+            }
+
             $destinationPath = storage_path('app/' . $storagePath);
-            
+
             $destinationDir = dirname($destinationPath);
             if (!is_dir($destinationDir)) {
                 mkdir($destinationDir, 0755, true);
@@ -153,19 +180,6 @@ class ProcessUploadedFile implements ShouldQueue
 
             if (!rename($this->tempFilePath, $destinationPath)) {
                 throw new \Exception('Failed to move file to final destination');
-            }
-
-            // Extract directory path from relative path
-            // The relativePath from frontend may include the filename (e.g., "folder/file.txt")
-            // We need to store only the directory path (e.g., "folder")
-            $directoryPath = null;
-            if ($safePath) {
-                $pathParts = explode('/', $safePath);
-                // Check if the last part is the filename by comparing with the actual filename
-                if (end($pathParts) === $safeFilename) {
-                    array_pop($pathParts); // Remove filename from path
-                }
-                $directoryPath = !empty($pathParts) ? implode('/', $pathParts) : null;
             }
 
             CacheFile::updateOrCreate(
@@ -182,6 +196,8 @@ class ProcessUploadedFile implements ShouldQueue
                     'metadata' => array_merge([
                         'original_path' => $safePath,
                         'directory_path' => $directoryPath,
+                        'current_path' => $currentPath,
+                        'final_path' => $finalPath,
                         'file_extension' => pathinfo($safeFilename, PATHINFO_EXTENSION),
                         'uploaded_via_chunks' => true,
                         'upload_time' => now()->toISOString(),

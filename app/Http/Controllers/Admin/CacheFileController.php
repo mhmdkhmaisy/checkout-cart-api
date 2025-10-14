@@ -266,7 +266,8 @@ class CacheFileController extends Controller
         $request->validate([
             'files.*' => 'required|file|max:1048576', // 1GB max per file - supports ALL file types
             'folders.*' => 'file|max:1048576', // For folder uploads
-            'preserve_structure' => 'boolean'
+            'preserve_structure' => 'boolean',
+            'current_path' => 'nullable|string'
         ]);
 
         $uploadedFiles = [];
@@ -275,6 +276,7 @@ class CacheFileController extends Controller
         $preserveStructure = $request->input('preserve_structure', true);
         $relativePaths = $request->input('relative_paths', []);
         $recordsToInsert = [];
+        $currentPath = $request->input('current_path', '');
 
         // Handle individual files with enhanced multi-file support
         if ($request->hasFile('files')) {
@@ -292,7 +294,7 @@ class CacheFileController extends Controller
             }
 
             // Process in optimized batch
-            $result = $this->processBatchUpload($fileData, $preserveStructure);
+            $result = $this->processBatchUpload($fileData, $preserveStructure, $currentPath);
             $uploadedFiles = array_merge($uploadedFiles, $result['uploaded']);
             $skippedFiles = array_merge($skippedFiles, $result['skipped']);
             $errors = array_merge($errors, $result['errors']);
@@ -302,7 +304,7 @@ class CacheFileController extends Controller
         if ($request->hasFile('folders')) {
             foreach ($request->file('folders') as $zipFile) {
                 try {
-                    $result = $this->processZipUpload($zipFile, $preserveStructure);
+                    $result = $this->processZipUpload($zipFile, $preserveStructure, $currentPath);
                     $uploadedFiles = array_merge($uploadedFiles, $result['uploaded']);
                     $skippedFiles = array_merge($skippedFiles, $result['skipped']);
                     $errors = array_merge($errors, $result['errors']);
@@ -352,11 +354,13 @@ class CacheFileController extends Controller
     {
         $request->validate([
             'tar_file' => 'required|file|max:2097152', // 2GB max for TAR files
-            'preserve_structure' => 'boolean'
+            'preserve_structure' => 'boolean',
+            'current_path' => 'nullable|string'
         ]);
 
         $tarFile = $request->file('tar_file');
         $preserveStructure = $request->input('preserve_structure', true);
+        $currentPath = $request->input('current_path', '');
         $extractionId = uniqid('tar_extract_');
 
         try {
@@ -374,7 +378,7 @@ class CacheFileController extends Controller
             ], 3600); // 1 hour cache
 
             // Start background extraction process
-            $this->extractTarInBackground($fullTempPath, $extractionId, $preserveStructure);
+            $this->extractTarInBackground($fullTempPath, $extractionId, $preserveStructure, $currentPath);
 
             return response()->json([
                 'success' => true,
@@ -705,7 +709,7 @@ class CacheFileController extends Controller
     /**
      * Extract TAR file in background with progress tracking
      */
-    private function extractTarInBackground($tarPath, $extractionId, $preserveStructure = true)
+    private function extractTarInBackground($tarPath, $extractionId, $preserveStructure = true, $currentPath = '')
     {
         try {
             // Update status to processing
@@ -776,13 +780,18 @@ class CacheFileController extends Controller
                             $fullRelativePath = str_replace($extractPath . DIRECTORY_SEPARATOR, '', $fullPath);
                             // Convert backslashes to forward slashes
                             $fullRelativePath = str_replace('\\', '/', $fullRelativePath);
-                            
+
                             // Extract ONLY the directory path, excluding the filename
                             $pathParts = explode('/', $fullRelativePath);
                             array_pop($pathParts); // Remove filename
                             $directoryPath = !empty($pathParts) ? implode('/', $pathParts) : null;
+
+                            // Prepend current path if present
+                            if ($currentPath) {
+                                $directoryPath = $directoryPath ? ($currentPath . '/' . $directoryPath) : $currentPath;
+                            }
                         }
-                        
+
                         $result = $this->processExtractedFile($fileInfo, $directoryPath);
                         if ($result['success']) {
                             if ($result['skipped']) {
@@ -793,7 +802,7 @@ class CacheFileController extends Controller
                         } else {
                             $errors[] = $result['error'];
                         }
-                        
+
                         $processed++;
                         
                         // Update progress every 10 files or on last file
@@ -852,7 +861,7 @@ class CacheFileController extends Controller
     /**
      * OPTIMIZED: Batch process multiple file uploads to reduce DB queries
      */
-    private function processBatchUpload(array $fileData, $preserveStructure = true): array
+    private function processBatchUpload(array $fileData, $preserveStructure = true, $currentPath = ''): array
     {
         $uploadedFiles = [];
         $skippedFiles = [];
@@ -863,7 +872,15 @@ class CacheFileController extends Controller
         foreach ($fileData as $data) {
             $originalName = $data['file']->getClientOriginalName();
             $relativePath = $data['relativePath'];
-            $fullRelativePath = ($relativePath && $preserveStructure) ? $relativePath : null;
+            // Prepend current path to relative path if present
+            if ($relativePath && $preserveStructure) {
+                $fullRelativePath = $currentPath ? ($currentPath . '/' . $relativePath) : $relativePath;
+            } elseif ($currentPath && !$relativePath) {
+                // No relative path but we're in a subdirectory - use current path
+                $fullRelativePath = $currentPath;
+            } else {
+                $fullRelativePath = null;
+            }
 
             $checkData[] = [
                 'filename' => $originalName,
@@ -897,20 +914,30 @@ class CacheFileController extends Controller
                 $existing = $existingFiles->get($key);
 
                 // Store file first - preserve directory structure if provided
-                if ($fullRelativePath && $preserveStructure) {
+                if ($fullRelativePath) {
                     // Sanitize the relative path to prevent directory traversal
                     $safePath = str_replace(['..', '\\'], ['', '/'], $fullRelativePath);
                     $safePath = trim($safePath, '/');
-                    
-                    // Preserve the full directory structure
-                    $directory = dirname($safePath);
-                    if ($directory && $directory !== '.') {
+
+                    // Extract directory path (excluding filename)
+                    $pathParts = explode('/', $safePath);
+                    array_pop($pathParts); // Remove filename
+                    $directory = implode('/', $pathParts);
+
+                    if ($directory) {
                         $storagePath = 'cache_files/' . $directory . '/' . $originalName;
                         $storageDir = 'cache_files/' . $directory;
                     } else {
                         $storagePath = 'cache_files/' . $originalName;
                         $storageDir = 'cache_files';
                     }
+                    $path = $file->storeAs($storageDir, $originalName);
+                } elseif ($currentPath) {
+                    // Upload to current directory
+                    $safePath = str_replace(['..', '\\'], ['', '/'], $currentPath);
+                    $safePath = trim($safePath, '/');
+                    $storagePath = 'cache_files/' . $safePath . '/' . $originalName;
+                    $storageDir = 'cache_files/' . $safePath;
                     $path = $file->storeAs($storageDir, $originalName);
                 } else {
                     // Flat storage with unique ID
@@ -1068,7 +1095,7 @@ class CacheFileController extends Controller
     /**
      * Enhanced ZIP file processing with better directory structure handling
      */
-    private function processZipUpload($zipFile, $preserveStructure = true): array
+    private function processZipUpload($zipFile, $preserveStructure = true, $currentPath = ''): array
     {
         $uploadedFiles = [];
         $skippedFiles = [];
@@ -1089,7 +1116,7 @@ class CacheFileController extends Controller
                 new RecursiveDirectoryIterator($extractPath, RecursiveDirectoryIterator::SKIP_DOTS),
                 RecursiveIteratorIterator::LEAVES_ONLY
             );
-            
+
             foreach ($iterator as $fileInfo) {
                 if ($fileInfo->isFile()) {
                     try {
@@ -1100,13 +1127,18 @@ class CacheFileController extends Controller
                             $fullRelativePath = str_replace($extractPath . DIRECTORY_SEPARATOR, '', $fullPath);
                             // Convert backslashes to forward slashes
                             $fullRelativePath = str_replace('\\', '/', $fullRelativePath);
-                            
+
                             // Extract ONLY the directory path, excluding the filename
                             $pathParts = explode('/', $fullRelativePath);
                             array_pop($pathParts); // Remove filename
                             $directoryPath = !empty($pathParts) ? implode('/', $pathParts) : null;
+
+                            // Prepend current path if present
+                            if ($currentPath) {
+                                $directoryPath = $directoryPath ? ($currentPath . '/' . $directoryPath) : $currentPath;
+                            }
                         }
-                        
+
                         $result = $this->processExtractedFile($fileInfo, $directoryPath);
                         if ($result['success']) {
                             if ($result['skipped']) {

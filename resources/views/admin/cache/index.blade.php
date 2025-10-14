@@ -618,6 +618,7 @@ let currentView = 'grid';
 let selectedFileItems = new Set();
 let contextMenuTarget = null;
 let confirmationCallback = null;
+let currentNavigationPath = '{{ $currentPath }}';
 
 // Extractable file extensions
 const extractableExtensions = ['zip', 'tar', 'gz', 'rar', '7z', 'tgz'];
@@ -1027,7 +1028,10 @@ function renameSelectedFile() {
 function navigateTo(path) {
     // Clean up the path
     path = (path || '').replace(/^\/+|\/+$/g, '');
-    
+
+    // Update current navigation path
+    currentNavigationPath = path;
+
     // Reload page with new path parameter
     const url = new URL(window.location);
     if (path) {
@@ -1480,6 +1484,7 @@ async function uploadTarFile(file, index) {
         const formData = new FormData();
         formData.append('tar_file', file);
         formData.append('preserve_structure', document.getElementById('preserve-structure').checked ? '1' : '0');
+        formData.append('current_path', currentNavigationPath);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
         
         const xhr = new XMLHttpRequest();
@@ -1600,6 +1605,7 @@ async function uploadBatchOptimized(batch) {
         });
 
         formData.append('preserve_structure', document.getElementById('preserve-structure').checked ? '1' : '0');
+        formData.append('current_path', currentNavigationPath);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
         const xhr = new XMLHttpRequest();
@@ -1690,6 +1696,7 @@ async function uploadSingleFileOptimized(file, index) {
         const formData = new FormData();
         formData.append('files[]', file);
         formData.append('preserve_structure', document.getElementById('preserve-structure').checked ? '1' : '0');
+        formData.append('current_path', currentNavigationPath);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
         
         // Add relative path for folder uploads - PRESERVE FULL DIRECTORY STRUCTURE
