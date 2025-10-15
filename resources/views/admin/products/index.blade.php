@@ -47,6 +47,19 @@
                     </div>
 
                     <div>
+                        <label for="category_id" class="block text-sm font-medium text-dragon-red mb-2">Category</label>
+                        <select id="category_id" 
+                                name="category_id"
+                                class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent">
+                            <option value="">No Category</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                        <div id="category_id_error" class="text-red-400 text-sm mt-1 hidden"></div>
+                    </div>
+
+                    <div>
                         <label for="item_id" class="block text-sm font-medium text-dragon-red mb-2">Item ID</label>
                         <input type="number" 
                                id="item_id" 
@@ -112,9 +125,11 @@
                     <tr>
                         <th class="px-6 py-4 text-left font-semibold text-dragon-red">ID</th>
                         <th class="px-6 py-4 text-left font-semibold text-dragon-red">Product Name</th>
+                        <th class="px-6 py-4 text-left font-semibold text-dragon-red">Category</th>
                         <th class="px-6 py-4 text-left font-semibold text-dragon-red">Item ID</th>
                         <th class="px-6 py-4 text-left font-semibold text-dragon-red">Qty Unit</th>
                         <th class="px-6 py-4 text-left font-semibold text-dragon-red">Price</th>
+                        <th class="px-6 py-4 text-left font-semibold text-dragon-red">Type</th>
                         <th class="px-6 py-4 text-left font-semibold text-dragon-red">Status</th>
                         <th class="px-6 py-4 text-left font-semibold text-dragon-red">Actions</th>
                     </tr>
@@ -124,9 +139,23 @@
                         <tr class="hover:bg-dragon-surface transition-colors" data-product-id="{{ $product->id }}">
                             <td class="px-6 py-4 text-dragon-silver">{{ $product->id }}</td>
                             <td class="px-6 py-4 font-medium text-dragon-silver">{{ $product->product_name }}</td>
+                            <td class="px-6 py-4 text-dragon-silver">
+                                {{ $product->category ? $product->category->name : '-' }}
+                            </td>
                             <td class="px-6 py-4 text-dragon-silver">{{ $product->item_id }}</td>
                             <td class="px-6 py-4 text-dragon-silver">{{ $product->qty_unit }}</td>
                             <td class="px-6 py-4 text-dragon-silver">${{ number_format($product->price, 2) }}</td>
+                            <td class="px-6 py-4">
+                                @if($product->bundleItems->count() > 0)
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-purple-600 text-purple-100">
+                                        Bundle ({{ $product->bundleItems->count() }} items)
+                                    </span>
+                                @else
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-600 text-blue-100">
+                                        Single
+                                    </span>
+                                @endif
+                            </td>
                             <td class="px-6 py-4">
                                 <span class="px-3 py-1 rounded-full text-xs font-medium
                                     @if($product->is_active) bg-green-600 text-green-100
@@ -146,7 +175,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-dragon-silver-dark">
+                            <td colspan="9" class="px-6 py-8 text-center text-dragon-silver-dark">
                                 No products found. <button onclick="showCreateForm()" 
                                                          class="text-dragon-red hover:underline">Create your first product</button>
                             </td>
@@ -216,6 +245,7 @@ function editProduct(productId) {
             document.getElementById('form-method').value = 'PUT';
             document.getElementById('product-id').value = product.id;
             document.getElementById('product_name').value = product.product_name || '';
+            document.getElementById('category_id').value = product.category_id || '';
             document.getElementById('item_id').value = product.item_id || '';
             document.getElementById('qty_unit').value = product.qty_unit || '';
             document.getElementById('price').value = product.price || '';
