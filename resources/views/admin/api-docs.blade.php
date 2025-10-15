@@ -4,10 +4,13 @@
 
 @section('content')
 <style>
-    .sidebar-nav {
+    .sidebar-wrapper {
         position: sticky;
         top: 20px;
-        max-height: calc(100vh - 100px);
+        align-self: flex-start;
+    }
+    .sidebar-nav {
+        max-height: calc(100vh - 40px);
         overflow-y: auto;
     }
     .sidebar-nav a {
@@ -105,7 +108,8 @@
     <div class="flex gap-8">
         <!-- Sidebar Navigation -->
         <div class="w-64 flex-shrink-0">
-            <div class="sidebar-nav glass-effect rounded-lg p-4 border border-dragon-border">
+            <div class="sidebar-wrapper">
+                <div class="sidebar-nav glass-effect rounded-lg p-4 border border-dragon-border">
                 <h3 class="text-lg font-bold text-dragon-red mb-4 flex items-center">
                     <i class="fas fa-book mr-2"></i>API Reference
                 </h3>
@@ -144,6 +148,7 @@
                         <i class="fas fa-exclamation-triangle mr-2 w-4"></i>Error Handling
                     </a>
                 </nav>
+                </div>
             </div>
         </div>
 
@@ -512,193 +517,238 @@ Headers:
                     </div>
                 </section>
 
-                <!-- Cache Management API -->
+                <!-- Cache Patch Management API -->
                 <section id="cache" class="mb-12">
                     <h2 class="text-3xl font-bold text-dragon-red mb-6 flex items-center">
-                        <i class="fas fa-database mr-3"></i>Cache Management API
+                        <i class="fas fa-database mr-3"></i>Cache Patch Management API
                     </h2>
                     <p class="text-dragon-silver-dark mb-6">
-                        The Cache API provides access to game cache files, including models, textures, sprites, and configuration data. These endpoints are typically used by game launchers and clients.
+                        The Patch Management API provides intelligent incremental updates for game cache files. Using semantic versioning and delta patches, clients can efficiently download only changed files instead of the entire cache. These endpoints are designed for game launchers and clients that need efficient update mechanisms.
                     </p>
                     
-                    <!-- Get Manifest -->
+                    <!-- Get Latest Version -->
                     <div class="endpoint-card bg-dragon-surface rounded-lg p-6 mb-6 border border-dragon-border">
                         <div class="flex items-center justify-between mb-4">
                             <div class="flex items-center gap-3">
                                 <span class="method-badge method-get">GET</span>
-                                <code class="text-dragon-silver text-lg">/api/cache/manifest</code>
+                                <code class="text-dragon-silver text-lg">/admin/cache/patches/latest</code>
                             </div>
                         </div>
                         
                         <p class="text-dragon-silver-dark mb-4">
-                            Returns the complete cache manifest with file structure, checksums, and metadata. Use this to determine which files need to be downloaded or updated.
+                            Returns the latest available patch version and a list of all patches. Use this to check what version is currently available.
                         </p>
+                        
+                        <div class="mb-4">
+                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Request Example</h4>
+                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-dragon-silver">GET {{ url('/admin/cache/patches/latest') }}</code></pre>
+                        </div>
                         
                         <div class="mb-4">
                             <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Response (200 OK)</h4>
                             <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-green-400">{
-  "version": "20241015120000",
-  "generated_at": "2024-10-15T12:00:00.367721Z",
-  "total_files": 1547,
-  "total_directories": 42,
-  "total_size": 157286400,
-  "structure": {
-    "preserve_paths": true,
-    "directory_tree": [
-      {
-        "type": "directory",
-        "name": "models",
-        "path": "models",
-        "children": [...]
-      }
-    ],
-    "flat_files": [
-      {
-        "filename": "main_file_sprites.dat",
-        "path": "main_file_sprites.dat",
-        "size": 2048000,
-        "hash": "a1b2c3d4e5f6...",
-        "type": "file"
-      }
-    ]
-  },
-  "metadata": {
-    "format_version": "2.0",
-    "supports_directory_structure": true,
-    "compression": "gzip"
-  }
+  "success": true,
+  "latest_version": "1.2.5",
+  "patches": [
+    {
+      "id": 15,
+      "version": "1.2.5",
+      "is_base": false,
+      "base_version": "1.2.0",
+      "file_count": 23,
+      "size": 5242880,
+      "created_at": "2024-10-15T14:30:00Z"
+    },
+    {
+      "id": 14,
+      "version": "1.2.0",
+      "is_base": true,
+      "base_version": null,
+      "file_count": 1547,
+      "size": 157286400,
+      "created_at": "2024-10-14T10:00:00Z"
+    }
+  ],
+  "total_patches": 15
 }</code></pre>
+                        </div>
+                        
+                        <div class="bg-dragon-black/50 rounded p-3 border border-dragon-border">
+                            <h4 class="text-sm font-semibold text-dragon-silver-dark mb-2"><i class="fas fa-info-circle mr-2"></i>Patch Types</h4>
+                            <ul class="text-sm text-dragon-silver-dark space-y-1 list-disc list-inside">
+                                <li><strong>Base Patch:</strong> Full cache snapshot containing all files</li>
+                                <li><strong>Delta Patch:</strong> Incremental patch containing only changed/new files</li>
+                                <li>Version format follows semantic versioning (major.minor.patch)</li>
+                            </ul>
                         </div>
                     </div>
                     
-                    <!-- Download Cache -->
+                    <!-- Check for Updates -->
                     <div class="endpoint-card bg-dragon-surface rounded-lg p-6 mb-6 border border-dragon-border">
                         <div class="flex items-center justify-between mb-4">
                             <div class="flex items-center gap-3">
-                                <span class="method-badge method-get">GET</span>
-                                <code class="text-dragon-silver text-lg">/api/cache/download</code>
+                                <span class="method-badge method-post">POST</span>
+                                <code class="text-dragon-silver text-lg">/admin/cache/patches/check-updates</code>
                             </div>
                         </div>
                         
                         <p class="text-dragon-silver-dark mb-4">
-                            Downloads cache files as a compressed bundle. Supports full download or selective file/directory downloads.
+                            Checks if updates are available by comparing the client's current version with the latest available version. Returns a list of patches needed to update.
                         </p>
                         
                         <div class="mb-4">
-                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Query Parameters</h4>
+                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Request Parameters</h4>
                             <div class="bg-dragon-black/50 rounded border border-dragon-border p-4 space-y-2">
                                 <div class="flex items-start gap-3">
-                                    <code class="text-blue-400">mode</code>
+                                    <code class="text-blue-400">current_version</code>
                                     <span class="param-required">REQUIRED</span>
-                                    <span class="text-dragon-silver-dark text-sm">string - "full" or "selective"</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <code class="text-blue-400">files</code>
-                                    <span class="param-optional">OPTIONAL</span>
-                                    <span class="text-dragon-silver-dark text-sm">string - Comma-separated list of filenames (for selective mode)</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <code class="text-blue-400">paths</code>
-                                    <span class="param-optional">OPTIONAL</span>
-                                    <span class="text-dragon-silver-dark text-sm">string - Comma-separated list of directory paths (for selective mode)</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <code class="text-blue-400">preserve_structure</code>
-                                    <span class="param-optional">OPTIONAL</span>
-                                    <span class="text-dragon-silver-dark text-sm">boolean - Maintain directory structure (default: true)</span>
+                                    <span class="text-dragon-silver-dark text-sm">string - Client's current cache version (e.g., "1.2.0")</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="mb-4">
-                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Examples</h4>
-                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-dragon-silver"># Download all files with structure
-GET {{ url('/api/cache/download?mode=full&preserve_structure=true') }}
+                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Request Example</h4>
+                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-dragon-silver">POST {{ url('/admin/cache/patches/check-updates') }}
+Content-Type: application/json
 
-# Download specific directory
-GET {{ url('/api/cache/download?mode=selective&paths=models/weapons') }}
-
-# Download specific files (flattened)
-GET {{ url('/api/cache/download?mode=selective&files=config.dat,items.dat&preserve_structure=false') }}</code></pre>
+{
+  "current_version": "1.2.0"
+}</code></pre>
                         </div>
                         
                         <div class="mb-4">
-                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Response</h4>
-                            <p class="text-dragon-silver-dark text-sm mb-2">Binary ZIP file download with appropriate headers:</p>
-                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-dragon-silver">Content-Type: application/zip
-Content-Disposition: attachment; filename="cache-20241015120000.zip"
-Content-Length: 157286400</code></pre>
+                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Response (200 OK) - Update Available</h4>
+                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-green-400">{
+  "success": true,
+  "update_available": true,
+  "current_version": "1.2.0",
+  "latest_version": "1.2.5",
+  "patches_needed": [
+    {
+      "id": 12,
+      "version": "1.2.1",
+      "size": 1048576,
+      "download_url": "/admin/cache/patches/12/download"
+    },
+    {
+      "id": 13,
+      "version": "1.2.3",
+      "size": 2097152,
+      "download_url": "/admin/cache/patches/13/download"
+    },
+    {
+      "id": 15,
+      "version": "1.2.5",
+      "size": 5242880,
+      "download_url": "/admin/cache/patches/15/download"
+    }
+  ],
+  "total_download_size": 8388608,
+  "combined_download_url": "/admin/cache/patches/download-combined?from_version=1.2.0"
+}</code></pre>
                         </div>
-                    </div>
-                    
-                    <!-- Directory Tree -->
-                    <div class="endpoint-card bg-dragon-surface rounded-lg p-6 mb-6 border border-dragon-border">
-                        <div class="flex items-center gap-3 mb-4">
-                            <span class="method-badge method-get">GET</span>
-                            <code class="text-dragon-silver text-lg">/api/cache/directory-tree</code>
-                        </div>
-                        <p class="text-dragon-silver-dark mb-4">Returns hierarchical directory structure for cache navigation.</p>
-                    </div>
-                    
-                    <!-- Search -->
-                    <div class="endpoint-card bg-dragon-surface rounded-lg p-6 mb-6 border border-dragon-border">
-                        <div class="flex items-center gap-3 mb-4">
-                            <span class="method-badge method-get">GET</span>
-                            <code class="text-dragon-silver text-lg">/api/cache/search</code>
-                        </div>
-                        <p class="text-dragon-silver-dark mb-4">Search cache files and directories by name, path, or extension.</p>
                         
                         <div class="mb-4">
-                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Query Parameters</h4>
-                            <div class="bg-dragon-black/50 rounded border border-dragon-border p-4 space-y-2">
+                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Response (200 OK) - No Update Needed</h4>
+                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-dragon-silver">{
+  "success": true,
+  "update_available": false,
+  "current_version": "1.2.5",
+  "latest_version": "1.2.5",
+  "message": "Client is up to date"
+}</code></pre>
+                        </div>
+                        
+                        <div class="bg-dragon-black/50 rounded p-3 border border-dragon-border">
+                            <h4 class="text-sm font-semibold text-dragon-silver-dark mb-2"><i class="fas fa-lightbulb mr-2"></i>Update Strategy</h4>
+                            <ul class="text-sm text-dragon-silver-dark space-y-1 list-disc list-inside">
+                                <li>Download patches individually using the <code>download_url</code> for each patch</li>
+                                <li>Or use <code>combined_download_url</code> to get all patches in one ZIP file</li>
+                                <li>Apply patches in order from oldest to newest</li>
+                                <li>Each patch contains only files that changed since the previous version</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Download Individual Patch -->
+                    <div class="endpoint-card bg-dragon-surface rounded-lg p-6 mb-6 border border-dragon-border">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="method-badge method-get">GET</span>
+                            <code class="text-dragon-silver text-lg">/admin/cache/patches/{patch_id}/download</code>
+                        </div>
+                        
+                        <p class="text-dragon-silver-dark mb-4">
+                            Downloads a specific patch file by ID. Returns a ZIP archive containing all changed files for that version.
+                        </p>
+                        
+                        <div class="mb-4">
+                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Path Parameters</h4>
+                            <div class="bg-dragon-black/50 rounded border border-dragon-border p-4">
                                 <div class="flex items-start gap-3">
-                                    <code class="text-blue-400">q</code>
+                                    <code class="text-blue-400">patch_id</code>
                                     <span class="param-required">REQUIRED</span>
-                                    <span class="text-dragon-silver-dark text-sm">string - Search query</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <code class="text-blue-400">type</code>
-                                    <span class="param-optional">OPTIONAL</span>
-                                    <span class="text-dragon-silver-dark text-sm">string - Filter by "file", "directory", or "all" (default)</span>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <code class="text-blue-400">extension</code>
-                                    <span class="param-optional">OPTIONAL</span>
-                                    <span class="text-dragon-silver-dark text-sm">string - Filter by file extension (e.g., "dat", "idx")</span>
+                                    <span class="text-dragon-silver-dark text-sm">integer - The patch ID to download</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="mb-4">
                             <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Example</h4>
-                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-dragon-silver">GET {{ url('/api/cache/search?q=weapon&type=file&extension=dat') }}</code></pre>
+                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-dragon-silver">GET {{ url('/admin/cache/patches/15/download') }}</code></pre>
                         </div>
-                    </div>
-                    
-                    <!-- Stats -->
-                    <div class="endpoint-card bg-dragon-surface rounded-lg p-6 mb-6 border border-dragon-border">
-                        <div class="flex items-center gap-3 mb-4">
-                            <span class="method-badge method-get">GET</span>
-                            <code class="text-dragon-silver text-lg">/api/cache/stats</code>
-                        </div>
-                        <p class="text-dragon-silver-dark mb-4">Get detailed cache statistics including file counts, sizes, and distribution by type.</p>
-                    </div>
-                    
-                    <!-- Download Individual File -->
-                    <div class="endpoint-card bg-dragon-surface rounded-lg p-6 mb-6 border border-dragon-border">
-                        <div class="flex items-center gap-3 mb-4">
-                            <span class="method-badge method-get">GET</span>
-                            <code class="text-dragon-silver text-lg">/api/cache/file/{filename}</code>
-                        </div>
-                        <p class="text-dragon-silver-dark mb-4">Download a specific cache file by filename. Use the <code>path</code> parameter for files with duplicate names in different directories.</p>
                         
                         <div class="mb-4">
-                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Examples</h4>
-                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-dragon-silver"># Download from root
-GET {{ url('/api/cache/file/config.dat') }}
-
-# Download from specific path
-GET {{ url('/api/cache/file/player.dat?path=models/characters/player.dat') }}</code></pre>
+                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Response</h4>
+                            <p class="text-dragon-silver-dark text-sm mb-2">Binary ZIP file download with headers:</p>
+                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-dragon-silver">Content-Type: application/zip
+Content-Disposition: attachment; filename="cache-patch-1.2.5.zip"
+Content-Length: 5242880</code></pre>
+                        </div>
+                    </div>
+                    
+                    <!-- Download Combined Patches -->
+                    <div class="endpoint-card bg-dragon-surface rounded-lg p-6 mb-6 border border-dragon-border">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="method-badge method-post">POST</span>
+                            <code class="text-dragon-silver text-lg">/admin/cache/patches/download-combined</code>
+                        </div>
+                        
+                        <p class="text-dragon-silver-dark mb-4">
+                            Downloads multiple patches combined into a single ZIP file. This is more efficient than downloading patches individually when multiple updates are needed.
+                        </p>
+                        
+                        <div class="mb-4">
+                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Query Parameters</h4>
+                            <div class="bg-dragon-black/50 rounded border border-dragon-border p-4 space-y-2">
+                                <div class="flex items-start gap-3">
+                                    <code class="text-blue-400">from_version</code>
+                                    <span class="param-required">REQUIRED</span>
+                                    <span class="text-dragon-silver-dark text-sm">string - Starting version (e.g., "1.2.0")</span>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <code class="text-blue-400">to_version</code>
+                                    <span class="param-optional">OPTIONAL</span>
+                                    <span class="text-dragon-silver-dark text-sm">string - Target version (defaults to latest)</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Example</h4>
+                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-dragon-silver">POST {{ url('/admin/cache/patches/download-combined?from_version=1.2.0') }}</code></pre>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="text-sm font-semibold text-dragon-red mb-2 uppercase tracking-wide">Response</h4>
+                            <p class="text-dragon-silver-dark text-sm mb-2">Binary ZIP file containing all patches from the specified version to latest:</p>
+                            <pre class="bg-dragon-black rounded border border-dragon-border"><code class="text-dragon-silver">Content-Type: application/zip
+Content-Disposition: attachment; filename="patches_1.2.0_to_1.2.5.zip"
+Content-Length: 8388608</code></pre>
+                        </div>
+                        
+                        <div class="bg-blue-500/10 border-l-4 border-blue-500 p-4 rounded">
+                            <p class="text-dragon-silver text-sm"><i class="fas fa-rocket mr-2"></i><strong>Performance Tip:</strong> Use combined downloads when updating from older versions. The system automatically merges all delta patches into a single download.</p>
                         </div>
                     </div>
                 </section>
