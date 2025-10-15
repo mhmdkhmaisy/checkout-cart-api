@@ -58,6 +58,10 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
         - **Integrity Verification:** Validates patch checksums against database records to detect corruption or tampering
         - **View Data Modal:** Interactive collapsible directory tree showing patch contents with file paths and hashes
         - **Security Note:** Admin routes currently lack authentication middleware (intentional for development) - must add auth before production
+    - **UI Improvements (Oct 15, 2025):** Enhanced clarity and usability of patch comparison system:
+        - **4-Metric Display:** Patch comparison modal now displays 4 separate stat boxes (Added Files, Modified Files, Removed Files, Total Changes) instead of 3, eliminating confusion about what "Total Changes" represents
+        - **Visual Hierarchy:** Color-coded metrics (green for added, yellow for modified, red for removed, blue for total) make it immediately clear what changed between patch versions
+        - **Accurate Totals:** Total Changes now explicitly shows sum of added + modified + removed files, preventing misinterpretation when comparing patches with different file counts
 - **Multi-site Voting System:** Tracks votes and rewards.
 - **Client Management:** Facilitates the distribution and management of game client versions.
 
@@ -66,6 +70,15 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
 - **Performance Optimization:** Critical PHP upload limits (`upload_max_filesize`, `post_max_size`, `memory_limit`, `max_execution_time`, `max_input_time`) are configured for handling large files.
 - **Queue System:** Laravel queues are essential for asynchronous processing of chunked uploads and file manipulations.
 - **API Endpoints:** A structured API provides endpoints for donations, cache management (manifest, download, stats), and voting.
+- **API Documentation (Oct 15, 2025):** Complete redesign with GitLab-inspired styling:
+    - **Modern Layout:** Sticky sidebar navigation with smooth scrolling and active section highlighting
+    - **HTTP Method Badges:** Color-coded badges (GET/POST/PATCH/DELETE) for instant endpoint identification
+    - **Comprehensive Examples:** Every endpoint includes detailed request/response examples with actual data
+    - **Parameter Documentation:** Clear indicators for required vs optional parameters with type information
+    - **Dragon Theme:** Consistent use of dragon color schema (#d40000 red, #0a0a0a black, #e8e8e8 silver) matching admin panel
+    - **Interactive Features:** Copy-to-clipboard buttons for all code examples, collapsible sections, hover effects
+    - **Complete Coverage:** Documents all API endpoints including Products, Checkout, Claim, Cache Management, Vote System, Client Download, Webhooks, Admin API, and Error Handling
+    - **Developer-Friendly:** Integration tips, best practices, and security notes included throughout
 
 ### External Dependencies
 - **Payment Gateways:**
