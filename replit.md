@@ -18,6 +18,18 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
 
 **Technical Implementations & Feature Specifications:**
 - **Donation Management:** Supports PayPal and Coinbase Commerce integrations.
+    - **Product Categories (Oct 15, 2025):** Products can be organized into categories for better management:
+        - Categories table with name, description, and is_active fields
+        - Products have optional category_id foreign key relationship
+        - Category dropdown in product creation/edit forms
+        - Category column displayed in products table
+    - **Bundle/Pack System (Oct 15, 2025):** Products can contain multiple items as bundles:
+        - ProductItems table links products to multiple item_id/qty_unit pairs
+        - Dynamic bundle item management in product forms (add/remove items)
+        - Products without bundle items are single products (use main item_id/qty_unit)
+        - Products with bundle items display as "Bundle" type with item count
+        - Bundle items persist correctly through create/update operations
+        - Bundle data serialized as JSON array in API responses
 - **Cache File Distribution:**
     - Features a standard multi-file upload system with support for individual files, folders, and archive extraction (ZIP/TAR).
     - Implements a smart hashing strategy, using SHA256 for file identification and duplicate detection.
