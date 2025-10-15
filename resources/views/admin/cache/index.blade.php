@@ -443,16 +443,16 @@
                 <div class="text-xs text-dragon-silver-dark mt-1">Added Files</div>
             </div>
             <div class="glass-effect rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-red-400" id="diff-removed-count">0</div>
-                <div class="text-xs text-dragon-silver-dark mt-1">Removed Files</div>
-            </div>
-            <div class="glass-effect rounded-lg p-4 text-center">
                 <div class="text-2xl font-bold text-yellow-400" id="diff-modified-count">0</div>
                 <div class="text-xs text-dragon-silver-dark mt-1">Modified Files</div>
             </div>
+            <div class="glass-effect rounded-lg p-4 text-center">
+                <div class="text-2xl font-bold text-blue-400" id="diff-total-count">0</div>
+                <div class="text-xs text-dragon-silver-dark mt-1">Total Changes</div>
+            </div>
         </div>
 
-        <div class="flex-1 overflow-hidden">
+        <div class="flex-1 overflow-hidden max-h-[500px]">
             <div class="h-full overflow-y-auto bg-dragon-black/30 rounded p-4">
                 <div id="diff-results" class="space-y-2">
                     <!-- Diff results will be populated here -->
@@ -2249,8 +2249,8 @@ function showPatchDiff(data) {
     document.getElementById('diff-patches-info').textContent = 
         `v${from_patch.version} → v${to_patch.version}`;
     document.getElementById('diff-added-count').textContent = added.length;
-    document.getElementById('diff-removed-count').textContent = removed.length;
     document.getElementById('diff-modified-count').textContent = modified.length;
+    document.getElementById('diff-total-count').textContent = added.length + removed.length + modified.length;
     
     const resultsContainer = document.getElementById('diff-results');
     let html = '';
