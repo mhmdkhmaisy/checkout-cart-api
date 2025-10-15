@@ -92,6 +92,19 @@
                         <div id="price_error" class="text-red-400 text-sm mt-1 hidden"></div>
                     </div>
 
+                    <div class="border-t border-dragon-border pt-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="block text-sm font-medium text-dragon-red">Bundle Items (Optional)</label>
+                            <button type="button" onclick="addBundleItem()" 
+                                    class="text-sm px-3 py-1 bg-dragon-red text-white rounded hover:opacity-90">
+                                + Add Item
+                            </button>
+                        </div>
+                        <p class="text-xs text-dragon-silver-dark mb-2">Add items to create a bundle/pack. Leave empty for single product.</p>
+                        <div id="bundle-items-container" class="space-y-2">
+                        </div>
+                    </div>
+
                     <div class="flex items-center">
                         <input type="checkbox" 
                                id="is_active" 
@@ -205,7 +218,8 @@ function showCreateForm() {
     document.getElementById('submit-text').textContent = 'Create Product';
     document.getElementById('form-method').value = 'POST';
     document.getElementById('product-form').reset();
-    document.getElementById('is_active').checked = true; // Default to active
+    document.getElementById('is_active').checked = true;
+    loadBundleItems([]);
     document.getElementById('product-modal').classList.remove('hidden');
     clearErrors();
 }
@@ -250,6 +264,8 @@ function editProduct(productId) {
             document.getElementById('qty_unit').value = product.qty_unit || '';
             document.getElementById('price').value = product.price || '';
             document.getElementById('is_active').checked = Boolean(product.is_active);
+            
+            loadBundleItems(product.bundle_items || []);
             
             document.getElementById('product-modal').classList.remove('hidden');
             clearErrors();
@@ -354,6 +370,60 @@ function showMessage(message, type) {
     }, 5000);
 }
 
+let bundleItemCounter = 0;
+
+function addBundleItem(itemId = '', qtyUnit = '') {
+    const container = document.getElementById('bundle-items-container');
+    const index = bundleItemCounter++;
+    
+    const itemHtml = `
+        <div class="flex gap-2 items-start bundle-item" data-index="${index}">
+            <div class="flex-1">
+                <input type="number" 
+                       name="bundle_items[${index}][item_id]" 
+                       value="${itemId}"
+                       placeholder="Item ID" 
+                       class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
+                       required>
+            </div>
+            <div class="flex-1">
+                <input type="number" 
+                       name="bundle_items[${index}][qty_unit]" 
+                       value="${qtyUnit}"
+                       placeholder="Qty Unit" 
+                       min="1"
+                       class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
+                       required>
+            </div>
+            <button type="button" onclick="removeBundleItem(${index})" 
+                    class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                Remove
+            </button>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', itemHtml);
+}
+
+function removeBundleItem(index) {
+    const item = document.querySelector(`.bundle-item[data-index="${index}"]`);
+    if (item) {
+        item.remove();
+    }
+}
+
+function loadBundleItems(bundleItems) {
+    const container = document.getElementById('bundle-items-container');
+    container.innerHTML = '';
+    bundleItemCounter = 0;
+    
+    if (bundleItems && bundleItems.length > 0) {
+        bundleItems.forEach(item => {
+            addBundleItem(item.item_id, item.qty_unit);
+        });
+    }
+}
+
 document.getElementById('product-form').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -378,6 +448,22 @@ document.getElementById('product-form').addEventListener('submit', function(e) {
     
     // Handle checkbox
     data.is_active = document.getElementById('is_active').checked ? 1 : 0;
+    
+    // Collect bundle items
+    const bundleItems = [];
+    document.querySelectorAll('.bundle-item').forEach((item, index) => {
+        const itemId = item.querySelector('input[name*="[item_id]"]')?.value;
+        const qtyUnit = item.querySelector('input[name*="[qty_unit]"]')?.value;
+        if (itemId && qtyUnit) {
+            bundleItems.push({
+                item_id: parseInt(itemId),
+                qty_unit: parseInt(qtyUnit)
+            });
+        }
+    });
+    if (bundleItems.length > 0) {
+        data.bundle_items = bundleItems;
+    }
     
     // Add method for updates
     if (isEditing) {

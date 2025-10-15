@@ -40,11 +40,22 @@ class ProductController extends Controller
 
         $product = Product::create($data);
 
+        if ($request->has('bundle_items')) {
+            foreach ($request->bundle_items as $bundleItem) {
+                if (!empty($bundleItem['item_id']) && !empty($bundleItem['qty_unit'])) {
+                    $product->bundleItems()->create([
+                        'item_id' => $bundleItem['item_id'],
+                        'qty_unit' => $bundleItem['qty_unit']
+                    ]);
+                }
+            }
+        }
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Product created successfully.',
-                'product' => $product
+                'product' => $product->load('bundleItems')
             ]);
         }
 
@@ -87,11 +98,24 @@ class ProductController extends Controller
 
         $product->update($data);
 
+        $product->bundleItems()->delete();
+
+        if ($request->has('bundle_items')) {
+            foreach ($request->bundle_items as $bundleItem) {
+                if (!empty($bundleItem['item_id']) && !empty($bundleItem['qty_unit'])) {
+                    $product->bundleItems()->create([
+                        'item_id' => $bundleItem['item_id'],
+                        'qty_unit' => $bundleItem['qty_unit']
+                    ]);
+                }
+            }
+        }
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Product updated successfully.',
-                'product' => $product
+                'product' => $product->load('bundleItems')
             ]);
         }
 
