@@ -882,6 +882,11 @@ function updateBulkActionsDisplay() {
     const bulkActions = document.getElementById('bulk-actions');
     const selectedCount = document.getElementById('selected-count');
     
+    // Guard: Check if elements exist before accessing
+    if (!bulkActions || !selectedCount) {
+        return;
+    }
+    
     if (selectedFileItems.size > 0) {
         bulkActions.classList.remove('hidden');
         selectedCount.textContent = selectedFileItems.size;
@@ -1950,7 +1955,10 @@ function formatSpeed(bytesPerSecond) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    updateBulkActions();
+    // Only call updateBulkActions if the necessary elements exist
+    if (document.getElementById('bulk-actions')) {
+        updateBulkActions();
+    }
     setupFileBrowserDragDrop();
     
     // Hide context menu when clicking elsewhere
@@ -2216,7 +2224,12 @@ function comparePatchesAction() {
     }
     
     fetch(`/admin/cache/patches/compare?from=${fromId}&to=${toId}`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showPatchDiff(data);
@@ -2226,7 +2239,7 @@ function comparePatchesAction() {
         })
         .catch(error => {
             console.error('Comparison error:', error);
-            alert('Network error occurred while comparing patches');
+            alert('Error comparing patches: ' + error.message + '\n\nPlease check the browser console for details.');
         });
 }
 
@@ -2294,7 +2307,12 @@ function generateChangelog() {
     const patchId = currentPatchData.id;
     
     fetch(`/admin/cache/patches/${patchId}/changelog`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showChangelog(data);
@@ -2304,7 +2322,7 @@ function generateChangelog() {
         })
         .catch(error => {
             console.error('Changelog error:', error);
-            alert('Network error occurred while generating changelog');
+            alert('Error generating changelog: ' + error.message + '\n\nPlease check the browser console for details.');
         });
 }
 
@@ -2370,7 +2388,12 @@ function hideChangelogModal() {
 // File History Tracking
 function showFileHistory(filePath) {
     fetch(`/admin/cache/patches/file-history?path=${encodeURIComponent(filePath)}`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 displayFileHistory(filePath, data.history);
@@ -2380,7 +2403,7 @@ function showFileHistory(filePath) {
         })
         .catch(error => {
             console.error('File history error:', error);
-            alert('Network error occurred while loading file history');
+            alert('Error loading file history: ' + error.message + '\n\nPlease check the browser console for details.');
         });
 }
 
@@ -2431,7 +2454,12 @@ function verifyIntegrity() {
     document.getElementById('integrity-results').innerHTML = '<p class="text-dragon-silver-dark">Starting verification...</p>';
     
     fetch(`/admin/cache/patches/${patchId}/verify`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             document.getElementById('integrity-progress').classList.add('hidden');
             
@@ -2446,7 +2474,7 @@ function verifyIntegrity() {
             console.error('Verification error:', error);
             document.getElementById('integrity-progress').classList.add('hidden');
             document.getElementById('integrity-results').innerHTML = 
-                '<p class="text-red-400">Network error occurred during verification</p>';
+                `<p class="text-red-400">Verification error: ${error.message}<br><small>Please check the browser console for details.</small></p>`;
         });
 }
 
