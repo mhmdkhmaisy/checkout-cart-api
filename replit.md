@@ -77,8 +77,9 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
     - **Parameter Documentation:** Clear indicators for required vs optional parameters with type information
     - **Dragon Theme:** Consistent use of dragon color schema (#d40000 red, #0a0a0a black, #e8e8e8 silver) matching admin panel
     - **Interactive Features:** Copy-to-clipboard buttons for all code examples, collapsible sections, hover effects
-    - **Complete Coverage:** Documents all API endpoints including Products, Checkout, Claim, Cache Management, Vote System, Client Download, Webhooks, Admin API, and Error Handling
+    - **Complete Coverage:** Documents all API endpoints including Products, Checkout, Claim, Cache Patch Management, Vote System, Client Download, Webhooks, Admin API, and Error Handling
     - **Developer-Friendly:** Integration tips, best practices, and security notes included throughout
+    - **Patch System Documentation:** Updated cache management section to reflect the new patch system endpoints (/admin/cache/patches/*) with explanations of base patches, delta patches, version checking, and update strategies
 
 ### External Dependencies
 - **Payment Gateways:**
