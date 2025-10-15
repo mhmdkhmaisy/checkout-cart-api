@@ -4,12 +4,9 @@
 
 @section('content')
 <style>
-    .sidebar-wrapper {
+    .sidebar-nav {
         position: sticky;
         top: 20px;
-        align-self: flex-start;
-    }
-    .sidebar-nav {
         max-height: calc(100vh - 40px);
         overflow-y: auto;
     }
@@ -108,8 +105,7 @@
     <div class="flex gap-8">
         <!-- Sidebar Navigation -->
         <div class="w-64 flex-shrink-0">
-            <div class="sidebar-wrapper">
-                <div class="sidebar-nav glass-effect rounded-lg p-4 border border-dragon-border">
+            <div class="sidebar-nav glass-effect rounded-lg p-4 border border-dragon-border">
                 <h3 class="text-lg font-bold text-dragon-red mb-4 flex items-center">
                     <i class="fas fa-book mr-2"></i>API Reference
                 </h3>
@@ -148,7 +144,6 @@
                         <i class="fas fa-exclamation-triangle mr-2 w-4"></i>Error Handling
                     </a>
                 </nav>
-                </div>
             </div>
         </div>
 
