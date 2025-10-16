@@ -81,8 +81,11 @@
     background: rgba(20, 20, 20, 0.95);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 1.25rem;
+    padding: 1rem;
     transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 .product-card:hover {
@@ -90,43 +93,76 @@
     background: rgba(26, 26, 26, 0.95);
 }
 
+.category-tag {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    background: var(--primary-color);
+    color: var(--text-light);
+    padding: 0.25rem 0.75rem;
+    border-radius: 0 7px 0 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.bundle-badge {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    background: rgba(212, 175, 55, 0.9);
+    color: #000;
+    padding: 0.25rem 0.6rem;
+    border-radius: 7px 0 8px 0;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
 .product-image {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     object-fit: contain;
     background: rgba(10, 10, 10, 0.8);
     border-radius: 6px;
-    padding: 6px;
-    margin-bottom: 0.75rem;
+    padding: 8px;
+    margin: 0.5rem auto 0.75rem;
+    display: block;
 }
 
 .product-name {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--text-light);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    text-align: center;
+    line-height: 1.3;
 }
 
 .product-price {
     background: var(--primary-color);
     color: var(--text-light);
-    padding: 0.4rem 0.8rem;
+    padding: 0.5rem 0.8rem;
     border-radius: 6px;
     font-size: 1.1rem;
     font-weight: 800;
-    display: inline-block;
-    margin-bottom: 0.75rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
 }
 
 .stock-badge {
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.35rem;
-    padding: 0.25rem 0.6rem;
+    padding: 0.3rem 0.6rem;
     border-radius: 4px;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
+    margin-bottom: 0.75rem;
 }
 
 .stock-badge.in-stock {
@@ -139,32 +175,6 @@
     background: rgba(239, 68, 68, 0.2);
     border: 1px solid #ef4444;
     color: #ef4444;
-}
-
-.category-tag {
-    display: inline-block;
-    background: rgba(212, 0, 0, 0.15);
-    border: 1px solid rgba(212, 0, 0, 0.4);
-    color: var(--primary-color);
-    padding: 0.2rem 0.6rem;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-}
-
-.bundle-badge {
-    display: inline-block;
-    background: rgba(212, 175, 55, 0.15);
-    border: 1px solid rgba(212, 175, 55, 0.4);
-    color: #d4af37;
-    padding: 0.2rem 0.6rem;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    margin-left: 0.35rem;
 }
 
 .bundle-items {
@@ -186,10 +196,10 @@
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
     width: 100%;
-    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
     text-transform: uppercase;
 }
 
@@ -341,35 +351,33 @@
                 <div id="products-container" class="products-grid">
                     @foreach($products as $product)
                         <div class="product-card" data-category="{{ $product->category_id ?? 'none' }}">
-                            <img src="https://via.placeholder.com/48x48/d40000/e8e8e8?text={{ substr($product->product_name, 0, 1) }}" 
+                            @if($product->bundleItems->count() > 0)
+                                <span class="bundle-badge">
+                                    <i class="fas fa-box"></i> BUNDLE
+                                </span>
+                            @endif
+                            
+                            @if($product->category)
+                                <span class="category-tag">{{ $product->category->name }}</span>
+                            @endif
+                            
+                            <img src="https://via.placeholder.com/56x56/d40000/e8e8e8?text={{ substr($product->product_name, 0, 1) }}" 
                                  alt="{{ $product->product_name }}" 
                                  class="product-image">
                             
                             <div class="product-name">{{ $product->product_name }}</div>
                             
-                            <div style="margin-bottom: 0.75rem;">
-                                @if($product->category)
-                                    <span class="category-tag">{{ $product->category->name }}</span>
-                                @endif
-                                @if($product->bundleItems->count() > 0)
-                                    <span class="bundle-badge">
-                                        <i class="fas fa-box"></i> Bundle
-                                    </span>
-                                @endif
-                            </div>
+                            <div class="product-price">${{ number_format($product->price, 2) }}</div>
                             
-                            <div style="margin-bottom: 0.75rem;">
-                                <span class="product-price">${{ number_format($product->price, 2) }}</span>
-                                <span class="stock-badge {{ $product->qty_unit > 0 ? 'in-stock' : 'out-of-stock' }}">
-                                    <i class="fas fa-circle"></i>
-                                    {{ $product->qty_unit > 0 ? 'In Stock' : 'Out of Stock' }}
-                                </span>
+                            <div class="stock-badge {{ $product->qty_unit > 0 ? 'in-stock' : 'out-of-stock' }}">
+                                <i class="fas fa-circle"></i>
+                                {{ $product->qty_unit > 0 ? 'IN STOCK' : 'OUT OF STOCK' }}
                             </div>
                             
                             @if($product->bundleItems->count() > 0)
                                 <button onclick="toggleBundle({{ $product->id }})" class="bundle-toggle">
                                     <i class="fas fa-chevron-down" id="bundle-icon-{{ $product->id }}"></i> 
-                                    View Bundle Contents ({{ $product->bundleItems->count() }} items)
+                                    View Contents ({{ $product->bundleItems->count() }})
                                 </button>
                                 
                                 <div class="bundle-items" id="bundle-{{ $product->id }}">
@@ -386,16 +394,16 @@
                                 </div>
                             @endif
                             
-                            <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; {{ $product->qty_unit > 0 ? '' : 'opacity: 0.5; pointer-events: none;' }}">
+                            <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: auto; {{ $product->qty_unit > 0 ? '' : 'opacity: 0.5; pointer-events: none;' }}">
                                 <input type="number" 
                                        value="1" 
                                        min="1" 
                                        class="form-input quantity-input" 
                                        id="quantity-{{ $product->id }}"
-                                       style="width: 60px; padding: 0.5rem; text-align: center; font-weight: 700; font-size: 0.9rem;">
+                                       style="width: 55px; padding: 0.5rem 0.25rem; text-align: center; font-weight: 700; font-size: 0.9rem;">
                                 <button onclick="addToCart({{ $product->id }})" 
                                         class="btn btn-primary add-to-cart-btn" 
-                                        style="flex: 1; padding: 0.5rem; font-size: 0.75rem; {{ session('cart_user') ? '' : 'display: none;' }}"
+                                        style="flex: 1; padding: 0.55rem 0.5rem; font-size: 0.7rem; {{ session('cart_user') ? '' : 'display: none;' }}"
                                         data-product-id="{{ $product->id }}"
                                         {{ $product->qty_unit > 0 ? '' : 'disabled' }}>
                                     <i class="fas fa-cart-plus"></i> ADD TO BASKET
@@ -473,7 +481,7 @@
                                         <i class="fas fa-credit-card"></i> PROCEED TO CHECKOUT
                                     </button>
                                     
-                                    <button onclick="clearCartItems()" class="btn btn-secondary" style="width: 100%; padding: 0.6rem; font-size: 0.75rem;">
+                                    <button onclick="showClearBasketModal()" class="btn btn-secondary" style="width: 100%; padding: 0.6rem; font-size: 0.75rem;">
                                         <i class="fas fa-trash-alt"></i> CLEAR BASKET
                                     </button>
                                 </div>
@@ -486,11 +494,66 @@
     </div>
 </div>
 
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-dragon-black border border-dragon-border rounded-lg p-8 max-w-md w-full mx-4" style="background: rgba(10, 10, 10, 0.98); border: 1px solid var(--border-color);">
+        <div class="flex items-center mb-6">
+            <div class="p-3 rounded-full bg-red-500/20 text-red-400 mr-4">
+                <i class="fas fa-exclamation-triangle text-2xl"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-semibold" style="color: var(--text-light);" id="confirm-title">Confirm Action</h3>
+                <p style="color: var(--text-muted);" id="confirm-message">Are you sure?</p>
+            </div>
+        </div>
+        
+        <div class="flex justify-end gap-3">
+            <button onclick="hideConfirmationModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                Cancel
+            </button>
+            <button id="confirm-action-btn" onclick="executeConfirmation()" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                Confirm
+            </button>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 let currentView = 'grid';
 let currentCategory = 'all';
 let currentUsername = '{{ session("cart_user") }}';
+let confirmationCallback = null;
+
+// Confirmation Modal Functions
+function showConfirmationModal(title, message, callback, actionText = 'Confirm') {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    document.getElementById('confirm-action-btn').textContent = actionText;
+    confirmationCallback = callback;
+    document.getElementById('confirmation-modal').classList.remove('hidden');
+}
+
+function hideConfirmationModal() {
+    document.getElementById('confirmation-modal').classList.add('hidden');
+    confirmationCallback = null;
+}
+
+function executeConfirmation() {
+    if (confirmationCallback) {
+        confirmationCallback();
+        hideConfirmationModal();
+    }
+}
+
+function showClearBasketModal() {
+    showConfirmationModal(
+        'Clear Basket',
+        'Are you sure you want to clear all items from your basket?',
+        clearCartItems,
+        'Clear Basket'
+    );
+}
 
 // Set Cart User
 function setCartUser() {
@@ -605,14 +668,15 @@ function toggleBundle(productId) {
     }
 }
 
-// Add to Cart
+// Add to Cart - FIX: Parse quantity as integer to prevent concatenation
 function addToCart(productId) {
     if (!currentUsername) {
         showError('Please set your username first');
         return;
     }
     
-    const quantity = parseInt($(`#quantity-${productId}`).val()) || 1;
+    const quantityInput = $(`#quantity-${productId}`);
+    const quantity = parseInt(quantityInput.val(), 10) || 1;
     
     $.post('{{ route("store.add-to-cart") }}', {
         product_id: productId,
@@ -620,6 +684,8 @@ function addToCart(productId) {
         _token: '{{ csrf_token() }}'
     })
     .done(function(response) {
+        // Reset quantity input to 1 after adding to cart
+        quantityInput.val(1);
         loadCart();
     })
     .fail(function() {
@@ -714,10 +780,8 @@ function removeFromCart(productId) {
     });
 }
 
-// Clear Cart
+// Clear Cart - Now without confirm, using modal
 function clearCartItems() {
-    if (!confirm('Are you sure you want to clear your cart?')) return;
-    
     $.post('{{ route("store.clear-cart") }}', {
         _token: '{{ csrf_token() }}'
     })
