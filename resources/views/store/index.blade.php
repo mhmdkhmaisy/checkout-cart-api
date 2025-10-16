@@ -495,23 +495,23 @@
 </div>
 
 <!-- Confirmation Modal -->
-<div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
-    <div class="bg-dragon-black border border-dragon-border rounded-lg p-8 max-w-md w-full mx-4" style="background: rgba(10, 10, 10, 0.98); border: 1px solid var(--border-color);">
-        <div class="flex items-center mb-6">
-            <div class="p-3 rounded-full bg-red-500/20 text-red-400 mr-4">
-                <i class="fas fa-exclamation-triangle text-2xl"></i>
+<div id="confirmation-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: rgba(10, 10, 10, 0.98); border: 1px solid var(--border-color); border-radius: 8px; padding: 2rem; max-width: 500px; width: 90%; margin: 0 auto;">
+        <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+            <div style="padding: 0.75rem; border-radius: 50%; background: rgba(239, 68, 68, 0.2); color: #ef4444; margin-right: 1rem;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem;"></i>
             </div>
             <div>
-                <h3 class="text-xl font-semibold" style="color: var(--text-light);" id="confirm-title">Confirm Action</h3>
-                <p style="color: var(--text-muted);" id="confirm-message">Are you sure?</p>
+                <h3 id="confirm-title" style="font-size: 1.25rem; font-weight: 700; color: var(--text-light); margin-bottom: 0.25rem;">Confirm Action</h3>
+                <p id="confirm-message" style="color: var(--text-muted); font-size: 0.9rem;">Are you sure?</p>
             </div>
         </div>
         
-        <div class="flex justify-end gap-3">
-            <button onclick="hideConfirmationModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button onclick="hideConfirmationModal()" style="padding: 0.6rem 1.5rem; background: #4b5563; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">
                 Cancel
             </button>
-            <button id="confirm-action-btn" onclick="executeConfirmation()" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+            <button id="confirm-action-btn" onclick="executeConfirmation()" style="padding: 0.6rem 1.5rem; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">
                 Confirm
             </button>
         </div>
@@ -531,11 +531,13 @@ function showConfirmationModal(title, message, callback, actionText = 'Confirm')
     document.getElementById('confirm-message').textContent = message;
     document.getElementById('confirm-action-btn').textContent = actionText;
     confirmationCallback = callback;
-    document.getElementById('confirmation-modal').classList.remove('hidden');
+    const modal = document.getElementById('confirmation-modal');
+    modal.style.display = 'flex';
 }
 
 function hideConfirmationModal() {
-    document.getElementById('confirmation-modal').classList.add('hidden');
+    const modal = document.getElementById('confirmation-modal');
+    modal.style.display = 'none';
     confirmationCallback = null;
 }
 
