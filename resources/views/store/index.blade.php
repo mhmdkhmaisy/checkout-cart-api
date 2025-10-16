@@ -477,11 +477,21 @@
                                         <span class="text-primary" style="font-size: 1.5rem; font-weight: 800;" id="cart-total">$0.00</span>
                                     </div>
                                     
-                                    <button onclick="checkout('paypal')" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem; padding: 0.7rem; font-size: 0.8rem; background: #0070ba;" id="paypal-checkout-btn" disabled>
+                                    <!-- Terms & Conditions Checkbox -->
+                                    <div style="margin-bottom: 1rem; padding: 0.75rem; background: rgba(26, 26, 26, 0.8); border: 1px solid var(--border-color); border-radius: 6px;">
+                                        <label style="display: flex; align-items: start; cursor: pointer; font-size: 0.75rem;">
+                                            <input type="checkbox" id="terms-checkbox" style="margin-right: 0.5rem; margin-top: 0.15rem; cursor: pointer;">
+                                            <span style="color: var(--text-muted); line-height: 1.4;">
+                                                I agree to the <a href="/store/terms" target="_blank" style="color: var(--primary-color); text-decoration: underline;">Terms & Conditions</a> and understand all sales are final with no refunds.
+                                            </span>
+                                        </label>
+                                    </div>
+                                    
+                                    <button onclick="checkout('paypal')" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem; padding: 0.7rem; font-size: 0.8rem; background: #0070ba; box-shadow: none;" id="paypal-checkout-btn" disabled>
                                         <i class="fab fa-paypal"></i> CHECKOUT WITH PAYPAL
                                     </button>
                                     
-                                    <button onclick="checkout('coinbase')" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem; padding: 0.7rem; font-size: 0.8rem; background: #0052ff;" id="coinbase-checkout-btn" disabled>
+                                    <button onclick="checkout('coinbase')" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem; padding: 0.7rem; font-size: 0.8rem; background: #0052ff; box-shadow: none;" id="coinbase-checkout-btn" disabled>
                                         <i class="fab fa-bitcoin"></i> CHECKOUT WITH COINBASE
                                     </button>
                                     
@@ -524,6 +534,7 @@
 
 @push('scripts')
 <script>
+const API_BASE_URL = '{{ rtrim(config("app.url"), "/") }}/api';
 let currentView = 'grid';
 let currentCategory = 'all';
 let currentUsername = '{{ session("cart_user") }}';
@@ -812,6 +823,13 @@ async function checkout(paymentMethod) {
         return;
     }
     
+    // Check if terms checkbox is checked
+    const termsCheckbox = document.getElementById('terms-checkbox');
+    if (!termsCheckbox.checked) {
+        alert('Please agree to the Terms & Conditions before proceeding to checkout');
+        return;
+    }
+    
     // Get cart items
     const cartResponse = await $.get('{{ route("store.get-cart") }}');
     const cart = cartResponse.cart;
@@ -843,7 +861,7 @@ async function checkout(paymentMethod) {
         
         // Make API call to checkout endpoint
         const response = await $.ajax({
-            url: '/api/checkout',
+            url: API_BASE_URL + '/checkout',
             type: 'POST',
             data: JSON.stringify(checkoutData),
             contentType: 'application/json',

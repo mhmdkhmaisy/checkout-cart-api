@@ -29,6 +29,11 @@ class StoreController extends Controller
         return view('store.index', compact('products', 'categories'));
     }
 
+    public function terms(): View
+    {
+        return view('store.terms');
+    }
+
     public function setUser(Request $request): JsonResponse
     {
         $request->validate([

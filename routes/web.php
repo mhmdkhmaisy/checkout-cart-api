@@ -137,6 +137,7 @@ Route::get('/play', function () {
 // Public store routes
 Route::prefix('store')->name('store.')->group(function () {
     Route::get('/', [App\Http\Controllers\StoreController::class, 'index'])->name('index');
+    Route::get('/terms', [App\Http\Controllers\StoreController::class, 'terms'])->name('terms');
     Route::post('/set-user', [App\Http\Controllers\StoreController::class, 'setUser'])->name('set-user');
     Route::post('/clear-user', [App\Http\Controllers\StoreController::class, 'clearUser'])->name('clear-user');
     Route::post('/add-to-cart', [App\Http\Controllers\StoreController::class, 'addToCart'])->name('add-to-cart');
