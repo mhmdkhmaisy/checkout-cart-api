@@ -133,3 +133,15 @@ Route::get('/play', function () {
     $clients = \App\Models\Client::getLatestClients();
     return view('play', compact('clients'));
 })->name('play');
+
+// Public store routes
+Route::prefix('store')->name('store.')->group(function () {
+    Route::get('/', [App\Http\Controllers\StoreController::class, 'index'])->name('index');
+    Route::post('/set-user', [App\Http\Controllers\StoreController::class, 'setUser'])->name('set-user');
+    Route::post('/clear-user', [App\Http\Controllers\StoreController::class, 'clearUser'])->name('clear-user');
+    Route::post('/add-to-cart', [App\Http\Controllers\StoreController::class, 'addToCart'])->name('add-to-cart');
+    Route::post('/update-cart', [App\Http\Controllers\StoreController::class, 'updateCart'])->name('update-cart');
+    Route::delete('/remove-from-cart/{productId}', [App\Http\Controllers\StoreController::class, 'removeFromCart'])->name('remove-from-cart');
+    Route::get('/cart', [App\Http\Controllers\StoreController::class, 'getCart'])->name('get-cart');
+    Route::post('/clear-cart', [App\Http\Controllers\StoreController::class, 'clearCart'])->name('clear-cart');
+});
