@@ -534,7 +534,6 @@
 
 @push('scripts')
 <script>
-const API_BASE_URL = '{{ rtrim(config("app.url"), "/") }}/api';
 let currentView = 'grid';
 let currentCategory = 'all';
 let currentUsername = '{{ session("cart_user") }}';
@@ -861,7 +860,7 @@ async function checkout(paymentMethod) {
         
         // Make API call to checkout endpoint
         const response = await $.ajax({
-            url: API_BASE_URL + '/checkout',
+            url: '/api/checkout',
             type: 'POST',
             data: JSON.stringify(checkoutData),
             contentType: 'application/json',
