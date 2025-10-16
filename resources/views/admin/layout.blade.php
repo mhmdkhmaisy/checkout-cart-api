@@ -110,6 +110,12 @@
                                 All Products
                             </a>
 
+                            <a href="{{ route('admin.categories.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.categories.index') ? 'active' : '' }}">
+                                <i class="fas fa-tags mr-3"></i>
+                                Categories
+                            </a>
+
                             <a href="{{ route('admin.orders.logs') }}" 
                                class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.orders.logs') ? 'active' : '' }}">
                                 <i class="fas fa-list-alt mr-3"></i>

@@ -9,10 +9,11 @@
         <h2 class="text-3xl font-bold text-dragon-red dragon-text-glow">
             Products Management
         </h2>
-        <button onclick="showCreateForm()" 
-           class="gradient-red px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity">
+        <a href="{{ route('admin.products.create') }}" 
+           class="gradient-red px-6 py-3 rounded-lg font-medium hover:opacity-90 transition-opacity inline-block">
+            <i class="fas fa-plus mr-2"></i>
             Add New Product
-        </button>
+        </a>
     </div>
 
     <!-- Success/Error Messages -->

@@ -21,7 +21,8 @@ class ProductController extends Controller
 
     public function create(): View
     {
-        return view('admin.products.create');
+        $categories = Category::orderBy('name')->get();
+        return view('admin.products.create', compact('categories'));
     }
 
     public function store(Request $request): RedirectResponse|JsonResponse
