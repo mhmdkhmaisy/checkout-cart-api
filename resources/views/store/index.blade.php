@@ -477,8 +477,12 @@
                                         <span class="text-primary" style="font-size: 1.5rem; font-weight: 800;" id="cart-total">$0.00</span>
                                     </div>
                                     
-                                    <button onclick="checkout()" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem; padding: 0.7rem; font-size: 0.8rem;" id="checkout-btn" disabled>
-                                        <i class="fas fa-credit-card"></i> PROCEED TO CHECKOUT
+                                    <button onclick="checkout('paypal')" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem; padding: 0.7rem; font-size: 0.8rem; background: #0070ba;" id="paypal-checkout-btn" disabled>
+                                        <i class="fab fa-paypal"></i> CHECKOUT WITH PAYPAL
+                                    </button>
+                                    
+                                    <button onclick="checkout('coinbase')" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem; padding: 0.7rem; font-size: 0.8rem; background: #0052ff;" id="coinbase-checkout-btn" disabled>
+                                        <i class="fab fa-bitcoin"></i> CHECKOUT WITH COINBASE
                                     </button>
                                     
                                     <button onclick="showClearBasketModal()" class="btn btn-secondary" style="width: 100%; padding: 0.6rem; font-size: 0.75rem;">
@@ -706,7 +710,8 @@ function loadCart() {
 // Render Cart
 function renderCart(cart, total) {
     const cartItems = $('#cart-items');
-    const checkoutBtn = $('#checkout-btn');
+    const paypalBtn = $('#paypal-checkout-btn');
+    const coinbaseBtn = $('#coinbase-checkout-btn');
     
     if (Object.keys(cart).length === 0) {
         cartItems.html(`
@@ -716,12 +721,17 @@ function renderCart(cart, total) {
             </div>
         `);
         $('#cart-total').text('$0.00');
-        checkoutBtn.prop('disabled', true);
+        if (paypalBtn.length) paypalBtn.prop('disabled', true);
+        if (coinbaseBtn.length) coinbaseBtn.prop('disabled', true);
         return;
     }
     
     let html = '';
     Object.values(cart).forEach(item => {
+        const qty = parseInt(item.quantity);
+        const minusQty = qty - 1;
+        const plusQty = qty + 1;
+        
         html += `
             <div class="cart-item">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
@@ -735,16 +745,16 @@ function renderCart(cart, total) {
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="quantity-controls">
-                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity - 1})">
+                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${minusQty})">
                             <i class="fas fa-minus"></i>
                         </button>
-                        <span style="min-width: 35px; text-align: center; font-weight: 700; font-size: 0.9rem;">${item.quantity}</span>
-                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity + 1})">
+                        <span style="min-width: 35px; text-align: center; font-weight: 700; font-size: 0.9rem;">${qty}</span>
+                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${plusQty})">
                             <i class="fas fa-plus"></i>
                         </button>
                     </div>
                     <div class="text-primary" style="font-weight: 800; font-size: 1rem;">
-                        $${(parseFloat(item.price) * item.quantity).toFixed(2)}
+                        $${(parseFloat(item.price) * qty).toFixed(2)}
                     </div>
                 </div>
             </div>
@@ -753,14 +763,17 @@ function renderCart(cart, total) {
     
     cartItems.html(html);
     $('#cart-total').text('$' + total);
-    checkoutBtn.prop('disabled', false);
+    if (paypalBtn.length) paypalBtn.prop('disabled', false);
+    if (coinbaseBtn.length) coinbaseBtn.prop('disabled', false);
 }
 
-// Update Quantity
+// Update Quantity - FIX: Ensure quantity is parsed as integer
 function updateQuantity(productId, quantity) {
+    const qty = parseInt(quantity, 10);
+    
     $.post('{{ route("store.update-cart") }}', {
         product_id: productId,
-        quantity: quantity,
+        quantity: qty,
         _token: '{{ csrf_token() }}'
     })
     .done(function(response) {
@@ -792,9 +805,83 @@ function clearCartItems() {
     });
 }
 
-// Checkout
-function checkout() {
-    window.location.href = '/test-checkout.html';
+// Checkout with PayPal or Coinbase
+async function checkout(paymentMethod) {
+    if (!currentUsername) {
+        alert('Please set your username first');
+        return;
+    }
+    
+    // Get cart items
+    const cartResponse = await $.get('{{ route("store.get-cart") }}');
+    const cart = cartResponse.cart;
+    const total = cartResponse.total;
+    
+    if (Object.keys(cart).length === 0) {
+        alert('Your basket is empty');
+        return;
+    }
+    
+    // Prepare checkout data
+    const checkoutData = {
+        user_id: currentUsername,
+        payment_method: paymentMethod,
+        items: Object.values(cart).map(item => ({
+            product_id: parseInt(item.id),
+            name: item.name,
+            price: parseFloat(item.price),
+            quantity: parseInt(item.quantity)
+        })),
+        currency: 'USD'
+    };
+    
+    try {
+        // Show loading state
+        const btnId = paymentMethod === 'paypal' ? '#paypal-checkout-btn' : '#coinbase-checkout-btn';
+        const originalText = $(btnId).html();
+        $(btnId).html('<i class="fas fa-spinner fa-spin"></i> Processing...').prop('disabled', true);
+        
+        // Make API call to checkout endpoint
+        const response = await $.ajax({
+            url: '/api/checkout',
+            type: 'POST',
+            data: JSON.stringify(checkoutData),
+            contentType: 'application/json',
+            dataType: 'json'
+        });
+        
+        // Restore button
+        $(btnId).html(originalText).prop('disabled', false);
+        
+        // If checkout successful and has payment URL, open in new tab
+        if (response.success && (response.payment_url || response.checkout_url)) {
+            const paymentUrl = response.payment_url || response.checkout_url;
+            window.open(paymentUrl, '_blank');
+            
+            // Optionally clear cart after successful checkout
+            // clearCartItems();
+        } else {
+            alert('Checkout failed: ' + (response.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Checkout error:', error);
+        
+        // Restore button
+        const btnId = paymentMethod === 'paypal' ? '#paypal-checkout-btn' : '#coinbase-checkout-btn';
+        const btnText = paymentMethod === 'paypal' ? '<i class="fab fa-paypal"></i> CHECKOUT WITH PAYPAL' : '<i class="fab fa-bitcoin"></i> CHECKOUT WITH COINBASE';
+        $(btnId).html(btnText).prop('disabled', false);
+        
+        let errorMessage = 'Checkout failed: ';
+        if (error.responseJSON && error.responseJSON.error) {
+            errorMessage += error.responseJSON.error;
+        } else if (error.responseJSON && error.responseJSON.message) {
+            errorMessage += error.responseJSON.message;
+        } else {
+            errorMessage += 'Please try again';
+        }
+        
+        alert(errorMessage);
+    }
 }
 
 // Load cart on page load
