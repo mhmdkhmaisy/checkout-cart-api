@@ -98,8 +98,6 @@
             height: 40px;
             margin-right: 0.75rem;
             border-radius: 8px;
-            border: 2px solid var(--primary-color);
-            box-shadow: 0 0 15px rgba(212, 0, 0, 0.5);
         }
 
         .nav-links {
