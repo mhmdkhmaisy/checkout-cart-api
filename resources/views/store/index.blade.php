@@ -482,7 +482,7 @@
                                         <label style="display: flex; align-items: start; cursor: pointer; font-size: 0.75rem;">
                                             <input type="checkbox" id="terms-checkbox" style="margin-right: 0.5rem; margin-top: 0.15rem; cursor: pointer;">
                                             <span style="color: var(--text-muted); line-height: 1.4;">
-                                                I agree to the <a href="/store/terms" target="_blank" style="color: var(--primary-color); text-decoration: underline;">Terms & Conditions</a> and understand all sales are final with no refunds.
+                                                I agree to the <a href='{{ route("store.terms") }}' target="_blank" style="color: var(--primary-color); text-decoration: underline;">Terms & Conditions</a> and understand all sales are final with no refunds.
                                             </span>
                                         </label>
                                     </div>

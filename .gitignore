@@ -9,3 +9,7 @@
 /bootstrap/cache
 /storage/app/public/clients
 database/database.sqlite
+/storage/app/cache_files
+/storage/app/manifests
+/storage/app/cache/manifests
+/storage/app/cache/patches
