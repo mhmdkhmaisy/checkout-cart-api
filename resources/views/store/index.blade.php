@@ -585,7 +585,7 @@ function setCartUser() {
         return;
     }
     
-    $.post('{{ route("store.set-user") }}', {
+    $.post('/store/set-user', {
         username: username,
         _token: '{{ csrf_token() }}'
     })
@@ -603,7 +603,7 @@ function setCartUser() {
 
 // Change Cart User
 function changeCartUser() {
-    $.post('{{ route("store.clear-user") }}', {
+    $.post('/store/clear-user', {
         _token: '{{ csrf_token() }}'
     })
     .done(function() {
@@ -694,7 +694,7 @@ function addToCart(productId) {
     const quantityInput = $(`#quantity-${productId}`);
     const quantity = parseInt(quantityInput.val(), 10) || 1;
     
-    $.post('{{ route("store.add-to-cart") }}', {
+    $.post('/store/add-to-cart', {
         product_id: productId,
         quantity: quantity,
         _token: '{{ csrf_token() }}'
@@ -711,7 +711,7 @@ function addToCart(productId) {
 
 // Load Cart
 function loadCart() {
-    $.get('{{ route("store.get-cart") }}')
+    $.get('/store/cart')
         .done(function(response) {
             renderCart(response.cart, response.total);
         });
@@ -781,7 +781,7 @@ function renderCart(cart, total) {
 function updateQuantity(productId, quantity) {
     const qty = parseInt(quantity, 10);
     
-    $.post('{{ route("store.update-cart") }}', {
+    $.post('/store/update-cart', {
         product_id: productId,
         quantity: qty,
         _token: '{{ csrf_token() }}'
@@ -794,7 +794,7 @@ function updateQuantity(productId, quantity) {
 // Remove from Cart
 function removeFromCart(productId) {
     $.ajax({
-        url: '{{ route("store.remove-from-cart", ":id") }}'.replace(':id', productId),
+        url: '/store/remove-from-cart/' + productId,
         type: 'DELETE',
         data: {
             _token: '{{ csrf_token() }}'
@@ -807,7 +807,7 @@ function removeFromCart(productId) {
 
 // Clear Cart - Now without confirm, using modal
 function clearCartItems() {
-    $.post('{{ route("store.clear-cart") }}', {
+    $.post('/store/clear-cart', {
         _token: '{{ csrf_token() }}'
     })
     .done(function() {
@@ -830,7 +830,7 @@ async function checkout(paymentMethod) {
     }
     
     // Get cart items
-    const cartResponse = await $.get('{{ route("store.get-cart") }}');
+    const cartResponse = await $.get('/store/cart');
     const cart = cartResponse.cart;
     const total = cartResponse.total;
     

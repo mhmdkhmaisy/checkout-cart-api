@@ -201,7 +201,7 @@ function setUsername() {
     }
     
     // Store username in session via AJAX
-    $.post('{{ route("vote.set-username") }}', {
+    $.post('/vote/set-username', {
         username: username,
         _token: $('meta[name="csrf-token"]').attr('content')
     })
@@ -245,7 +245,7 @@ function showVoteSites() {
 function loadVoteStatus() {
     if (!currentUsername) return;
     
-    $.get('{{ route("vote.user-votes") }}', { username: currentUsername })
+    $.get('/vote/user-votes', { username: currentUsername })
         .done(function(data) {
             data.forEach(function(siteData) {
                 const siteId = siteData.site.id;
@@ -281,7 +281,7 @@ function vote(siteId) {
     button.prop('disabled', true);
     buttonText.text('Processing...');
     
-    $.post(`{{ route('vote.submit', '') }}/${siteId}`, {
+    $.post(`/vote/${siteId}`, {
         username: currentUsername,
         _token: $('meta[name="csrf-token"]').attr('content')
     })
