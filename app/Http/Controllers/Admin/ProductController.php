@@ -27,19 +27,20 @@ class ProductController extends Controller
 
     public function store(Request $request): RedirectResponse|JsonResponse
     {
-        $request->validate([
-            'product_name' => 'required|string|max:100',
-            'category_id' => 'nullable|exists:categories,id',
-            'item_id' => 'required|integer',
-            'qty_unit' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0.01',
-            'is_active' => 'boolean'
-        ]);
+        try {
+            $validated = $request->validate([
+                'product_name' => 'required|string|max:100',
+                'category_id' => 'nullable|exists:categories,id',
+                'item_id' => 'required|integer',
+                'qty_unit' => 'required|integer|min:1',
+                'price' => 'required|numeric|min:0.01',
+                'is_active' => 'boolean'
+            ]);
 
-        $data = $request->all();
-        $data['is_active'] = $request->has('is_active') ? 1 : 0;
+            $data = $validated;
+            $data['is_active'] = $request->input('is_active', 0) ? 1 : 0;
 
-        $product = Product::create($data);
+            $product = Product::create($data);
 
         if ($request->has('bundle_items')) {
             foreach ($request->bundle_items as $bundleItem) {
@@ -52,16 +53,28 @@ class ProductController extends Controller
             }
         }
 
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Product created successfully.',
-                'product' => $product->load('bundleItems')
-            ]);
-        }
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product created successfully.',
+                    'product' => $product->load('bundleItems')
+                ]);
+            }
 
-        return redirect()->route('admin.products.index')
-            ->with('success', 'Product created successfully.');
+            return redirect()->route('admin.products.index')
+                ->with('success', 'Product created successfully.');
+        } catch (\Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error creating product: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error creating product: ' . $e->getMessage());
+        }
     }
 
     public function show(Product $product): View
@@ -85,19 +98,20 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product): RedirectResponse|JsonResponse
     {
-        $request->validate([
-            'product_name' => 'required|string|max:100',
-            'category_id' => 'nullable|exists:categories,id',
-            'item_id' => 'required|integer',
-            'qty_unit' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0.01',
-            'is_active' => 'boolean'
-        ]);
+        try {
+            $validated = $request->validate([
+                'product_name' => 'required|string|max:100',
+                'category_id' => 'nullable|exists:categories,id',
+                'item_id' => 'required|integer',
+                'qty_unit' => 'required|integer|min:1',
+                'price' => 'required|numeric|min:0.01',
+                'is_active' => 'boolean'
+            ]);
 
-        $data = $request->all();
-        $data['is_active'] = $request->has('is_active') ? 1 : 0;
+            $data = $validated;
+            $data['is_active'] = $request->input('is_active', 0) ? 1 : 0;
 
-        $product->update($data);
+            $product->update($data);
 
         $product->bundleItems()->delete();
 
@@ -112,16 +126,28 @@ class ProductController extends Controller
             }
         }
 
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Product updated successfully.',
-                'product' => $product->load('bundleItems')
-            ]);
-        }
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product updated successfully.',
+                    'product' => $product->load('bundleItems')
+                ]);
+            }
 
-        return redirect()->route('admin.products.index')
-            ->with('success', 'Product updated successfully.');
+            return redirect()->route('admin.products.index')
+                ->with('success', 'Product updated successfully.');
+        } catch (\Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error updating product: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error updating product: ' . $e->getMessage());
+        }
     }
 
     public function destroy(Product $product): RedirectResponse|JsonResponse

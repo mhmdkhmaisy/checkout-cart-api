@@ -19,27 +19,40 @@ class CategoryController extends Controller
 
     public function store(Request $request): RedirectResponse|JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:100|unique:categories,name',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean'
-        ]);
-
-        $data = $request->all();
-        $data['is_active'] = $request->has('is_active') ? 1 : 0;
-
-        $category = Category::create($data);
-
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Category created successfully.',
-                'category' => $category
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:100|unique:categories,name',
+                'description' => 'nullable|string',
+                'is_active' => 'boolean'
             ]);
-        }
 
-        return redirect()->route('admin.categories.index')
-            ->with('success', 'Category created successfully.');
+            $data = $validated;
+            $data['is_active'] = $request->input('is_active', 0) ? 1 : 0;
+
+            $category = Category::create($data);
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Category created successfully.',
+                    'category' => $category
+                ]);
+            }
+
+            return redirect()->route('admin.categories.index')
+                ->with('success', 'Category created successfully.');
+        } catch (\Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error creating category: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error creating category: ' . $e->getMessage());
+        }
     }
 
     public function edit(Category $category): JsonResponse
@@ -56,27 +69,40 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category): RedirectResponse|JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:100|unique:categories,name,' . $category->id,
-            'description' => 'nullable|string',
-            'is_active' => 'boolean'
-        ]);
-
-        $data = $request->all();
-        $data['is_active'] = $request->has('is_active') ? 1 : 0;
-
-        $category->update($data);
-
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Category updated successfully.',
-                'category' => $category
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:100|unique:categories,name,' . $category->id,
+                'description' => 'nullable|string',
+                'is_active' => 'boolean'
             ]);
-        }
 
-        return redirect()->route('admin.categories.index')
-            ->with('success', 'Category updated successfully.');
+            $data = $validated;
+            $data['is_active'] = $request->input('is_active', 0) ? 1 : 0;
+
+            $category->update($data);
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Category updated successfully.',
+                    'category' => $category
+                ]);
+            }
+
+            return redirect()->route('admin.categories.index')
+                ->with('success', 'Category updated successfully.');
+        } catch (\Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error updating category: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error updating category: ' . $e->getMessage());
+        }
     }
 
     public function destroy(Category $category): RedirectResponse|JsonResponse
