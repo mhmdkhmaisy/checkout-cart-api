@@ -442,14 +442,23 @@
                     <li><a href="{{ route('vote.index') }}" class="{{ request()->routeIs('vote.index') ? 'active' : '' }}">
                         <i class="fas fa-home"></i> Home
                     </a></li>
+                    <li><a href="#" class="">
+                        <i class="fas fa-gamepad"></i> Play
+                    </a></li>
+                    <li><a href="{{ route('store.index') }}" class="{{ request()->routeIs('store.*') ? 'active' : '' }}">
+                        <i class="fas fa-store"></i> Store
+                    </a></li>
                     <li><a href="{{ route('vote.index') }}" class="{{ request()->routeIs('vote.*') ? 'active' : '' }}">
                         <i class="fas fa-vote-yea"></i> Vote
                     </a></li>
-                    <li><a href="{{ route('vote.stats') }}" class="{{ request()->routeIs('vote.stats') ? 'active' : '' }}">
-                        <i class="fas fa-chart-bar"></i> Statistics
+                    <li><a href="#" class="">
+                        <i class="fas fa-user"></i> My Profile
                     </a></li>
-                    <li><a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.*') ? 'active' : '' }}">
-                        <i class="fas fa-cog"></i> Admin
+                    <li><a href="#" class="">
+                        <i class="fas fa-users"></i> Players
+                    </a></li>
+                    <li><a href="#" class="btn btn-primary" style="margin-left: 1rem;">
+                        Play Now
                     </a></li>
                 </ul>
                 
