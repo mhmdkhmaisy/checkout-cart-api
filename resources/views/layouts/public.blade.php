@@ -23,20 +23,26 @@
     
     <style>
         :root {
-            --primary-color: #d40000;
-            --primary-bright: #ff0000;
-            --secondary-color: #1a1a1a;
+            --primary-color: #c41e3a;
+            --primary-bright: #e63946;
+            --primary-dark: #a01729;
+            --secondary-color: #141414;
             --accent-color: #0a0a0a;
-            --text-light: #e8e8e8;
+            --accent-gold: #d4a574;
+            --accent-ember: #ff6b35;
+            --text-light: #f0f0f0;
             --text-dark: #333333;
-            --text-muted: #999999;
-            --text-gold: #d4af37;
-            --background-dark: #0a0a0a;
-            --background-gradient: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-            --card-background: rgba(26, 26, 26, 0.95);
-            --border-color: #333333;
-            --border-gold: rgba(212, 175, 55, 0.3);
-            --hover-color: rgba(212, 0, 0, 0.15);
+            --text-muted: #a0a0a0;
+            --text-gold: #d4a574;
+            --background-dark: #0d0d0d;
+            --background-gradient: linear-gradient(135deg, #0d0d0d 0%, #1a1414 100%);
+            --card-background: rgba(20, 16, 16, 0.92);
+            --border-color: #3a2a2a;
+            --border-gold: rgba(212, 165, 116, 0.25);
+            --border-ember: rgba(255, 107, 53, 0.15);
+            --hover-color: rgba(196, 30, 58, 0.12);
+            --glow-primary: rgba(196, 30, 58, 0.4);
+            --glow-gold: rgba(212, 165, 116, 0.3);
         }
 
         * {
@@ -47,10 +53,11 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #000000;
+            background: #0a0a0a;
             background-image: 
-                radial-gradient(circle at 20% 50%, rgba(212, 0, 0, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(212, 0, 0, 0.05) 0%, transparent 50%);
+                radial-gradient(ellipse at 15% 20%, rgba(196, 30, 58, 0.06) 0%, transparent 40%),
+                radial-gradient(ellipse at 85% 80%, rgba(212, 165, 116, 0.04) 0%, transparent 45%),
+                radial-gradient(ellipse at 50% 50%, rgba(255, 107, 53, 0.02) 0%, transparent 60%);
             background-attachment: fixed;
             color: var(--text-light);
             line-height: 1.6;
@@ -65,14 +72,14 @@
 
         /* Header Styles */
         .header {
-            background: linear-gradient(180deg, rgba(10, 10, 10, 0.98) 0%, rgba(26, 26, 26, 0.95) 100%);
+            background: linear-gradient(180deg, rgba(13, 13, 13, 0.98) 0%, rgba(20, 16, 16, 0.95) 100%);
             backdrop-filter: blur(20px);
             border-bottom: 2px solid;
-            border-image: linear-gradient(90deg, transparent, var(--primary-color), transparent) 1;
+            border-image: linear-gradient(90deg, transparent, var(--primary-color), var(--accent-gold), transparent) 1;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 4px 20px rgba(212, 0, 0, 0.2);
+            box-shadow: 0 4px 20px var(--glow-primary);
         }
 
         .nav {
@@ -87,10 +94,13 @@
             align-items: center;
             font-size: 1.5rem;
             font-weight: 800;
-            color: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-bright) 0%, var(--accent-gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             text-decoration: none;
-            text-shadow: 0 0 20px rgba(212, 0, 0, 0.8), 0 0 40px rgba(212, 0, 0, 0.4);
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            text-shadow: none;
+            filter: drop-shadow(0 0 12px var(--glow-primary)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
         }
 
         .logo img {
@@ -139,7 +149,7 @@
         .nav-links a:hover,
         .nav-links a.active {
             color: var(--text-light);
-            text-shadow: 0 0 10px rgba(212, 0, 0, 0.5);
+            text-shadow: 0 0 10px var(--glow-primary);
         }
 
         .mobile-menu-toggle {
@@ -160,7 +170,7 @@
             padding: 2rem;
             transition: all 0.3s ease;
             position: relative;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
         }
 
         .glass-card::before {
@@ -170,14 +180,14 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+            background: linear-gradient(90deg, transparent, var(--primary-color), var(--accent-gold), transparent);
             border-radius: 8px 8px 0 0;
         }
 
         .glass-card:hover {
             border-color: var(--primary-color);
             transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(212, 0, 0, 0.3);
+            box-shadow: 0 8px 30px var(--glow-primary), 0 0 20px var(--glow-gold), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
         /* Button Styles */
@@ -220,12 +230,13 @@
         .btn-primary {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-bright) 100%);
             color: var(--text-light);
-            box-shadow: 0 4px 15px rgba(212, 0, 0, 0.4);
+            box-shadow: 0 4px 15px var(--glow-primary), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .btn-primary:hover {
-            box-shadow: 0 6px 25px rgba(212, 0, 0, 0.6);
+            box-shadow: 0 6px 25px var(--glow-primary), 0 0 30px var(--glow-gold), inset 0 1px 0 rgba(255, 255, 255, 0.15);
             transform: translateY(-2px);
+            background: linear-gradient(135deg, var(--primary-bright) 0%, var(--accent-ember) 100%);
         }
 
         .btn-secondary {
@@ -268,7 +279,7 @@
         .form-input {
             width: 100%;
             padding: 0.75rem 1rem;
-            background: rgba(10, 10, 10, 0.9);
+            background: rgba(13, 13, 13, 0.9);
             border: 2px solid var(--border-color);
             border-radius: 6px;
             color: var(--text-light);
@@ -280,8 +291,8 @@
         .form-input:focus {
             outline: none;
             border-color: var(--primary-color);
-            background: rgba(10, 10, 10, 1);
-            box-shadow: 0 0 15px rgba(212, 0, 0, 0.3);
+            background: rgba(13, 13, 13, 1);
+            box-shadow: 0 0 15px var(--glow-primary), 0 0 5px var(--glow-gold);
         }
 
         .form-input::placeholder {
@@ -355,8 +366,9 @@
 
         /* Footer */
         .footer {
-            background: rgba(26, 26, 26, 0.95);
-            border-top: 1px solid var(--border-color);
+            background: linear-gradient(180deg, rgba(20, 16, 16, 0.95) 0%, rgba(13, 13, 13, 0.98) 100%);
+            border-top: 1px solid;
+            border-image: linear-gradient(90deg, transparent, var(--border-color), var(--border-gold), transparent) 1;
             padding: 2rem 0;
             margin-top: 4rem;
         }
