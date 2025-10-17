@@ -985,7 +985,7 @@ function downloadFile(fileId) {
     // Find the file by ID and download it
     const file = @json($files->items()).find(f => f.id == fileId);
     if (file && file.file_type === 'file') {
-        let downloadUrl = `{{ url('/api/cache/file') }}/${encodeURIComponent(file.filename)}`;
+        let downloadUrl = `/api/cache/file/${encodeURIComponent(file.filename)}`;
         if (file.relative_path) {
             downloadUrl += `?path=${encodeURIComponent(file.relative_path)}`;
         }
@@ -1064,7 +1064,7 @@ async function extractFile(fileId, fileName) {
 async function pollFileExtractionProgress(extractionId, fileName) {
     const pollInterval = setInterval(async () => {
         try {
-            const response = await fetch('{{ url('/admin/cache/extraction-progress') }}?id=' + extractionId);
+            const response = await fetch('/admin/cache/extraction-progress?id=' + extractionId);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -1682,7 +1682,7 @@ async function pollExtractionProgress(extractionId, fileIndex, resolve) {
     const pollInterval = setInterval(async () => {
         try {
             // Fixed URL construction
-            const response = await fetch('{{ url('/admin/cache/extraction-progress') }}?id=' + extractionId);
+            const response = await fetch('/admin/cache/extraction-progress?id=' + extractionId);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -2004,7 +2004,7 @@ function downloadPatch(version) {
 
 function deletePatch(version) {
     if (confirm(`Are you sure you want to delete patch v${version}?\n\nThis action cannot be undone.`)) {
-        fetch(`{{ url('/admin/cache/patches') }}/${version}`, {
+        fetch(`/admin/cache/patches/${version}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -2033,7 +2033,7 @@ function mergePatches() {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Merging...';
         
-        fetch('{{ url('/admin/cache/patches/merge') }}', {
+        fetch('/admin/cache/patches/merge', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -2227,7 +2227,7 @@ function comparePatchesAction() {
         return;
     }
     
-    fetch(`{{ url('/admin/cache/patches/compare') }}?from=${fromId}&to=${toId}`)
+    fetch(`/admin/cache/patches/compare?from=${fromId}&to=${toId}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -2311,7 +2311,7 @@ function generateChangelog() {
     
     const patchId = currentPatchData.id;
     
-    fetch(`{{ url('/admin/cache/patches') }}/${patchId}/changelog`)
+    fetch(`/admin/cache/patches/${patchId}/changelog`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -2392,7 +2392,7 @@ function hideChangelogModal() {
 
 // File History Tracking
 function showFileHistory(filePath) {
-    fetch(`{{ url('/admin/cache/patches/file-history') }}?path=${encodeURIComponent(filePath)}`)
+    fetch(`/admin/cache/patches/file-history?path=${encodeURIComponent(filePath)}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -2458,7 +2458,7 @@ function verifyIntegrity() {
     document.getElementById('integrity-progress').classList.remove('hidden');
     document.getElementById('integrity-results').innerHTML = '<p class="text-dragon-silver-dark">Starting verification...</p>';
     
-    fetch(`{{ url('/admin/cache/patches') }}/${patchId}/verify`)
+    fetch(`/admin/cache/patches/${patchId}/verify`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

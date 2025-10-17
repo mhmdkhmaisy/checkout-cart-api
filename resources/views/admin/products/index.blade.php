@@ -235,7 +235,7 @@ function editProduct(productId) {
         return;
     }
 
-    fetch(`{{ url('/admin/products') }}/${productId}/edit`, {
+    fetch(`/admin/products/${productId}/edit`, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
@@ -288,7 +288,7 @@ function deleteProduct(productId) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
                       document.querySelector('input[name="_token"]')?.value;
 
-    fetch(`{{ url('/admin/products') }}/${productId}`, {
+    fetch(`/admin/products/${productId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': csrfToken,
@@ -437,7 +437,7 @@ document.getElementById('product-form').addEventListener('submit', function(e) {
     }
     
     const formData = new FormData(this);
-    const url = isEditing ? `{{ url('/admin/products') }}/${currentProductId}` : '{{ route("admin.products.store") }}';
+    const url = isEditing ? `/admin/products/${currentProductId}` : '/admin/products';
     
     // Convert FormData to regular object
     const data = {};

@@ -166,7 +166,7 @@ function editCategory(categoryId) {
         return;
     }
 
-    fetch(`{{ url('/admin/categories') }}/${categoryId}/edit`, {
+    fetch(`/admin/categories/${categoryId}/edit`, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',
@@ -214,7 +214,7 @@ function deleteCategory(categoryId) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
                       document.querySelector('input[name="_token"]')?.value;
 
-    fetch(`{{ url('/admin/categories') }}/${categoryId}`, {
+    fetch(`/admin/categories/${categoryId}`, {
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': csrfToken,

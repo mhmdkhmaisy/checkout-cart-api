@@ -252,7 +252,7 @@ $(document).ready(function() {
                 if (uploadXHR.status === 302) {
                     showUploadSuccess();
                     setTimeout(() => {
-                        window.location.href = "{{ route('admin.clients.index') }}";
+                        window.location.href = "/admin/clients";
                     }, 2000);
                 } else if (uploadXHR.status === 200) {
                     // Check response content for success indicators
@@ -260,7 +260,7 @@ $(document).ready(function() {
                     if (responseText.includes('success') || responseText.includes('uploaded') || responseText.includes('created')) {
                         showUploadSuccess();
                         setTimeout(() => {
-                            window.location.href = "{{ route('admin.clients.index') }}";
+                            window.location.href = "/admin/clients";
                         }, 2000);
                     } else {
                         // Try to parse as JSON for error messages
