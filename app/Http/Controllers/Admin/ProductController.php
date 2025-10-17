@@ -152,16 +152,40 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse|JsonResponse
     {
-        $product->delete();
+        try {
+            if ($product->orderItems()->exists()) {
+                if (request()->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot delete product. It has associated order items.'
+                    ], 422);
+                }
 
-        if (request()->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Product deleted successfully.'
-            ]);
+                return redirect()->route('admin.products.index')
+                    ->with('error', 'Cannot delete product. It has associated order items.');
+            }
+
+            $product->delete();
+
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product deleted successfully.'
+                ]);
+            }
+
+            return redirect()->route('admin.products.index')
+                ->with('success', 'Product deleted successfully.');
+        } catch (\Exception $e) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error deleting product: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->route('admin.products.index')
+                ->with('error', 'Error deleting product: ' . $e->getMessage());
         }
-
-        return redirect()->route('admin.products.index')
-            ->with('success', 'Product deleted successfully.');
     }
 }
