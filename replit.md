@@ -88,14 +88,24 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
         - Client update flag for patches requiring launcher updates
         - Auto-generated slugs from titles
         - Dedicated updates index and single update pages
+        - **Drag-and-Drop Block Editor (Oct 17, 2025):** Interactive visual editor for content creation:
+            - Native HTML5 drag-and-drop for reordering blocks
+            - Visual editing for all 6 block types with appropriate input controls
+            - Dynamic add/remove block functionality
+            - List item management (add/remove items within list blocks)
+            - Auto-generates JSON on form submission
+            - Loads existing blocks in edit mode with proper data binding
+            - Tailwind CSS styling matching dragon theme throughout admin interface
     - **Top Voters Widget:** Tabbed display showing top 5 voters (weekly/monthly)
         - Real-time vote counting from database
         - Responsive tab interface matching dragon theme
     - **Color Schema:** Consistent dragon theme across all public pages (red #c41e3a, gold #d4a574, dark backgrounds)
     - **Admin Management:** Full CRUD interfaces for events and updates
         - Image upload support for events (stored in `storage/events/`)
-        - JSON content editor for updates with examples
+        - Drag-and-drop block editor for updates (replacing JSON textarea)
         - Preview functionality for updates before publishing
+        - All admin views use Tailwind CSS with dragon theme (#d40000, #0a0a0a, #e8e8e8)
+        - Content Management navigation section in admin sidebar
 
 **System Design Choices:**
 - **Database:** SQLite is used for development and portability within the Replit environment, with a recommendation to switch to MySQL/PostgreSQL for production.
