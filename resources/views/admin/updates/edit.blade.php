@@ -66,7 +66,7 @@
                 </div>
 
                 <!-- Hidden textarea for JSON content -->
-                <textarea name="content" id="contentJson" class="hidden" required></textarea>
+                <textarea name="content" id="contentJson" class="hidden"></textarea>
                 @error('content')
                     <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
                 @enderror
