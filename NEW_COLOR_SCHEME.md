@@ -49,10 +49,11 @@
 - Enhanced glow effects mimicking dragon fire
 - More mystical and premium feel
 
-### 2. **Multi-layered Background**
-- 3 radial gradients with crimson, gold, and ember tones
-- Creates depth and atmosphere
-- Subtle dragon lair ambiance
+### 2. **Multi-layered Gradient Background**
+- **Base gradient**: Deep diagonal sweep from black (#0a0a0a) → warm red-tinted (#1a0f0f) → deep black (#0d0d0d)
+- **3 radial overlays**: Crimson (8%), gold (6%), and ember (4%) tones
+- Creates depth and warm atmosphere
+- Immersive dragon lair ambiance - no more solid black!
 
 ### 3. **Enhanced Glass Cards**
 - Warmer brown-tinted borders
@@ -92,16 +93,25 @@ The colors blend together to create a cohesive, premium gaming experience that f
 ### Files Modified:
 1. ✅ `resources/views/layouts/public.blade.php`
    - Updated all CSS variables
-   - Enhanced background gradients
-   - Improved button styles
-   - Better card effects
-   - Richer header/footer
+   - **Multi-layer gradient background** (no more solid black!)
+   - Improved button styles with ember glow
+   - Better card effects with dual-glow
+   - Richer header/footer gradients
+
+2. ✅ `resources/views/vote/stats.blade.php`
+   - Updated all stat card colors (crimson, gold, ember)
+   - Changed borders from gray (#333) to warm brown (#3a2a2a)
+   - Enhanced hover effects with dual-glow
+   - Updated all text colors to new scheme
+   - Added gradient top borders to cards
+   - Updated site icons with gradient backgrounds
 
 ### Affected Pages:
-- /vote - Vote page
-- /play - Download page  
-- /store - Store page
-- All pages using public.blade.php layout
+- /vote - Vote page ✅
+- /vote/stats - Vote statistics page ✅
+- /play - Download page ✅
+- /store - Store page ✅
+- All pages using public.blade.php layout ✅
 
 ## 🔄 Restoration
 

@@ -53,11 +53,12 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #0a0a0a;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0f0f 50%, #0d0d0d 100%);
             background-image: 
-                radial-gradient(ellipse at 15% 20%, rgba(196, 30, 58, 0.06) 0%, transparent 40%),
-                radial-gradient(ellipse at 85% 80%, rgba(212, 165, 116, 0.04) 0%, transparent 45%),
-                radial-gradient(ellipse at 50% 50%, rgba(255, 107, 53, 0.02) 0%, transparent 60%);
+                linear-gradient(135deg, #0a0a0a 0%, #1a0f0f 50%, #0d0d0d 100%),
+                radial-gradient(ellipse at 15% 20%, rgba(196, 30, 58, 0.08) 0%, transparent 40%),
+                radial-gradient(ellipse at 85% 80%, rgba(212, 165, 116, 0.06) 0%, transparent 45%),
+                radial-gradient(ellipse at 50% 50%, rgba(255, 107, 53, 0.04) 0%, transparent 60%);
             background-attachment: fixed;
             color: var(--text-light);
             line-height: 1.6;
