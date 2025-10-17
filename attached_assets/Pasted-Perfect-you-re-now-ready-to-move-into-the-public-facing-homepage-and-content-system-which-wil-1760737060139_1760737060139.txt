@@ -1,0 +1,270 @@
+Perfect — you’re now ready to move into the **public-facing homepage and content system**, which will tie everything you’ve already built (cache management, launcher integration, admin backend) into a professional, game-centric portal.
+
+Here’s a **full developer breakdown** covering **frontend (public homepage)** + **admin CMS for updates/events**, designed to fit your existing `public.blade.php` layout and Laravel stack.
+
+---
+
+## 🧱 PART 1: Layout Structure
+
+You’ll continue using `public.blade.php` as your base layout (which already includes the navbar/footer).
+The homepage (`resources/views/home.blade.php`) will extend it:
+
+```blade
+@extends('layouts.public')
+
+@section('content')
+<div class="container py-4 space-y-6">
+
+    {{-- Events Section --}}
+    <section id="events">
+        <h2 class="text-xl font-semibold mb-3">Ongoing & Upcoming Events</h2>
+        <div class="grid md:grid-cols-3 gap-4">
+            @foreach ($events as $event)
+                <x-event-card :event="$event" />
+            @endforeach
+        </div>
+    </section>
+
+    {{-- Recent Updates Section --}}
+    <section id="updates">
+        <h2 class="text-xl font-semibold mb-3 mt-6">Recent Updates</h2>
+        <div class="grid md:grid-cols-2 gap-4">
+            @foreach ($updates->take(2) as $update)
+                <x-update-card :update="$update" />
+            @endforeach
+        </div>
+    </section>
+
+    {{-- Voter Widget --}}
+    <section id="top-voters" class="mt-8">
+        <h2 class="text-xl font-semibold mb-3">Top Voters</h2>
+        <x-voter-tabs :weekly="$topVotersWeek" :monthly="$topVotersMonth" />
+    </section>
+
+</div>
+@endsection
+```
+
+Each sub-section uses reusable **Blade components** (e.g. `<x-event-card>`, `<x-update-card>`).
+
+---
+
+## 🎉 PART 2: Events System
+
+### 🗄️ Database Table: `events`
+
+| Field                   | Type                              | Description                      |
+| ----------------------- | --------------------------------- | -------------------------------- |
+| id                      | bigint                            | Primary key                      |
+| title                   | string                            | Event title                      |
+| type                    | string                            | Event type (PvP, Giveaway, etc.) |
+| description             | text                              | Full info shown in modal         |
+| rewards                 | text                              | List or JSON of rewards          |
+| start_at                | datetime                          | Start time                       |
+| end_at                  | datetime                          | Optional end                     |
+| image                   | string                            | Banner image                     |
+| status                  | enum('upcoming','active','ended') | Auto-updated                     |
+| created_at / updated_at | timestamps                        | —                                |
+
+---
+
+### ⚙️ Event Scheduler
+
+A scheduled task runs hourly to update event `status` based on current time.
+
+```php
+// app/Console/Commands/UpdateEventStatuses.php
+public function handle() {
+    Event::where('start_at', '<=', now())->where('end_at', '>', now())->update(['status' => 'active']);
+    Event::where('end_at', '<', now())->update(['status' => 'ended']);
+}
+```
+
+---
+
+### 🎨 Blade Component: `<x-event-card>`
+
+```blade
+<div class="card bg-dark border p-4 rounded-2xl relative">
+    <img src="{{ asset('storage/'.$event->image) }}" class="rounded mb-2 h-32 object-cover">
+    <h3 class="font-bold text-lg">{{ $event->title }}</h3>
+    <p class="text-sm text-muted">{{ ucfirst($event->type) }}</p>
+    <div class="flex justify-between items-center mt-2">
+        <span class="badge bg-{{ $event->status == 'active' ? 'green' : 'gray' }}">
+            {{ ucfirst($event->status) }}
+        </span>
+        <span class="text-sm">
+            {{ $event->status == 'upcoming' ? $event->start_at->diffForHumans() : 'Ends '.$event->end_at->diffForHumans() }}
+        </span>
+    </div>
+
+    <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#eventModal{{ $event->id }}">
+        View Details
+    </button>
+
+    @include('components.event-modal', ['event' => $event])
+</div>
+```
+
+### 🎯 Event Modal
+
+Shows full description, rewards, countdown timer.
+
+```blade
+<div class="modal fade" id="eventModal{{ $event->id }}" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ $event->title }}</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>{!! nl2br(e($event->description)) !!}</p>
+        <div class="mt-3">
+          <strong>Rewards:</strong>
+          <ul class="list-disc ms-4">
+            @foreach(json_decode($event->rewards, true) as $reward)
+              <li>{{ $reward }}</li>
+            @endforeach
+          </ul>
+        </div>
+        <p class="mt-4 text-sm text-muted">
+          Starts: {{ $event->start_at->format('M d, Y H:i') }} <br>
+          Ends: {{ $event->end_at->format('M d, Y H:i') }}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+---
+
+## 📰 PART 3: Recent Updates System (Block-Based Editor)
+
+### 🗄️ Table: `updates`
+
+| Field                   | Type       | Description      |
+| ----------------------- | ---------- | ---------------- |
+| id                      | bigint     | Primary key      |
+| title                   | string     | Update title     |
+| slug                    | string     | URL slug         |
+| content                 | longtext   | JSON from editor |
+| created_at / updated_at | timestamps | —                |
+
+---
+
+### 🧱 Admin Panel Editor
+
+Use **Editor.js** or **TipTap** (rich-text block editor).
+Supported blocks:
+
+* Header
+* Paragraph
+* List
+* Code block
+* Image upload
+* Info blocks (`success`, `info`, `warning`, `danger`)
+
+Store output JSON in `content`.
+Render using a **renderer Blade helper** that maps blocks to HTML.
+
+#### Example Renderer (simplified)
+
+```php
+function renderUpdate($contentJson) {
+    $blocks = json_decode($contentJson, true)['blocks'];
+    $html = '';
+    foreach ($blocks as $block) {
+        switch ($block['type']) {
+            case 'header': $html .= "<h{$block['data']['level']}>{$block['data']['text']}</h{$block['data']['level']}>"; break;
+            case 'paragraph': $html .= "<p>{$block['data']['text']}</p>"; break;
+            case 'list': $html .= "<ul>".collect($block['data']['items'])->map(fn($i)=>"<li>$i</li>")->join('')."</ul>"; break;
+            case 'code': $html .= "<pre><code>{$block['data']['code']}</code></pre>"; break;
+            case 'info': $html .= "<div class='alert alert-{$block['data']['style']}'>{$block['data']['text']}</div>"; break;
+        }
+    }
+    return $html;
+}
+```
+
+---
+
+### 🧩 Homepage Display (Recent Updates)
+
+Use `<x-update-card>` to show latest 2 updates.
+
+```blade
+<div class="card bg-dark border p-4">
+    <h3 class="text-lg font-bold">{{ $update->title }}</h3>
+    <p class="text-sm text-muted">{{ $update->created_at->diffForHumans() }}</p>
+    <div class="mt-2">{!! Str::limit(strip_tags(renderUpdate($update->content)), 120) !!}</div>
+    <a href="{{ route('updates.show', $update->slug) }}" class="btn btn-outline mt-3">Read More</a>
+</div>
+```
+
+---
+
+## 🗳️ PART 4: Voter Widget
+
+Create component `<x-voter-tabs>` showing top 5 voters (weekly/monthly).
+
+```blade
+<div class="tabs">
+  <ul class="nav nav-tabs" id="voterTabs">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#weekly">This Week</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#monthly">This Month</a></li>
+  </ul>
+
+  <div class="tab-content mt-3">
+    <div class="tab-pane fade show active" id="weekly">
+      @foreach($weekly as $voter)
+        <p>#{{ $loop->iteration }} {{ $voter->username }} ({{ $voter->votes }} votes)</p>
+      @endforeach
+    </div>
+    <div class="tab-pane fade" id="monthly">
+      @foreach($monthly as $voter)
+        <p>#{{ $loop->iteration }} {{ $voter->username }} ({{ $voter->votes }} votes)</p>
+      @endforeach
+    </div>
+  </div>
+</div>
+```
+
+---
+
+## 🔔 PART 5: Client Update Notifications (Integration)
+
+* When an admin posts a new update with `client_update = true`,
+  update the manifest version number.
+* Launcher or standalone client fetches manifest:
+
+  * If outdated → shows “New client version available!”
+  * If in launcher → triggers silent auto-update.
+* Web UI also shows banner:
+
+  ```blade
+  @if($clientOutdated)
+  <div class="alert alert-warning text-center">
+      A new client version is available. Please relaunch your launcher to update automatically.
+  </div>
+  @endif
+  ```
+
+---
+
+## 🧭 PART 6: Navigation Flow Summary
+
+| Page              | Description                        |
+| ----------------- | ---------------------------------- |
+| `/`               | Homepage — Events, Updates, Voters |
+| `/updates`        | Updates list                       |
+| `/updates/{slug}` | Full update page                   |
+| `/events`         | All events                         |
+| `/play`           | Launcher link                      |
+| `/admin/events`   | Admin CRUD for events              |
+| `/admin/updates`  | Block-based editor for updates     |
+
+---
+
+The Public views should use the same colour schema as /vote, /store etc
