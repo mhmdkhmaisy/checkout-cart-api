@@ -17,6 +17,9 @@ class Kernel extends ConsoleKernel
         
         // Regenerate cache manifest daily at 3 AM
         $schedule->command('cache:generate-manifest')->dailyAt('03:00');
+        
+        // Update event statuses every hour
+        $schedule->command('events:update-statuses')->hourly();
     }
 
     /**

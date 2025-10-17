@@ -166,6 +166,24 @@
                             </a>
                         </div>
                     </div>
+                    
+                    <!-- Content Management Section -->
+                    <div class="pt-4">
+                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Content Management</h3>
+                        <div class="mt-2 space-y-1">
+                            <a href="{{ route('admin.events.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.events.*') ? 'active' : '' }}">
+                                <i class="fas fa-calendar-star mr-3"></i>
+                                Events
+                            </a>
+                            <a href="{{ route('admin.updates.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.updates.*') ? 'active' : '' }}">
+                                <i class="fas fa-newspaper mr-3"></i>
+                                Updates
+                            </a>
+                        </div>
+                    </div>
+                    
                     <!-- API Documentation -->
                     <div class="pt-4">
                         <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">API Documentation</h3>

@@ -76,6 +76,26 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
         - **Accurate Totals:** Total Changes now explicitly shows sum of added + modified + removed files, preventing misinterpretation when comparing patches with different file counts
 - **Multi-site Voting System:** Tracks votes and rewards.
 - **Client Management:** Facilitates the distribution and management of game client versions.
+- **Public Homepage & Content System (Oct 17, 2025):** Comprehensive portal for player engagement:
+    - **Events System:** Full event management with status tracking (upcoming/active/ended)
+        - Event creation with title, type (PvP, Giveaway, Double XP, etc.), description, rewards, and images
+        - Auto-status updates via scheduler command (`events:update-statuses`)
+        - Event cards with modal details on homepage
+        - Dedicated events page with pagination
+    - **Updates/News System:** Block-based content management for game updates
+        - JSON-based content blocks (header, paragraph, list, code, image, alert)
+        - UpdateRenderer helper class for rendering JSON blocks to HTML
+        - Client update flag for patches requiring launcher updates
+        - Auto-generated slugs from titles
+        - Dedicated updates index and single update pages
+    - **Top Voters Widget:** Tabbed display showing top 5 voters (weekly/monthly)
+        - Real-time vote counting from database
+        - Responsive tab interface matching dragon theme
+    - **Color Schema:** Consistent dragon theme across all public pages (red #c41e3a, gold #d4a574, dark backgrounds)
+    - **Admin Management:** Full CRUD interfaces for events and updates
+        - Image upload support for events (stored in `storage/events/`)
+        - JSON content editor for updates with examples
+        - Preview functionality for updates before publishing
 
 **System Design Choices:**
 - **Database:** SQLite is used for development and portability within the Replit environment, with a recommendation to switch to MySQL/PostgreSQL for production.
