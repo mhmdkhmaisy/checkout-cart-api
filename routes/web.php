@@ -11,15 +11,16 @@ use App\Http\Controllers\VoteController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\CacheFileController;
 use App\Http\Controllers\Admin\CacheBundleController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Admin\EventController;
+use App\Http\Controllers\Admin\UpdateController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    return redirect()->route('admin.dashboard');
-});
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Admin routes (in production, add authentication middleware)
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -104,6 +105,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
     });
 
+    // Event management
+    Route::resource('events', EventController::class);
+
+    // Update management
+    Route::resource('updates', UpdateController::class);
 
 });
 
@@ -135,4 +141,17 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::delete('/remove-from-cart/{productId}', [App\Http\Controllers\StoreController::class, 'removeFromCart'])->name('remove-from-cart');
     Route::get('/cart', [App\Http\Controllers\StoreController::class, 'getCart'])->name('get-cart');
     Route::post('/clear-cart', [App\Http\Controllers\StoreController::class, 'clearCart'])->name('clear-cart');
+});
+
+// Public events and updates routes
+Route::get('/events', [HomeController::class, 'events'])->name('events');
+Route::get('/updates', [HomeController::class, 'updates'])->name('updates');
+Route::get('/updates/{slug}', [HomeController::class, 'showUpdate'])->name('updates.show');
+
+// Public vote routes (if not already defined)
+Route::prefix('vote')->name('vote.')->group(function () {
+    Route::get('/', [VoteController::class, 'index'])->name('index');
+    Route::post('/set-username', [VoteController::class, 'setUsername'])->name('set-username');
+    Route::get('/status', [VoteController::class, 'getStatus'])->name('status');
+    Route::get('/stats', [VoteController::class, 'stats'])->name('stats');
 });
