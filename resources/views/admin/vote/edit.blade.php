@@ -7,7 +7,7 @@
 @section('content')
 <div class="max-w-2xl mx-auto">
     <div class="glass-effect rounded-xl p-8 border border-dragon-border">
-        <form action="{{ route('admin.vote.update', $voteSite) }}" method="POST" class="space-y-6">
+        <form action="{{ route('admin.vote.sites.update', $voteSite) }}" method="POST" class="space-y-6">
             @csrf
             @method('PUT')
             

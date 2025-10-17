@@ -114,16 +114,6 @@ Route::prefix('payment')->name('payment.')->group(function () {
     Route::get('/receipt/{orderId}/download', [PaymentController::class, 'downloadPdf'])->name('download-pdf');
 });
 
-// Public vote routes
-Route::prefix('vote')->name('vote.')->group(function () {
-    Route::get('/', [VoteController::class, 'index'])->name('index');
-    Route::post('/set-username', [VoteController::class, 'setUsername'])->name('set-username');
-    Route::post('/{site}', [VoteController::class, 'vote'])->name('submit');
-    Route::any('/callback', [VoteController::class, 'callback'])->name('callback');
-    Route::get('/stats', [VoteController::class, 'stats'])->name('stats');
-    Route::get('/user-votes', [VoteController::class, 'getUserVotes'])->name('user-votes');
-});
-
 // Public client download routes
 Route::get('/download/{os}/{version}', [ClientController::class, 'download'])->name('client.download');
 Route::get('/manifest.json', [ClientController::class, 'manifest'])->name('client.manifest');

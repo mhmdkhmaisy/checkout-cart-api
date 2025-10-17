@@ -19,12 +19,12 @@
                 </div>
             </div>
             <div class="flex space-x-3">
-                <a href="{{ route('admin.vote.edit', $voteSite) }}" 
+                <a href="{{ route('admin.vote.sites.edit', $voteSite) }}" 
                    class="px-4 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg transition-colors">
                     <i class="fas fa-edit mr-2"></i>
                     Edit Site
                 </a>
-                <form action="{{ route('admin.vote.toggle', $voteSite) }}" method="POST" class="inline">
+                <form action="{{ route('admin.vote.sites.toggle', $voteSite) }}" method="POST" class="inline">
                     @csrf
                     @method('PATCH')
                     <button type="submit" 
