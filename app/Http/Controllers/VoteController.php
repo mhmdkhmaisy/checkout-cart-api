@@ -77,7 +77,7 @@ class VoteController extends Controller
             'site_id' => $site->id,
             'ip_address' => $request->ip(),
             'started' => Carbon::now(),
-            'incentive' => uniqid()
+            'uid' => uniqid()
         ]);
 
         // Store username in session for persistence
@@ -86,7 +86,7 @@ class VoteController extends Controller
         // Generate vote URL
         $voteUrl = str_replace(
             ['{sid}', '{incentive}'],
-            [$site->site_id, $vote->incentive],
+            [$site->site_id, $vote->uid],
             $site->url
         );
 
@@ -99,13 +99,13 @@ class VoteController extends Controller
     public function callback(Request $request)
     {
         // Handle vote callbacks from voting sites
-        $incentive = $request->get('incentive') ?? $request->get('uid');
+        $uid = $request->get('incentive') ?? $request->get('uid');
         
-        if (!$incentive) {
-            return response('Missing incentive', 400);
+        if (!$uid) {
+            return response('Missing uid', 400);
         }
 
-        $vote = Vote::where('incentive', $incentive)->first();
+        $vote = Vote::where('uid', $uid)->first();
         
         if (!$vote) {
             return response('Vote not found', 404);
@@ -117,8 +117,7 @@ class VoteController extends Controller
 
         // Mark vote as completed
         $vote->update([
-            'callback_date' => Carbon::now(),
-            'callback_ip' => $request->ip()
+            'callback_date' => Carbon::now()
         ]);
 
         // Here you would typically give rewards to the player
