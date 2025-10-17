@@ -1,105 +1,142 @@
-@extends('layouts.admin')
+@extends('admin.layout')
 
-@section('title', 'Create Event')
+@section('title', 'Create Event - Aragon RSPS Admin')
+
+@section('header', 'Create New Event')
 
 @section('content')
-<div class="container-fluid py-4">
-    <div class="mb-4">
-        <a href="{{ route('admin.events.index') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Events
-        </a>
-    </div>
+<div class="mb-6">
+    <a href="{{ route('admin.events.index') }}" class="inline-flex items-center px-4 py-2 bg-dragon-surface border border-dragon-border text-dragon-silver rounded-lg hover:bg-dragon-red hover:text-white transition-colors">
+        <i class="fas fa-arrow-left mr-2"></i> Back to Events
+    </a>
+</div>
 
-    <h1 class="h3 mb-4">Create New Event</h1>
+<div class="bg-dragon-surface border border-dragon-border rounded-lg shadow-lg">
+    <div class="p-6">
+        <form action="{{ route('admin.events.store') }}" method="POST" enctype="multipart/form-data">
+            @csrf
 
-    <div class="card">
-        <div class="card-body">
-            <form action="{{ route('admin.events.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
+            <div class="mb-6">
+                <label for="title" class="block text-dragon-silver font-semibold mb-2">
+                    Event Title <span class="text-dragon-red">*</span>
+                </label>
+                <input type="text" 
+                       class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('title') border-red-500 @enderror" 
+                       id="title" 
+                       name="title" 
+                       value="{{ old('title') }}" 
+                       required>
+                @error('title')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
 
-                <div class="mb-3">
-                    <label for="title" class="form-label">Event Title *</label>
-                    <input type="text" class="form-control @error('title') is-invalid @enderror" 
-                           id="title" name="title" value="{{ old('title') }}" required>
-                    @error('title')
-                        <div class="invalid-feedback">{{ $message }}</div>
+            <div class="mb-6">
+                <label for="type" class="block text-dragon-silver font-semibold mb-2">
+                    Event Type <span class="text-dragon-red">*</span>
+                </label>
+                <select class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('type') border-red-500 @enderror" 
+                        id="type" 
+                        name="type" 
+                        required>
+                    <option value="">Select Type</option>
+                    <option value="PvP" {{ old('type') == 'PvP' ? 'selected' : '' }}>PvP</option>
+                    <option value="Giveaway" {{ old('type') == 'Giveaway' ? 'selected' : '' }}>Giveaway</option>
+                    <option value="Double XP" {{ old('type') == 'Double XP' ? 'selected' : '' }}>Double XP</option>
+                    <option value="Boss Event" {{ old('type') == 'Boss Event' ? 'selected' : '' }}>Boss Event</option>
+                    <option value="Other" {{ old('type') == 'Other' ? 'selected' : '' }}>Other</option>
+                </select>
+                @error('type')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-6">
+                <label for="description" class="block text-dragon-silver font-semibold mb-2">
+                    Description <span class="text-dragon-red">*</span>
+                </label>
+                <textarea class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('description') border-red-500 @enderror" 
+                          id="description" 
+                          name="description" 
+                          rows="5" 
+                          required>{{ old('description') }}</textarea>
+                @error('description')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-6">
+                <label for="rewards" class="block text-dragon-silver font-semibold mb-2">
+                    Rewards (one per line) <span class="text-dragon-red">*</span>
+                </label>
+                <textarea class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('rewards') border-red-500 @enderror" 
+                          id="rewards" 
+                          name="rewards" 
+                          rows="4" 
+                          required 
+                          placeholder="1st Place: 1B coins&#10;2nd Place: 500M coins&#10;3rd Place: 250M coins">{{ old('rewards') }}</textarea>
+                <p class="text-sm text-dragon-silver-dark mt-1">Enter each reward on a new line</p>
+                @error('rewards')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="start_at" class="block text-dragon-silver font-semibold mb-2">
+                        Start Date/Time <span class="text-dragon-red">*</span>
+                    </label>
+                    <input type="datetime-local" 
+                           class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('start_at') border-red-500 @enderror" 
+                           id="start_at" 
+                           name="start_at" 
+                           value="{{ old('start_at') }}" 
+                           required>
+                    @error('start_at')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <div class="mb-3">
-                    <label for="type" class="form-label">Event Type *</label>
-                    <select class="form-select @error('type') is-invalid @enderror" id="type" name="type" required>
-                        <option value="">Select Type</option>
-                        <option value="PvP" {{ old('type') == 'PvP' ? 'selected' : '' }}>PvP</option>
-                        <option value="Giveaway" {{ old('type') == 'Giveaway' ? 'selected' : '' }}>Giveaway</option>
-                        <option value="Double XP" {{ old('type') == 'Double XP' ? 'selected' : '' }}>Double XP</option>
-                        <option value="Boss Event" {{ old('type') == 'Boss Event' ? 'selected' : '' }}>Boss Event</option>
-                        <option value="Other" {{ old('type') == 'Other' ? 'selected' : '' }}>Other</option>
-                    </select>
-                    @error('type')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                <div>
+                    <label for="end_at" class="block text-dragon-silver font-semibold mb-2">
+                        End Date/Time
+                    </label>
+                    <input type="datetime-local" 
+                           class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('end_at') border-red-500 @enderror" 
+                           id="end_at" 
+                           name="end_at" 
+                           value="{{ old('end_at') }}">
+                    <p class="text-sm text-dragon-silver-dark mt-1">Leave empty for no end date</p>
+                    @error('end_at')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+            </div>
 
-                <div class="mb-3">
-                    <label for="description" class="form-label">Description *</label>
-                    <textarea class="form-control @error('description') is-invalid @enderror" 
-                              id="description" name="description" rows="5" required>{{ old('description') }}</textarea>
-                    @error('description')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+            <div class="mb-6">
+                <label for="image" class="block text-dragon-silver font-semibold mb-2">
+                    Event Image
+                </label>
+                <input type="file" 
+                       class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('image') border-red-500 @enderror" 
+                       id="image" 
+                       name="image" 
+                       accept="image/*">
+                <p class="text-sm text-dragon-silver-dark mt-1">Recommended size: 800x400px (PNG, JPG, max 2MB)</p>
+                @error('image')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
 
-                <div class="mb-3">
-                    <label for="rewards" class="form-label">Rewards (one per line) *</label>
-                    <textarea class="form-control @error('rewards') is-invalid @enderror" 
-                              id="rewards" name="rewards" rows="4" required 
-                              placeholder="1st Place: 1B coins&#10;2nd Place: 500M coins&#10;3rd Place: 250M coins">{{ old('rewards') }}</textarea>
-                    <small class="form-text text-muted">Enter each reward on a new line</small>
-                    @error('rewards')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="start_at" class="form-label">Start Date/Time *</label>
-                        <input type="datetime-local" class="form-control @error('start_at') is-invalid @enderror" 
-                               id="start_at" name="start_at" value="{{ old('start_at') }}" required>
-                        @error('start_at')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="end_at" class="form-label">End Date/Time</label>
-                        <input type="datetime-local" class="form-control @error('end_at') is-invalid @enderror" 
-                               id="end_at" name="end_at" value="{{ old('end_at') }}">
-                        <small class="form-text text-muted">Leave empty for no end date</small>
-                        @error('end_at')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label for="image" class="form-label">Event Image</label>
-                    <input type="file" class="form-control @error('image') is-invalid @enderror" 
-                           id="image" name="image" accept="image/*">
-                    <small class="form-text text-muted">Recommended size: 800x400px (PNG, JPG, max 2MB)</small>
-                    @error('image')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Create Event
-                    </button>
-                    <a href="{{ route('admin.events.index') }}" class="btn btn-secondary">Cancel</a>
-                </div>
-            </form>
-        </div>
+            <div class="flex gap-3">
+                <button type="submit" class="px-6 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg transition-colors">
+                    <i class="fas fa-save mr-2"></i> Create Event
+                </button>
+                <a href="{{ route('admin.events.index') }}" class="px-6 py-2 bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg hover:bg-dragon-surface transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
     </div>
 </div>
 @endsection
