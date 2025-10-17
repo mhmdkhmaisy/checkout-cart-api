@@ -34,31 +34,48 @@
     </section>
     @endif
 
-    @if($updates->count() > 0)
-    <section id="updates" class="mb-5">
-        <div style="display: flex; justify-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2 class="text-primary" style="font-size: 2rem; font-weight: 700;">
-                <i class="fas fa-newspaper"></i> Recent Updates
-            </h2>
-            <a href="{{ route('updates') }}" class="btn btn-outline">
-                <i class="fas fa-arrow-right"></i> View All Updates
-            </a>
-        </div>
+    <style>
+        .updates-voters-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
         
-        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
-            @foreach ($updates as $update)
-                <x-update-card :update="$update" />
-            @endforeach
-        </div>
-    </section>
-    @endif
+        @media (min-width: 768px) {
+            .updates-voters-grid {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+    </style>
+    
+    <div class="updates-voters-grid">
+        @if($updates->count() > 0)
+        <section id="updates">
+            <div style="display: flex; justify-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 class="text-primary" style="font-size: 2rem; font-weight: 700;">
+                    <i class="fas fa-newspaper"></i> Recent Updates
+                </h2>
+                <a href="{{ route('updates') }}" class="btn btn-outline">
+                    <i class="fas fa-arrow-right"></i> View All Updates
+                </a>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                @foreach ($updates as $update)
+                    <x-update-card :update="$update" />
+                @endforeach
+            </div>
+        </section>
+        @endif
 
-    <section id="top-voters" class="mb-5">
-        <h2 class="text-primary" style="font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem;">
-            <i class="fas fa-trophy"></i> Top Voters
-        </h2>
-        <x-voter-tabs :weekly="$topVotersWeek" :monthly="$topVotersMonth" />
-    </section>
+        <section id="top-voters">
+            <h2 class="text-primary" style="font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem;">
+                <i class="fas fa-trophy"></i> Top Voters
+            </h2>
+            <x-voter-tabs :weekly="$topVotersWeek" :monthly="$topVotersMonth" />
+        </section>
+    </div>
 
     <section class="text-center mt-5">
         <div class="glass-card" style="padding: 3rem;">
