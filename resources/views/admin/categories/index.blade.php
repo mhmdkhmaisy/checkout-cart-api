@@ -308,7 +308,7 @@ document.getElementById('category-form').addEventListener('submit', function(e) 
     }
     
     const formData = new FormData(this);
-    const url = isEditing ? `{{ url('/admin/categories') }}/${currentCategoryId}` : '{{ route("admin.categories.store") }}';
+    const url = isEditing ? `/admin/categories/${currentCategoryId}` : '/admin/categories';
     
     const data = {};
     for (let [key, value] of formData.entries()) {

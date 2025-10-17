@@ -811,7 +811,7 @@ function showDeleteContextModal() {
 // Clear All Patches Function
 async function clearAllPatches() {
     try {
-        const response = await fetch('{{ route("admin.cache.patches.clear-all") }}', {
+        const response = await fetch('/admin/cache/patches/clear-all', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -1036,7 +1036,7 @@ async function extractFile(fileId, fileName) {
         formData.append('file_id', fileId);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
         
-        const response = await fetch('{{ route("admin.cache.extract-file") }}', {
+        const response = await fetch('/admin/cache/extract-file', {
             method: 'POST',
             body: formData
         });
@@ -1115,7 +1115,7 @@ function hideExtractModal() {
 function deleteFile(fileId) {
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = `{{ route('admin.cache.destroy', '') }}/${fileId}`;
+    form.action = `/admin/cache/${fileId}`;
     form.innerHTML = `
         @csrf
         @method('DELETE')
@@ -1247,7 +1247,7 @@ async function deleteSelected() {
         selectedFileItems.forEach(id => formData.append('file_ids[]', id));
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
         
-        const response = await fetch('{{ route("admin.cache.bulk-delete") }}', {
+        const response = await fetch('/admin/cache/bulk-delete', {
             method: 'POST',
             body: formData
         });
@@ -1563,7 +1563,7 @@ async function startBatchUpload() {
     
     // Call finalize endpoint to generate manifest/patch once
     try {
-        const response = await fetch('{{ route("admin.cache.finalize-upload") }}', {
+        const response = await fetch('/admin/cache/finalize-upload', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -1673,7 +1673,7 @@ async function uploadTarFile(file, index) {
 
         updateFileStatus(index, 'Uploading TAR...', 'text-purple-400');
         
-        xhr.open('POST', '{{ route("admin.cache.store-tar") }}');
+        xhr.open('POST', '/admin/cache/store-tar');
         xhr.send(formData);
     });
 }
@@ -1820,7 +1820,7 @@ async function uploadBatchOptimized(batch) {
             updateFileStatus(index, 'Uploading...', 'text-blue-400');
         });
 
-        xhr.open('POST', '{{ route("admin.cache.store") }}');
+        xhr.open('POST', '/admin/cache');
         xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
         xhr.send(formData);
     });
@@ -1897,7 +1897,7 @@ async function uploadSingleFileOptimized(file, index) {
 
         updateFileStatus(index, 'Uploading...', 'text-blue-400');
         
-        xhr.open('POST', '{{ route("admin.cache.store") }}');
+        xhr.open('POST', '/admin/cache');
         
         // OPTIMIZED: Set headers for better performance
         xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');

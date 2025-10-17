@@ -288,7 +288,7 @@ document.getElementById('new-category-form').addEventListener('submit', function
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     const categoryName = document.getElementById('new_category_name').value;
     
-    fetch('{{ route("admin.categories.store") }}', {
+    fetch('/admin/categories', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -390,7 +390,7 @@ document.getElementById('product-form').addEventListener('submit', function(e) {
         data.bundle_items = bundleItems;
     }
 
-    fetch('{{ route("admin.products.store") }}', {
+    fetch('/admin/products', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -410,7 +410,7 @@ document.getElementById('product-form').addEventListener('submit', function(e) {
         if (data.success) {
             showMessage(data.message, 'success');
             setTimeout(() => {
-                window.location.href = '{{ route("admin.products.index") }}';
+                window.location.href = '/admin/products';
             }, 1000);
         } else {
             showMessage('An error occurred', 'error');
