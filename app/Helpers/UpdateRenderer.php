@@ -195,4 +195,56 @@ class UpdateRenderer
         $plainText = implode(' ', $text);
         return Str::limit($plainText, $maxLength);
     }
+
+    public static function renderPreview($contentJson, $maxWeight = 300)
+    {
+        if (empty($contentJson)) {
+            return '';
+        }
+
+        $data = json_decode($contentJson, true);
+        
+        if (!$data || !isset($data['blocks'])) {
+            return '<p style="margin-bottom: 1rem; line-height: 1.7; color: var(--text-color, #ccc);">' . nl2br(e($contentJson)) . '</p>';
+        }
+
+        $html = '';
+        $currentWeight = 0;
+        
+        // Block weights for calculating "visual length"
+        $blockWeights = [
+            'header' => 50,
+            'paragraph' => function($data) { return strlen($data['text'] ?? ''); },
+            'list' => function($data) { return count($data['items'] ?? []) * 20; },
+            'code' => 100,
+            'image' => 50,
+            'alert' => function($data) { return strlen($data['message'] ?? ''); },
+        ];
+        
+        foreach ($data['blocks'] as $block) {
+            $type = $block['type'] ?? 'paragraph';
+            $blockData = $block['data'] ?? [];
+            
+            // Calculate weight for this block
+            $weight = 0;
+            if (isset($blockWeights[$type])) {
+                if (is_callable($blockWeights[$type])) {
+                    $weight = $blockWeights[$type]($blockData);
+                } else {
+                    $weight = $blockWeights[$type];
+                }
+            }
+            
+            // Stop if adding this block would exceed limit
+            if ($currentWeight + $weight > $maxWeight && $currentWeight > 0) {
+                $html .= '<p style="color: var(--text-muted, #999); font-style: italic; margin-top: 0.5rem;">...</p>';
+                break;
+            }
+            
+            $html .= self::renderBlock($block);
+            $currentWeight += $weight;
+        }
+        
+        return $html;
+    }
 }
