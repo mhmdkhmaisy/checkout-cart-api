@@ -20,7 +20,7 @@
         $windowsClient = $clients->get('windows');
         $macosClient = $clients->get('macos');
         $linuxClient = $clients->get('linux');
-        $jarClient = $clients->get('jar');
+        $jarClient = $clients->get('standalone');
     @endphp
 
     <!-- Main Windows Download Card -->
@@ -127,7 +127,7 @@
                 </p>
                 <a href="{{ $jarClient->download_url }}" 
                    class="btn btn-outline w-full"
-                   onclick="trackDownload('jar', '{{ $jarClient->version }}')">
+                   onclick="trackDownload('standalone', '{{ $jarClient->version }}')">
                     <i class="fas fa-download"></i> Download
                 </a>
             @else
