@@ -12,8 +12,10 @@
         <i class="far fa-clock"></i> {{ $update->created_at->diffForHumans() }}
     </p>
     
-    <div class="text-muted mb-3" style="max-height: 100px; overflow: hidden;">
-        {!! Str::limit(strip_tags(\App\Helpers\UpdateRenderer::render($update->content)), 150) !!}
+    <div class="text-muted mb-3" style="max-height: 100px; overflow: hidden; position: relative;">
+        <div style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.6;">
+            {{ \App\Helpers\UpdateRenderer::extractPlainText($update->content, 180) }}
+        </div>
     </div>
     
     <a href="{{ route('updates.show', $update->slug) }}" class="btn btn-outline w-full">

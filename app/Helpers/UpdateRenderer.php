@@ -2,6 +2,8 @@
 
 namespace App\Helpers;
 
+use Illuminate\Support\Str;
+
 class UpdateRenderer
 {
     public static function render($contentJson)
@@ -118,5 +120,63 @@ class UpdateRenderer
         $style = $styles[$type] ?? $styles['info'];
         
         return '<div style="' . $style . '">' . nl2br(e($message)) . '</div>';
+    }
+
+    public static function extractPlainText($contentJson, $maxLength = 200)
+    {
+        if (empty($contentJson)) {
+            return '';
+        }
+
+        $data = json_decode($contentJson, true);
+        
+        if (!$data || !isset($data['blocks'])) {
+            return Str::limit(strip_tags($contentJson), $maxLength);
+        }
+
+        $text = [];
+        
+        foreach ($data['blocks'] as $block) {
+            $type = $block['type'] ?? 'paragraph';
+            $blockData = $block['data'] ?? [];
+            
+            switch($type) {
+                case 'header':
+                    if (!empty($blockData['text'])) {
+                        $text[] = $blockData['text'];
+                    }
+                    break;
+                case 'paragraph':
+                    if (!empty($blockData['text'])) {
+                        $text[] = $blockData['text'];
+                    }
+                    break;
+                case 'list':
+                    if (!empty($blockData['items'])) {
+                        $text[] = implode(', ', $blockData['items']);
+                    }
+                    break;
+                case 'alert':
+                    if (!empty($blockData['message'])) {
+                        $text[] = $blockData['message'];
+                    }
+                    break;
+                case 'code':
+                    if (!empty($blockData['code'])) {
+                        $text[] = '[Code snippet]';
+                    }
+                    break;
+                case 'image':
+                    if (!empty($blockData['caption'])) {
+                        $text[] = $blockData['caption'];
+                    } else {
+                        $text[] = '[Image]';
+                    }
+                    break;
+            }
+        }
+        
+        $plainText = implode(' ', $text);
+        return Str::limit($plainText, $maxLength);
     }
 }

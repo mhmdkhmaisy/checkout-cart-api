@@ -262,6 +262,19 @@
             border-color: var(--primary-color);
         }
 
+        .btn-outline {
+            background: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: var(--text-light);
+            box-shadow: 0 4px 15px var(--glow-primary);
+            transform: translateY(-2px);
+        }
+
         /* Form Styles */
         .form-group {
             margin-bottom: 1.5rem;
@@ -329,6 +342,34 @@
 
         .text-muted {
             color: var(--text-muted);
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .items-start {
+            align-items: flex-start;
+        }
+
+        .text-lg {
+            font-size: 1.125rem;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
         }
 
         .mb-1 { margin-bottom: 0.5rem; }
