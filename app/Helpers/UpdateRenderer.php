@@ -135,45 +135,61 @@ class UpdateRenderer
         }
 
         $text = [];
+        $currentLength = 0;
         
         foreach ($data['blocks'] as $block) {
+            // Stop if we already have enough text
+            if ($currentLength >= $maxLength) {
+                break;
+            }
+            
             $type = $block['type'] ?? 'paragraph';
             $blockData = $block['data'] ?? [];
             
+            // Skip the first header (usually the title which is already shown)
+            if ($type === 'header' && empty($text)) {
+                continue;
+            }
+            
             switch($type) {
-                case 'header':
-                    if (!empty($blockData['text'])) {
-                        $text[] = $blockData['text'];
-                    }
-                    break;
                 case 'paragraph':
                     if (!empty($blockData['text'])) {
                         $text[] = $blockData['text'];
+                        $currentLength += strlen($blockData['text']);
                     }
                     break;
                 case 'list':
                     if (!empty($blockData['items'])) {
-                        $text[] = implode(', ', $blockData['items']);
+                        // Only show first few list items
+                        $items = array_slice($blockData['items'], 0, 3);
+                        $listText = implode(', ', $items);
+                        if (count($blockData['items']) > 3) {
+                            $listText .= '...';
+                        }
+                        $text[] = $listText;
+                        $currentLength += strlen($listText);
                     }
                     break;
                 case 'alert':
                     if (!empty($blockData['message'])) {
                         $text[] = $blockData['message'];
+                        $currentLength += strlen($blockData['message']);
                     }
                     break;
-                case 'code':
-                    if (!empty($blockData['code'])) {
-                        $text[] = '[Code snippet]';
+                case 'header':
+                    // Include headers after the first one as section markers
+                    if (!empty($blockData['text']) && !empty($text)) {
+                        $text[] = $blockData['text'];
+                        $currentLength += strlen($blockData['text']);
                     }
                     break;
-                case 'image':
-                    if (!empty($blockData['caption'])) {
-                        $text[] = $blockData['caption'];
-                    } else {
-                        $text[] = '[Image]';
-                    }
-                    break;
+                // Skip code blocks and images from preview
             }
+        }
+        
+        // If no text was extracted (maybe only header/code/images), show a generic message
+        if (empty($text)) {
+            return 'Click to read more...';
         }
         
         $plainText = implode(' ', $text);
