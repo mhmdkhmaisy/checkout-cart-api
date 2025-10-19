@@ -367,9 +367,24 @@ After running tests:
    - Set up monitoring
    - Prepare for production
 
+## Troubleshooting
+
+Having issues? Check the troubleshooting guide:
+
+```bash
+cat tests/performance/TROUBLESHOOTING.md
+```
+
+**Common issues:**
+- High error rates → Normal if cache/clients not uploaded yet
+- 404 responses → Expected for empty systems
+- Slow response times → Check performance monitor
+- Username errors → Already fixed in latest version
+
 ## Resources
 
 - 📖 [Detailed Setup Guide](SETUP.md)
+- 📖 [Troubleshooting Guide](TROUBLESHOOTING.md)
 - 📖 [Stress Testing Strategy](../../STRESS_TESTING_GUIDE.md)
 - 🔗 [k6 Documentation](https://k6.io/docs/)
 - 🔗 [Laravel Performance](https://laravel.com/docs/optimization)

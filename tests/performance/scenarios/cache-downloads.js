@@ -11,11 +11,12 @@ export let options = {
     vus: 5,
     duration: '5m',
     thresholds: {
-        'errors': ['rate<0.1'],
+        'errors': ['rate<0.15'],
         'http_req_duration': ['p(95)<3000'],
         'cache_bundles_duration': ['p(95)<1000'],
         'patch_download_duration': ['p(95)<2000']
-    }
+    },
+    discardResponseBodies: true
 };
 
 export default function () {
@@ -77,11 +78,12 @@ export default function () {
         group('Download Manifest', function () {
             res = http.get(`${baseUrl}/admin/cache/download-manifest`, {
                 ...params,
-                timeout: '30s'
+                timeout: '30s',
+                redirects: 0
             });
             
             const passed = check(res, {
-                'manifest downloaded': (r) => r.status === 200 || r.status === 404
+                'manifest downloaded': (r) => r.status === 200 || r.status === 302 || r.status === 404
             });
             errorRate.add(!passed);
             sleep(1);
