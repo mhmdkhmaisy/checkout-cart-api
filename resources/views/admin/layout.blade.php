@@ -199,6 +199,18 @@
                             </a>
                         </div>
                     </div>
+                    
+                    <!-- System Monitoring -->
+                    <div class="pt-4">
+                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">System</h3>
+                        <div class="mt-2 space-y-1">
+                            <a href="{{ route('admin.performance.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.performance.*') ? 'active' : '' }}">
+                                <i class="fas fa-tachometer-alt mr-3"></i>
+                                Performance Monitor
+                            </a>
+                        </div>
+                    </div>
                 </ul>
             </nav>
 
