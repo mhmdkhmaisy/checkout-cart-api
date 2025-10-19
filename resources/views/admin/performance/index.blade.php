@@ -53,6 +53,41 @@
     .sort-indicator.active {
         opacity: 1;
     }
+    
+    /* Custom Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: #1a1a1a;
+        border: 2px solid #d40000;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 10px 40px rgba(212, 0, 0, 0.3);
+    }
+    
+    .modal-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
 </style>
 
 <div class="space-y-6">
@@ -66,6 +101,9 @@
         </div>
         <div class="flex items-center space-x-4">
             <div id="last-updated" class="text-sm text-dragon-silver-dark"></div>
+            <button onclick="showClearModal()" class="bg-red-900 hover:bg-red-800 text-white px-4 py-2 rounded-lg transition-colors border border-red-700">
+                Clear All Data
+            </button>
             <button onclick="refreshMetrics()" class="bg-dragon-red hover:bg-dragon-red-bright text-white px-4 py-2 rounded-lg transition-colors">
                 Refresh
             </button>
@@ -74,6 +112,38 @@
 
     <!-- Alerts -->
     <div id="alerts-container" class="hidden">
+    </div>
+
+    <!-- Clear Confirmation Modal -->
+    <div id="clear-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex items-center mb-4">
+                <svg class="w-12 h-12 text-red-500 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <div>
+                    <h3 class="text-xl font-bold text-dragon-red">Confirm Clear All Data</h3>
+                    <p class="text-dragon-silver-dark text-sm mt-1">This action cannot be undone</p>
+                </div>
+            </div>
+            <p class="text-dragon-silver mb-4">
+                Are you sure you want to delete all performance monitoring data? This will permanently remove:
+            </p>
+            <ul class="list-disc list-inside text-dragon-silver-dark mb-4 space-y-1">
+                <li>All request logs and metrics</li>
+                <li>Route performance history</li>
+                <li>Slow query records</li>
+                <li>Performance summaries</li>
+            </ul>
+            <div class="modal-buttons">
+                <button onclick="hideClearModal()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                    Cancel
+                </button>
+                <button onclick="confirmClearAll()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                    Yes, Clear All Data
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Live Metrics Cards -->
@@ -458,6 +528,40 @@ async function refreshMetrics() {
         updateLastUpdated();
     } catch (error) {
         console.error('Error refreshing metrics:', error);
+    }
+}
+
+function showClearModal() {
+    document.getElementById('clear-modal').classList.add('active');
+}
+
+function hideClearModal() {
+    document.getElementById('clear-modal').classList.remove('active');
+}
+
+async function confirmClearAll() {
+    try {
+        const response = await fetch('/admin/performance/clear-all', {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            hideClearModal();
+            alert(`Successfully cleared ${result.data.logs_deleted} logs and ${result.data.summaries_deleted} summaries`);
+            refreshMetrics();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error clearing data:', error);
+        alert('Failed to clear data. Please try again.');
     }
 }
 

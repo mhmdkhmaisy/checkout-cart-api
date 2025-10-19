@@ -207,4 +207,29 @@ class PerformanceController extends Controller
             ], 500);
         }
     }
+
+    public function clearAll(): JsonResponse
+    {
+        try {
+            $logsDeleted = PerformanceLog::count();
+            PerformanceLog::truncate();
+            
+            $summariesDeleted = PerformanceSummary::count();
+            PerformanceSummary::truncate();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'All performance data cleared successfully',
+                'data' => [
+                    'logs_deleted' => $logsDeleted,
+                    'summaries_deleted' => $summariesDeleted,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

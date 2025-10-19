@@ -123,6 +123,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/alerts', [PerformanceController::class, 'alerts'])->name('alerts');
         Route::get('/summaries', [PerformanceController::class, 'summaries'])->name('summaries');
         Route::get('/queue-stats', [PerformanceController::class, 'queueStats'])->name('queue-stats');
+        Route::delete('/clear-all', [PerformanceController::class, 'clearAll'])->name('clear-all');
     });
 
 });
