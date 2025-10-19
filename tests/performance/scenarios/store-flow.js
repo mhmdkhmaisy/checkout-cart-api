@@ -46,12 +46,25 @@ export default function () {
                 + '_' + Date.now() + '_' + __VU;
             
             res = http.post(`${baseUrl}/store/set-user`, 
-                JSON.stringify({ username: username }), 
-                params
+                `username=${encodeURIComponent(username)}`,
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json'
+                    }
+                }
             );
             
             const passed = check(res, {
-                'username set': (r) => r.status === 200 || r.status === 302
+                'username set': (r) => r.status === 200 || r.status === 302,
+                'response has success': (r) => {
+                    try {
+                        const json = JSON.parse(r.body);
+                        return json.success === true;
+                    } catch (e) {
+                        return r.status === 302;
+                    }
+                }
             });
             errorRate.add(!passed);
             sleep(0.5);
