@@ -3,6 +3,36 @@
 @section('title', 'Performance Monitor - Aragon RSPS Admin')
 
 @section('content')
+<style>
+    /* Custom scrollbar styling */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(212, 0, 0, 0.1);
+        border-radius: 4px;
+        margin: 4px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #d40000;
+        border-radius: 4px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #ff0000;
+    }
+    
+    /* Chart container with fixed height */
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+</style>
+
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
@@ -76,13 +106,15 @@
         <!-- Request Timeline Chart -->
         <div class="glass-effect rounded-xl p-6 border border-dragon-border">
             <h3 class="text-xl font-semibold mb-4 text-dragon-red">Request Performance (Last Hour)</h3>
-            <canvas id="request-chart" height="200"></canvas>
+            <div class="chart-container">
+                <canvas id="request-chart"></canvas>
+            </div>
         </div>
 
         <!-- Route Performance Table -->
         <div class="glass-effect rounded-xl p-6 border border-dragon-border">
             <h3 class="text-xl font-semibold mb-4 text-dragon-red">Route Performance</h3>
-            <div class="overflow-y-auto" style="max-height: 300px;">
+            <div class="overflow-y-auto custom-scrollbar" style="max-height: 300px;">
                 <table class="w-full">
                     <thead class="sticky top-0 bg-dragon-surface">
                         <tr class="text-left text-dragon-silver-dark text-sm">
@@ -106,7 +138,7 @@
         <!-- Slow Queries -->
         <div class="glass-effect rounded-xl p-6 border border-dragon-border">
             <h3 class="text-xl font-semibold mb-4 text-dragon-red">Slow Queries (Last Hour)</h3>
-            <div class="overflow-y-auto" style="max-height: 300px;">
+            <div class="overflow-y-auto custom-scrollbar" style="max-height: 300px;">
                 <div id="slow-queries-container" class="space-y-3">
                     <div class="text-center py-8 text-dragon-silver-dark">Loading...</div>
                 </div>

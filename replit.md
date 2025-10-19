@@ -1,7 +1,7 @@
 # RSPS Complete System - Replit Project
 
 ### Overview
-This project is a comprehensive Laravel-based system designed for RuneScape Private Servers. Its core purpose is to provide robust management features for server administrators, including donation processing, cache file distribution, a multi-site voting system, and client management. The system aims to streamline server operations, enhance user experience, and provide a dark-themed, intuitive admin dashboard. Key capabilities include high-performance chunked file uploads, intelligent file management with directory navigation, and secure handling of game assets.
+This project is a comprehensive Laravel-based system for RuneScape Private Servers. Its primary goal is to provide robust management features for server administrators, including donation processing, cache file distribution, a multi-site voting system, and client management. The system aims to streamline server operations, enhance user experience, and offers an intuitive, dark-themed admin dashboard. Key capabilities include high-performance chunked file uploads, intelligent file management with directory navigation, and secure handling of game assets.
 
 ### User Preferences
 - Testing locally on PC (not using Replit preview)
@@ -12,121 +12,43 @@ This project is a comprehensive Laravel-based system designed for RuneScape Priv
 The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
 
 **UI/UX Decisions:**
-- The administration panel features a dark-themed dashboard for improved aesthetics and usability.
-- The file manager provides cPanel-like directory browsing with breadcrumb navigation and level-aware display.
+- The administration panel features a dark-themed dashboard.
+- The file manager provides cPanel-like directory browsing with breadcrumb navigation.
 - Supports drag-and-drop file uploads, folder uploads, and archive extraction with preserved directory structure.
+- Public-facing pages and admin interfaces maintain a consistent "dragon theme" color scheme (red, gold, dark backgrounds).
+- API documentation has a modern, GitLab-inspired layout with sticky navigation, HTTP method badges, and comprehensive examples.
 
 **Technical Implementations & Feature Specifications:**
-- **Donation Management:** Supports PayPal and Coinbase Commerce integrations.
-    - **Product Categories (Oct 15, 2025):** Products can be organized into categories for better management:
-        - Categories table with name, description, and is_active fields
-        - Products have optional category_id foreign key relationship
-        - Category dropdown in product creation/edit forms
-        - Category column displayed in products table
-    - **Bundle/Pack System (Oct 15, 2025):** Products can contain multiple items as bundles:
-        - ProductItems table links products to multiple item_id/qty_unit pairs
-        - Dynamic bundle item management in product forms (add/remove items)
-        - Products without bundle items are single products (use main item_id/qty_unit)
-        - Products with bundle items display as "Bundle" type with item count
-        - Bundle items persist correctly through create/update operations
-        - Bundle data serialized as JSON array in API responses
+- **Donation Management:** Integrates with PayPal and Coinbase Commerce. Products can be organized into categories and configured as bundles/packs containing multiple items.
 - **Cache File Distribution:**
-    - Features a standard multi-file upload system with support for individual files, folders, and archive extraction (ZIP/TAR).
-    - Implements a smart hashing strategy, using SHA256 for file identification and duplicate detection.
-    - Includes robust security features: directory traversal protection, filename sanitization, path normalization, null byte filtering, and storage isolation.
-    - The file manager supports full directory browsing, virtual folders, and path-based filtering.
-    - **Critical Path Fix (Oct 13, 2025):** Corrected `relative_path` storage throughout the system to store ONLY directory paths (excluding filenames), preventing files from being misidentified as folders.
-    - **Extract Here Feature:** Preserves complete directory structure when extracting archives - files are stored in `cache_files/{directory_path}/{filename}` maintaining folder hierarchy.
-    - **Duplicate Detection:** Normalized to use directory paths only for accurate duplicate checking across all upload methods.
-    - **Drag & Drop:** Enhanced with folder detection to gracefully handle browser restrictions, directing users to "Browse Folders" button.
-    - **Cleanup Command:** `php artisan cache:fix-paths` safely repairs existing database records with incorrect paths using metadata validation.
-    - **Delta Patch System (Oct 14, 2025):** Implemented intelligent incremental patch system for efficient cache updates:
-        - **Semantic Versioning:** Automatic version management (1.0.0, 1.0.1, etc.) with proper semantic version comparison
-        - **Incremental Patches:** Only changed/new files are packaged in delta patches, drastically reducing download sizes
-        - **Base Patches:** Full cache snapshots serve as foundation for delta chains
-        - **Auto-Merge:** Automatically consolidates 15+ incremental patches into new base version for optimal performance
-        - **Manifest System:** Dual manifest storage - JSON files for full state tracking, database records for delta diffs
-        - **Smart Diffing:** MD5 hashing compares against previous full state to accurately detect changes
-        - **API Endpoints:** Client can check for updates, download individual patches, or get combined patch bundles
-        - **Artifact Exclusion:** scanDir() explicitly filters out patch system directories to prevent corruption
-        - **Storage Paths:** Patches stored in `cache/patches/`, manifests in `cache/manifests/`, combined downloads in `cache/combined/`
-    - **Optimized Storage Architecture (Oct 14, 2025):** Refactored to eliminate duplicate storage and optimize disk usage:
-        - **Temporary Upload Processing:** Files are uploaded to `temp_uploads/` directory for processing only
-        - **Database as Authority:** Database maintains authoritative file records (metadata, hashes, paths) - not filesystem
-        - **Patch-Only Storage:** Only compressed patch ZIPs are permanently stored, original uploads are deleted after patch creation
-        - **Smart Cleanup:** Temporary files automatically deleted after patch generation, database records preserved
-        - **Incremental Detection:** Patch system compares database state against previous manifest to identify only new/changed files
-        - **Example Flow:** Upload base → DB records → Patch v1.0.0 created → Temp cleanup → Upload sprites → DB updated → Compare vs v1.0.0 → Patch v1.0.1 (sprites only) → Cleanup
-        - **Zero Duplication:** Eliminates previous issue where files were stored both as originals in `cache_files/` AND in patch ZIPs
-    - **Batch Upload Fixes (Oct 14, 2025):** Resolved critical issues with "Browse Directory" uploads:
-        - **Single Patch Per Upload:** Fixed multiple patch generation by deferring manifest/patch creation until all batches complete via new `finalizeUpload()` endpoint
-        - **Missing Files Fix:** Reduced batch sizes from 50/20 to 15/15 files to respect PHP `max_file_uploads=20` limit, preventing silent file drops
-        - **Batch Flow:** Individual batch uploads skip manifest → All batches complete → Single finalize call → One patch created
-        - **PHP Limit Awareness:** Batch sizes now safely stay below default PHP upload limits with margin for error
-    - **Patch Analysis & Insights (Oct 14, 2025):** Advanced patch management tools for monitoring and debugging:
-        - **Patch Comparison:** Side-by-side diff viewer shows added, removed, and modified files between any two patch versions with color-coded visual indicators
-        - **Changelog Generation:** Automatically creates human-readable changelogs from patch metadata, listing all file changes with timestamps
-        - **File History Tracking:** Traces individual file modifications across all patches with interactive directory tree navigation
-        - **Integrity Verification:** Validates patch checksums against database records to detect corruption or tampering
-        - **View Data Modal:** Interactive collapsible directory tree showing patch contents with file paths and hashes
-        - **Security Note:** Admin routes currently lack authentication middleware (intentional for development) - must add auth before production
-    - **UI Improvements (Oct 15, 2025):** Enhanced clarity and usability of patch comparison system:
-        - **4-Metric Display:** Patch comparison modal now displays 4 separate stat boxes (Added Files, Modified Files, Removed Files, Total Changes) instead of 3, eliminating confusion about what "Total Changes" represents
-        - **Visual Hierarchy:** Color-coded metrics (green for added, yellow for modified, red for removed, blue for total) make it immediately clear what changed between patch versions
-        - **Accurate Totals:** Total Changes now explicitly shows sum of added + modified + removed files, preventing misinterpretation when comparing patches with different file counts
+    - Supports multi-file, folder, and archive uploads (ZIP/TAR) with automatic directory structure preservation.
+    - Uses SHA256 for file hashing and duplicate detection.
+    - Includes robust security features: directory traversal protection, filename sanitization, and storage isolation.
+    - Implements an intelligent delta patch system for efficient, incremental updates using semantic versioning.
+    - Optimized storage architecture stores only compressed patch ZIPs permanently, eliminating original upload duplication.
+    - Advanced patch management tools include side-by-side comparison, changelog generation, file history tracking, and integrity verification.
 - **Multi-site Voting System:** Tracks votes and rewards.
-- **Client Management:** Facilitates the distribution and management of game client versions.
-- **Public Homepage & Content System (Oct 17, 2025):** Comprehensive portal for player engagement:
-    - **Events System:** Full event management with status tracking (upcoming/active/ended)
-        - Event creation with title, type (PvP, Giveaway, Double XP, etc.), description, rewards, and images
-        - Auto-status updates via scheduler command (`events:update-statuses`)
-        - Event cards with modal details on homepage
-        - Dedicated events page with pagination
-    - **Updates/News System:** Block-based content management for game updates
-        - JSON-based content blocks (header, paragraph, list, code, image, alert)
-        - UpdateRenderer helper class for rendering JSON blocks to HTML
-        - Client update flag for patches requiring launcher updates
-        - Auto-generated slugs from titles
-        - Dedicated updates index and single update pages
-        - **Drag-and-Drop Block Editor (Oct 17, 2025):** Interactive visual editor for content creation:
-            - Native HTML5 drag-and-drop for reordering blocks
-            - Visual editing for all 6 block types with appropriate input controls
-            - Dynamic add/remove block functionality
-            - List item management (add/remove items within list blocks)
-            - Auto-generates JSON on form submission
-            - Loads existing blocks in edit mode with proper data binding
-            - Tailwind CSS styling matching dragon theme throughout admin interface
-    - **Top Voters Widget:** Tabbed display showing top 5 voters (weekly/monthly)
-        - Real-time vote counting from database
-        - Responsive tab interface matching dragon theme
-    - **Color Schema:** Consistent dragon theme across all public pages (red #c41e3a, gold #d4a574, dark backgrounds)
-    - **Admin Management:** Full CRUD interfaces for events and updates
-        - Image upload support for events (stored in `storage/events/`)
-        - Drag-and-drop block editor for updates (replacing JSON textarea)
-        - Preview functionality for updates before publishing
-        - All admin views use Tailwind CSS with dragon theme (#d40000, #0a0a0a, #e8e8e8)
-        - Content Management navigation section in admin sidebar
+- **Client Management:** Facilitates distribution and management of game client versions.
+- **Public Homepage & Content System:**
+    - Features an Events System with full management, status tracking, and display.
+    - Includes an Updates/News System with a block-based content editor (header, paragraph, list, code, image, alert) and drag-and-drop functionality.
+    - Displays a tabbed Top Voters Widget (weekly/monthly).
+- **Performance Monitor & Analysis System:**
+    - Provides a real-time dashboard for CPU, memory, response times, and disk space.
+    - Tracks HTTP requests, logs slow database queries, and monitors queue job analytics.
+    - Offers visual analytics via Chart.js and an alert system for performance thresholds.
 
 **System Design Choices:**
-- **Database:** SQLite is used for development and portability within the Replit environment, with a recommendation to switch to MySQL/PostgreSQL for production.
-- **Performance Optimization:** Critical PHP upload limits (`upload_max_filesize`, `post_max_size`, `memory_limit`, `max_execution_time`, `max_input_time`) are configured for handling large files.
-- **Queue System:** Laravel queues are essential for asynchronous processing of chunked uploads and file manipulations.
-- **API Endpoints:** A structured API provides endpoints for donations, cache management (manifest, download, stats), and voting.
-- **API Documentation (Oct 15, 2025):** Complete redesign with GitLab-inspired styling:
-    - **Modern Layout:** Sticky sidebar navigation with smooth scrolling and active section highlighting
-    - **HTTP Method Badges:** Color-coded badges (GET/POST/PATCH/DELETE) for instant endpoint identification
-    - **Comprehensive Examples:** Every endpoint includes detailed request/response examples with actual data
-    - **Parameter Documentation:** Clear indicators for required vs optional parameters with type information
-    - **Dragon Theme:** Consistent use of dragon color schema (#d40000 red, #0a0a0a black, #e8e8e8 silver) matching admin panel
-    - **Interactive Features:** Copy-to-clipboard buttons for all code examples, collapsible sections, hover effects
-    - **Complete Coverage:** Documents all API endpoints including Products, Checkout, Claim, Cache Patch Management, Vote System, Client Download, Webhooks, Admin API, and Error Handling
-    - **Developer-Friendly:** Integration tips, best practices, and security notes included throughout
-    - **Patch System Documentation:** Updated cache management section to reflect the new patch system endpoints (/admin/cache/patches/*) with explanations of base patches, delta patches, version checking, and update strategies
+- **Database:** SQLite for development; MySQL/PostgreSQL recommended for production.
+- **Performance Optimization:** PHP upload limits are configured for large files.
+- **Queue System:** Laravel queues are used for asynchronous processing of uploads and file manipulations.
+- **API Endpoints:** A structured API provides endpoints for donations, cache management, voting, and includes comprehensive documentation.
 
 ### External Dependencies
 - **Payment Gateways:**
     - PayPal
     - Coinbase Commerce
 - **Database:**
-    - SQLite (development)
-    - MySQL / PostgreSQL (recommended for production)
+    - SQLite
+    - MySQL
+    - PostgreSQL
