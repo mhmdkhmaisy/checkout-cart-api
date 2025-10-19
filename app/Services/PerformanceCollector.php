@@ -140,20 +140,26 @@ class PerformanceCollector
 
     public function createSummary(string $timeframe, array $metrics): PerformanceSummary
     {
-        return PerformanceSummary::create([
-            'timeframe' => $timeframe,
-            'avg_request_time' => $metrics['avg_request_time'] ?? null,
-            'max_memory_usage' => $metrics['max_memory_usage'] ?? null,
-            'avg_cpu_load' => $metrics['avg_cpu_load'] ?? null,
-            'slowest_route' => $metrics['slowest_route'] ?? null,
-            'slowest_route_time' => $metrics['slowest_route_time'] ?? null,
-            'total_requests' => $metrics['total_requests'] ?? 0,
-            'failed_requests' => $metrics['failed_requests'] ?? 0,
-            'slow_queries_count' => $metrics['slow_queries_count'] ?? 0,
-            'avg_query_time' => $metrics['avg_query_time'] ?? null,
-            'failed_jobs' => $metrics['failed_jobs'] ?? 0,
-            'created_at' => now(),
-        ]);
+        PerformanceSummary::$disableLogging = true;
+        
+        try {
+            return PerformanceSummary::create([
+                'timeframe' => $timeframe,
+                'avg_request_time' => $metrics['avg_request_time'] ?? null,
+                'max_memory_usage' => $metrics['max_memory_usage'] ?? null,
+                'avg_cpu_load' => $metrics['avg_cpu_load'] ?? null,
+                'slowest_route' => $metrics['slowest_route'] ?? null,
+                'slowest_route_time' => $metrics['slowest_route_time'] ?? null,
+                'total_requests' => $metrics['total_requests'] ?? 0,
+                'failed_requests' => $metrics['failed_requests'] ?? 0,
+                'slow_queries_count' => $metrics['slow_queries_count'] ?? 0,
+                'avg_query_time' => $metrics['avg_query_time'] ?? null,
+                'failed_jobs' => $metrics['failed_jobs'] ?? 0,
+                'created_at' => now(),
+            ]);
+        } finally {
+            PerformanceSummary::$disableLogging = false;
+        }
     }
 
     public function getLiveMetrics(): array

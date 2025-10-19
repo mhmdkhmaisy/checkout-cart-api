@@ -8,6 +8,8 @@ class PerformanceSummary extends Model
 {
     const UPDATED_AT = null;
 
+    public static $disableLogging = false;
+
     protected $fillable = [
         'timeframe',
         'avg_request_time',

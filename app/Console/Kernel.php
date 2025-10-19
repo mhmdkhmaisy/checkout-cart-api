@@ -20,6 +20,12 @@ class Kernel extends ConsoleKernel
         
         // Update event statuses every hour
         $schedule->command('events:update-statuses')->hourly();
+        
+        // Performance monitoring aggregation every hour
+        $schedule->command('performance:monitor --once')->hourly();
+        
+        // Clean up old performance logs daily at 2 AM
+        $schedule->command('performance:cleanup')->dailyAt('02:00');
     }
 
     /**
@@ -38,5 +44,7 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         Commands\GenerateCacheManifest::class,
         Commands\CleanupCacheBundles::class,
+        Commands\PerformanceMonitorCommand::class,
+        Commands\PerformanceCleanupCommand::class,
     ];
 }
