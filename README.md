@@ -11,6 +11,9 @@ A comprehensive Laravel-based system for RuneScape Private Servers (RSPS) featur
 - [Admin Panel](#️-admin-panel)
 - [Security Features](#-security-features)
 - [RSPS Integration Example](#-rsps-integration-example)
+  - [Cache Update Integration](#cache-update-integration-full-implementation)
+  - [Update Flow Diagram](#update-flow-diagram)
+  - [Additional Examples](#additional-integration-examples)
 - [Development](#-development)
 - [Performance & Optimization](#-performance--optimization)
   - [Cache Upload Optimization](#cache-upload-optimization)
@@ -360,13 +363,418 @@ Access the admin panel at `/admin` to:
 
 ## 🎮 RSPS Integration Example
 
+### Cache Update Integration (Full Implementation)
+
+This example shows how to integrate the patch system into your game client for automatic cache updates.
+
 ```java
-// Java example for RSPS server
-public class RSPSSystemManager {
+import java.io.*;
+import java.net.*;
+import java.nio.file.*;
+import java.util.zip.*;
+import com.google.gson.*;
+
+public class CacheUpdateManager {
+    private static final String API_URL = "https://yourdomain.com";
+    private static final String CACHE_DIR = "./cache/";
+    private static final String MANIFEST_FILE = CACHE_DIR + "patches-manifest.json";
+    
+    private Gson gson = new Gson();
+    
+    /**
+     * Main cache update method - checks for updates and downloads patches
+     * Call this on client startup or when user clicks "Update Cache"
+     */
+    public boolean checkAndUpdateCache() {
+        try {
+            System.out.println("Checking for cache updates...");
+            
+            // Step 1: Check if we have a local manifest
+            File manifestFile = new File(MANIFEST_FILE);
+            String localVersion = null;
+            
+            if (manifestFile.exists()) {
+                // We have a local manifest - check current version
+                localVersion = getLocalVersion();
+                System.out.println("Current local cache version: " + localVersion);
+            } else {
+                System.out.println("No local cache found - will download all patches");
+            }
+            
+            // Step 2: Get latest version info from server
+            LatestVersionInfo serverInfo = getLatestVersionFromServer();
+            
+            if (serverInfo == null) {
+                System.err.println("Failed to connect to update server");
+                return false;
+            }
+            
+            System.out.println("Server cache version: " + serverInfo.latestVersion);
+            
+            // Step 3: Determine if we need to update
+            if (localVersion != null && localVersion.equals(serverInfo.latestVersion)) {
+                System.out.println("Cache is up to date!");
+                return true;
+            }
+            
+            // Step 4: Download patches
+            if (localVersion == null) {
+                // No local cache - download all patches
+                System.out.println("Downloading all patches...");
+                downloadAllPatches(serverInfo);
+            } else {
+                // We have local cache - download only newer patches
+                System.out.println("Downloading updates from " + localVersion + " to " + serverInfo.latestVersion);
+                downloadIncrementalPatches(localVersion, serverInfo.latestVersion);
+            }
+            
+            // Step 5: Update local manifest with latest version
+            updateLocalManifest(serverInfo.latestVersion);
+            
+            System.out.println("Cache update complete! Version: " + serverInfo.latestVersion);
+            return true;
+            
+        } catch (Exception e) {
+            System.err.println("Cache update failed: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Get current version from local patches-manifest.json
+     */
+    private String getLocalVersion() throws IOException {
+        String content = new String(Files.readAllBytes(Paths.get(MANIFEST_FILE)));
+        JsonObject manifest = gson.fromJson(content, JsonObject.class);
+        return manifest.get("version").getAsString();
+    }
+    
+    /**
+     * Get latest version info from server
+     * GET /admin/cache/patches/latest
+     */
+    private LatestVersionInfo getLatestVersionFromServer() {
+        try {
+            URL url = new URL(API_URL + "/admin/cache/patches/latest");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
+            
+            if (conn.getResponseCode() == 200) {
+                BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream())
+                );
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+                
+                return gson.fromJson(response.toString(), LatestVersionInfo.class);
+            } else {
+                System.err.println("Server returned: " + conn.getResponseCode());
+                return null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Download all patches (for fresh installation)
+     * POST /admin/cache/patches/download-combined
+     */
+    private void downloadAllPatches(LatestVersionInfo serverInfo) throws IOException {
+        System.out.println("Downloading combined patches (all files)...");
+        
+        // Create cache directory if it doesn't exist
+        new File(CACHE_DIR).mkdirs();
+        
+        // Request all patches from version "0.0.0" to latest
+        String requestBody = String.format(
+            "{\"from_version\":\"0.0.0\",\"to_version\":\"%s\"}", 
+            serverInfo.latestVersion
+        );
+        
+        downloadAndExtractPatch(
+            API_URL + "/admin/cache/patches/download-combined",
+            requestBody,
+            "POST"
+        );
+    }
+    
+    /**
+     * Download only incremental patches (for updates)
+     * POST /admin/cache/patches/download-combined
+     */
+    private void downloadIncrementalPatches(String fromVersion, String toVersion) 
+            throws IOException {
+        System.out.println("Downloading incremental patches...");
+        
+        String requestBody = String.format(
+            "{\"from_version\":\"%s\",\"to_version\":\"%s\"}", 
+            fromVersion, 
+            toVersion
+        );
+        
+        downloadAndExtractPatch(
+            API_URL + "/admin/cache/patches/download-combined",
+            requestBody,
+            "POST"
+        );
+    }
+    
+    /**
+     * Download patch ZIP and extract to cache directory
+     */
+    private void downloadAndExtractPatch(String urlString, String requestBody, 
+            String method) throws IOException {
+        URL url = new URL(urlString);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod(method);
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Content-Type", "application/json");
+        
+        // Send request body if POST
+        if ("POST".equals(method) && requestBody != null) {
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(requestBody.getBytes("UTF-8"));
+            }
+        }
+        
+        // Download patch file
+        if (conn.getResponseCode() == 200) {
+            File tempZip = new File(CACHE_DIR + "temp_patch.zip");
+            
+            try (InputStream in = conn.getInputStream();
+                 FileOutputStream out = new FileOutputStream(tempZip)) {
+                
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                long totalBytes = 0;
+                
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                    totalBytes += bytesRead;
+                    
+                    // Show progress every 1MB
+                    if (totalBytes % (1024 * 1024) == 0) {
+                        System.out.println("Downloaded: " + (totalBytes / 1024 / 1024) + " MB");
+                    }
+                }
+                
+                System.out.println("Download complete: " + totalBytes + " bytes");
+            }
+            
+            // Extract ZIP to cache directory
+            extractZipFile(tempZip, new File(CACHE_DIR));
+            
+            // Delete temp ZIP
+            tempZip.delete();
+            
+        } else {
+            throw new IOException("Failed to download patch: " + conn.getResponseCode());
+        }
+    }
+    
+    /**
+     * Extract ZIP file preserving directory structure
+     */
+    private void extractZipFile(File zipFile, File destDir) throws IOException {
+        System.out.println("Extracting patch files...");
+        
+        byte[] buffer = new byte[8192];
+        int filesExtracted = 0;
+        
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
+            ZipEntry entry;
+            
+            while ((entry = zis.getNextEntry()) != null) {
+                File newFile = new File(destDir, entry.getName());
+                
+                if (entry.isDirectory()) {
+                    newFile.mkdirs();
+                } else {
+                    // Create parent directories if needed
+                    new File(newFile.getParent()).mkdirs();
+                    
+                    // Extract file
+                    try (FileOutputStream fos = new FileOutputStream(newFile)) {
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                    
+                    filesExtracted++;
+                    if (filesExtracted % 100 == 0) {
+                        System.out.println("Extracted: " + filesExtracted + " files");
+                    }
+                }
+                
+                zis.closeEntry();
+            }
+        }
+        
+        System.out.println("Extraction complete: " + filesExtracted + " files extracted");
+    }
+    
+    /**
+     * Update local patches-manifest.json with latest version
+     */
+    private void updateLocalManifest(String version) throws IOException {
+        JsonObject manifest = new JsonObject();
+        manifest.addProperty("version", version);
+        manifest.addProperty("updated_at", System.currentTimeMillis());
+        
+        String json = gson.toJson(manifest);
+        Files.write(Paths.get(MANIFEST_FILE), json.getBytes());
+        
+        System.out.println("Updated local manifest to version: " + version);
+    }
+    
+    /**
+     * Data class for server response
+     */
+    private static class LatestVersionInfo {
+        String latestVersion;
+        int totalPatches;
+        long totalSize;
+        PatchInfo[] patches;
+        
+        static class PatchInfo {
+            int id;
+            String version;
+            String patchType;
+            String basedOnVersion;
+            int fileCount;
+            long totalSize;
+            long compressedSize;
+        }
+    }
+}
+```
+
+### Usage in Your Game Client
+
+```java
+// On client startup
+public static void main(String[] args) {
+    CacheUpdateManager updateManager = new CacheUpdateManager();
+    
+    // Check and update cache before launching game
+    if (updateManager.checkAndUpdateCache()) {
+        System.out.println("Cache is ready!");
+        // Launch game
+        launchGame();
+    } else {
+        System.err.println("Failed to update cache. Please try again.");
+        System.exit(1);
+    }
+}
+```
+
+### API Endpoints Used
+
+1. **GET /admin/cache/patches/latest**
+   - Returns latest version info and patch list
+   - No authentication required (public endpoint)
+
+2. **POST /admin/cache/patches/download-combined**
+   - Downloads combined patches from version X to Y
+   - Request body: `{"from_version": "1.0.0", "to_version": "1.0.5"}`
+   - Returns ZIP file with all changed files
+
+### Local Manifest Format
+
+```json
+{
+  "version": "1.0.5",
+  "updated_at": 1729368000000
+}
+```
+
+### Update Flow Diagram
+
+```
+┌─────────────────────────────────────────────────┐
+│ Client Startup                                  │
+└────────────────┬────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────┐
+│ Check if patches-manifest.json exists          │
+└────────┬───────────────────────────────┬────────┘
+         │ Exists                        │ Not Found
+         ▼                               ▼
+┌────────────────────┐      ┌────────────────────────┐
+│ Read local version │      │ Set localVersion = null│
+│ from manifest      │      │                        │
+└────────┬───────────┘      └───────────┬────────────┘
+         │                               │
+         └───────────────┬───────────────┘
+                         ▼
+         ┌───────────────────────────────┐
+         │ GET /admin/cache/patches/latest│
+         │ Get server's latest version   │
+         └───────────┬───────────────────┘
+                     ▼
+         ┌───────────────────────────────┐
+         │ Compare versions              │
+         └───┬───────────────────────┬───┘
+             │ Same                  │ Different/Null
+             ▼                       ▼
+    ┌────────────────┐    ┌──────────────────────┐
+    │ Already        │    │ Need Update          │
+    │ Up-to-date     │    │                      │
+    └────────────────┘    └──────┬───────────────┘
+                                  ▼
+                     ┌────────────────────────────┐
+                     │ localVersion == null?      │
+                     └──────┬───────────────┬─────┘
+                            │ Yes           │ No
+                            ▼               ▼
+              ┌──────────────────┐  ┌──────────────────┐
+              │ Download ALL     │  │ Download patches │
+              │ patches          │  │ from localVersion│
+              │ (0.0.0 → latest) │  │ to latest        │
+              └────────┬─────────┘  └────────┬─────────┘
+                       │                     │
+                       └──────────┬──────────┘
+                                  ▼
+                    ┌──────────────────────────┐
+                    │ POST /admin/cache/       │
+                    │ patches/download-combined│
+                    └──────────┬───────────────┘
+                               ▼
+                    ┌──────────────────────────┐
+                    │ Download & Extract ZIP   │
+                    │ to ./cache/ directory    │
+                    └──────────┬───────────────┘
+                               ▼
+                    ┌──────────────────────────┐
+                    │ Update local             │
+                    │ patches-manifest.json    │
+                    │ with latest version      │
+                    └──────────┬───────────────┘
+                               ▼
+                    ┌──────────────────────────┐
+                    │ Cache Ready - Launch Game│
+                    └──────────────────────────┘
+```
+
+### Additional Integration Examples
+
+#### Donation Management
+```java
+public class DonationManager {
     private static final String API_URL = "https://yourdomain.com/api";
     private static final String SERVER_KEY = "your_server_key";
     
-    // Donation Management
     public String createPayPalCheckout(String username, List<CartItem> items) {
         // Build request with items
         // Send POST to /api/checkout
@@ -378,17 +786,12 @@ public class RSPSSystemManager {
         // Process returned items
         // Add items to player inventory
     }
-    
-    // Cache Management with Patch System
-    public void downloadCacheUpdates() {
-        // Get manifest from /api/cache/manifest
-        // Compare with local cache
-        // Check for patches: /admin/cache/patches/check-updates
-        // Download only changed files or patch
-        // Preserve directory structure
-    }
-    
-    // Vote Rewards
+}
+```
+
+#### Vote Rewards
+```java
+public class VoteManager {
     public void processVoteRewards(String username) {
         // Check for pending vote rewards
         // Add rewards to player account
