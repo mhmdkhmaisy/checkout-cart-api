@@ -189,3 +189,5 @@ echo "  • Check the performance monitor: /admin/performance"
 echo "  • Review results: ./tests/performance/utils/analyze-results.sh"
 echo "  • View detailed logs in: $RESULTS_DIR"
 echo ""
+echo -e "${YELLOW}Press any key to exit...${NC}"
+read -n 1 -s

@@ -101,3 +101,10 @@ echo ""
 echo "========================================="
 echo "Analysis complete!"
 echo "========================================="
+echo ""
+
+# Only pause if run directly (not from another script)
+if [ "${BASH_SOURCE[0]}" -ef "$0" ]; then
+    echo "Press any key to exit..."
+    read -n 1 -s
+fi

@@ -88,3 +88,10 @@ echo "Results saved to: $OUTPUT_DIR"
 echo ""
 echo "To analyze results, run:"
 echo "  ./tests/performance/utils/analyze-results.sh"
+echo ""
+
+# Only pause if run directly (not from another script)
+if [ "${BASH_SOURCE[0]}" -ef "$0" ]; then
+    echo "Press any key to exit..."
+    read -n 1 -s
+fi
