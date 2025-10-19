@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\CacheBundleController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\UpdateController;
+use App\Http\Controllers\Admin\PerformanceController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -110,6 +111,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // Update management
     Route::resource('updates', UpdateController::class);
+
+    // Performance monitoring
+    Route::prefix('performance')->name('performance.')->group(function () {
+        Route::get('/', [PerformanceController::class, 'index'])->name('index');
+        Route::get('/metrics', [PerformanceController::class, 'metrics'])->name('metrics');
+        Route::get('/live', [PerformanceController::class, 'live'])->name('live');
+        Route::get('/history', [PerformanceController::class, 'history'])->name('history');
+        Route::get('/routes', [PerformanceController::class, 'routes'])->name('routes');
+        Route::get('/slow-queries', [PerformanceController::class, 'slowQueries'])->name('slow-queries');
+        Route::get('/alerts', [PerformanceController::class, 'alerts'])->name('alerts');
+        Route::get('/summaries', [PerformanceController::class, 'summaries'])->name('summaries');
+        Route::get('/queue-stats', [PerformanceController::class, 'queueStats'])->name('queue-stats');
+    });
 
 });
 
