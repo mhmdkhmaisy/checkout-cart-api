@@ -31,6 +31,28 @@
         height: 300px;
         width: 100%;
     }
+    
+    /* Sortable column headers */
+    .sortable-header {
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.2s;
+    }
+    
+    .sortable-header:hover {
+        color: #ff0000;
+    }
+    
+    .sort-indicator {
+        display: inline-block;
+        margin-left: 4px;
+        font-size: 0.75rem;
+        opacity: 0.5;
+    }
+    
+    .sort-indicator.active {
+        opacity: 1;
+    }
 </style>
 
 <div class="space-y-6">
@@ -119,8 +141,12 @@
                     <thead class="sticky top-0 bg-dragon-surface">
                         <tr class="text-left text-dragon-silver-dark text-sm">
                             <th class="pb-2">Route</th>
-                            <th class="pb-2 text-right">Avg Time</th>
-                            <th class="pb-2 text-right">Requests</th>
+                            <th class="pb-2 text-right sortable-header" onclick="sortRoutes('avg_time')">
+                                Avg Time<span id="sort-avg-time" class="sort-indicator">▼</span>
+                            </th>
+                            <th class="pb-2 text-right sortable-header" onclick="sortRoutes('request_count')">
+                                Requests<span id="sort-requests" class="sort-indicator">▼</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody id="routes-table" class="text-dragon-silver">
@@ -158,6 +184,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 let requestChart = null;
+let routesData = [];
+let currentSortColumn = 'avg_time';
+let currentSortDirection = 'desc';
 
 function formatBytes(bytes) {
     if (bytes === 0) return '0 B';
@@ -213,7 +242,34 @@ function updateLiveMetrics(data) {
     }
 }
 
-function updateRoutesTable(routes) {
+function sortRoutes(column) {
+    if (currentSortColumn === column) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortColumn = column;
+        currentSortDirection = 'desc';
+    }
+    
+    document.querySelectorAll('.sort-indicator').forEach(indicator => {
+        indicator.classList.remove('active');
+        indicator.textContent = '▼';
+    });
+    
+    const indicator = document.getElementById(`sort-${column === 'avg_time' ? 'avg-time' : 'requests'}`);
+    indicator.classList.add('active');
+    indicator.textContent = currentSortDirection === 'asc' ? '▲' : '▼';
+    
+    const sorted = [...routesData].sort((a, b) => {
+        const aVal = column === 'avg_time' ? parseFloat(a.avg_time) : parseInt(a.request_count);
+        const bVal = column === 'avg_time' ? parseFloat(b.avg_time) : parseInt(b.request_count);
+        
+        return currentSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+    
+    renderRoutesTable(sorted);
+}
+
+function renderRoutesTable(routes) {
     const tbody = document.getElementById('routes-table');
     
     if (!routes || routes.length === 0) {
@@ -221,13 +277,26 @@ function updateRoutesTable(routes) {
         return;
     }
 
-    tbody.innerHTML = routes.slice(0, 10).map(route => `
+    tbody.innerHTML = routes.map(route => `
         <tr class="border-t border-dragon-border">
             <td class="py-2 text-sm">${route.route || 'Unknown'}</td>
             <td class="py-2 text-sm text-right">${formatTime(route.avg_time)}</td>
             <td class="py-2 text-sm text-right">${route.request_count}</td>
         </tr>
     `).join('');
+}
+
+function updateRoutesTable(routes) {
+    routesData = routes || [];
+    
+    const sorted = [...routesData].sort((a, b) => {
+        const aVal = currentSortColumn === 'avg_time' ? parseFloat(a.avg_time) : parseInt(a.request_count);
+        const bVal = currentSortColumn === 'avg_time' ? parseFloat(b.avg_time) : parseInt(b.request_count);
+        
+        return currentSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+    
+    renderRoutesTable(sorted);
 }
 
 function updateSlowQueries(queries) {

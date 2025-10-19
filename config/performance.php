@@ -30,6 +30,12 @@ return [
     'excluded_routes' => [
         'admin/performance/metrics',
         'admin/performance/live',
+        'admin/performance/routes',
+        'admin/performance/slow-queries',
+        'admin/performance/history',
+        'admin/performance/queue-stats',
+        'admin/performance/alerts',
+        'admin/performance',
     ],
 
 ];
