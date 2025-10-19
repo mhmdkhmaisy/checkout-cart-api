@@ -38,16 +38,18 @@ fi
 echo ""
 echo "Test Options:"
 echo "  1) Baseline Test (Quick, 1 user, 10 iterations)"
-echo "  2) Store Flow Load Test (10-50 users, ~5 min)"
+echo "  2) Store Flow Load Test (10-50 users, ~12 min)"
 echo "  3) Vote Rush Spike Test (10-100 users spike)"
-echo "  4) Admin Panel Load Test (10-50 users, ~5 min)"
-echo "  5) Simple curl-based load test (No k6 required)"
-echo "  6) Run ALL tests (Full suite)"
-echo "  7) View/Analyze existing results"
+echo "  4) Admin Panel Load Test (10-50 users, ~12 min)"
+echo "  5) Client Downloads Test (5-10 users, ~8 min)"
+echo "  6) Cache Downloads Test (5 users, ~5 min)"
+echo "  7) Simple curl-based load test (No k6 required)"
+echo "  8) Run ALL tests (Full suite)"
+echo "  9) View/Analyze existing results"
 echo "  0) Exit"
 echo ""
 
-read -p "Select test to run [0-7]: " choice
+read -p "Select test to run [0-9]: " choice
 
 run_k6_test() {
     local test_file=$1
@@ -115,12 +117,28 @@ case $choice in
         fi
         ;;
     5)
-        run_simple_test
+        if [ "$K6_AVAILABLE" = true ]; then
+            run_k6_test "client-downloads.js" "Client Downloads Test"
+        else
+            echo -e "${RED}k6 is required for this test${NC}"
+            exit 1
+        fi
         ;;
     6)
         if [ "$K6_AVAILABLE" = true ]; then
+            run_k6_test "cache-downloads.js" "Cache Downloads Test"
+        else
+            echo -e "${RED}k6 is required for this test${NC}"
+            exit 1
+        fi
+        ;;
+    7)
+        run_simple_test
+        ;;
+    8)
+        if [ "$K6_AVAILABLE" = true ]; then
             echo ""
-            echo -e "${YELLOW}Running FULL test suite - this will take ~30 minutes${NC}"
+            echo -e "${YELLOW}Running FULL test suite - this will take ~40 minutes${NC}"
             read -p "Continue? (y/n): " confirm
             
             if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
@@ -131,6 +149,10 @@ case $choice in
                 run_k6_test "vote-rush.js" "Vote Rush Spike Test"
                 sleep 10
                 run_k6_test "admin-panel.js" "Admin Panel Load Test"
+                sleep 10
+                run_k6_test "client-downloads.js" "Client Downloads Test"
+                sleep 10
+                run_k6_test "cache-downloads.js" "Cache Downloads Test"
                 
                 echo ""
                 echo -e "${GREEN}=========================================${NC}"
@@ -144,7 +166,7 @@ case $choice in
             analyze_results
         fi
         ;;
-    7)
+    9)
         analyze_results
         ;;
     0)

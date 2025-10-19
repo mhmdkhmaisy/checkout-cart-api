@@ -41,6 +41,22 @@ export default function () {
             sleep(1);
         });
 
+        group('Set Username', function () {
+            const username = testData.usernames[Math.floor(Math.random() * testData.usernames.length)] 
+                + '_' + Date.now() + '_' + __VU;
+            
+            res = http.post(`${baseUrl}/store/set-user`, 
+                JSON.stringify({ username: username }), 
+                params
+            );
+            
+            const passed = check(res, {
+                'username set': (r) => r.status === 200 || r.status === 302
+            });
+            errorRate.add(!passed);
+            sleep(0.5);
+        });
+
         group('Browse Store', function () {
             const start = Date.now();
             res = http.get(`${baseUrl}/store`, params);

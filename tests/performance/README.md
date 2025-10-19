@@ -23,6 +23,8 @@ sudo ./tests/performance/install-k6.sh
 | **Store Flow** | 12min | 10→50 | E-commerce simulation |
 | **Vote Rush** | 4min | 10→100 (spike) | Vote campaign stress |
 | **Admin Panel** | 12min | 10→50 | Admin operations |
+| **Client Downloads** | 8min | 5→10 | Client download stress |
+| **Cache Downloads** | 5min | 5 | Cache/patch downloads (5 users) |
 | **Simple** | Variable | Custom | Lightweight curl-based |
 
 ## Test Structure
@@ -55,12 +57,14 @@ tests/performance/
 
 Choose from:
 1. Baseline Test - Quick performance check
-2. Store Flow - Full shopping simulation
+2. Store Flow - Full shopping simulation (with user session)
 3. Vote Rush - Spike testing
 4. Admin Panel - Backend stress test
-5. Simple Test - No k6 required
-6. Run ALL - Complete suite
-7. Analyze Results
+5. Client Downloads - Download latest clients
+6. Cache Downloads - Cache patch downloads (5 users)
+7. Simple Test - No k6 required
+8. Run ALL - Complete suite
+9. Analyze Results
 
 ### Direct Execution
 
