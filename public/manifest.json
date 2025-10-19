@@ -1,16 +1,16 @@
 {
     "latest": {
-        "standalone": "0.1.10",
+        "standalone": "0.1.12",
         "windows": "0.1.1"
     },
     "files": [
         {
             "os": "standalone",
-            "version": "0.1.10",
-            "url": "http:\/\/localhost:8000\/storage\/clients\/client_standalone_0.1.10.jar",
+            "version": "0.1.12",
+            "url": "http:\/\/localhost:8000\/storage\/clients\/client_standalone_0.1.12.jar",
             "size": 9162738,
             "hash": "602991de7bd94f72652b7a6970cd0ae13607d13b85918a68f8d78edb838b9ca0",
-            "changelog": null
+            "changelog": "Testing changelog"
         },
         {
             "os": "windows",

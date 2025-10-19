@@ -3,7 +3,7 @@
 # Simple Load Test using curl and parallel
 # Lightweight alternative when k6 is not available
 
-BASE_URL="${BASE_URL:-https://a45e440a-81dc-4a5e-b209-5c0b2f078577-00-35b253as32cbt.pike.replit.dev}"
+BASE_URL="${BASE_URL:-https://aragon-data.live}"
 CONCURRENT_USERS="${CONCURRENT_USERS:-10}"
 REQUESTS_PER_USER="${REQUESTS_PER_USER:-10}"
 OUTPUT_DIR="tests/performance/results"

@@ -1,5 +1,5 @@
 export const config = {
-    baseUrl: __ENV.BASE_URL || 'https://a45e440a-81dc-4a5e-b209-5c0b2f078577-00-35b253as32cbt.pike.replit.dev',
+    baseUrl: __ENV.BASE_URL || 'https://aragon-data.live',
     
     thresholds: {
         light: {

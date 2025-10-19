@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RESULTS_DIR="tests/performance/results"
+RESULTS_DIR="results/"
 
 echo "========================================="
 echo "Performance Test Results Analysis"
