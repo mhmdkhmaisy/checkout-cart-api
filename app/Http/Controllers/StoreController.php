@@ -4,12 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
+use App\Services\PromotionManager;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
 
 class StoreController extends Controller
 {
+    protected $promotionManager;
+
+    public function __construct(PromotionManager $promotionManager)
+    {
+        $this->promotionManager = $promotionManager;
+    }
+
     public function index(Request $request): View
     {
         $query = Product::with(['category', 'bundleItems'])
@@ -26,7 +34,16 @@ class StoreController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('store.index', compact('products', 'categories'));
+        // Get active promotions
+        $promotions = $this->promotionManager->getActivePromotions();
+        
+        // Get user progress if cart_user session exists
+        $userProgress = [];
+        if (session('cart_user')) {
+            $userProgress = $this->promotionManager->evaluateUserProgress(session('cart_user'));
+        }
+
+        return view('store.index', compact('products', 'categories', 'promotions', 'userProgress'));
     }
 
     public function terms(): View
