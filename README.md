@@ -57,6 +57,17 @@ A comprehensive Laravel-based system for RuneScape Private Servers (RSPS) featur
 - 📈 **Vote Tracking**: Comprehensive voting statistics and history
 - 🔗 **Callback Handling**: Secure webhook processing
 
+### 🎁 Deals & Promotions System
+- 🎯 **Store Gamification**: Time-based and spend-based promotional campaigns
+- 💎 **Flexible Promotion Types**: Single-use or recurrent bonus rewards
+- 📊 **Real-Time Progress Tracking**: Visual progress bars on store page
+- 🏆 **Reward Tiers**: Multi-item rewards with configurable quantities
+- 👥 **User & Global Limits**: Per-user claim limits and global campaign caps
+- ⏰ **Auto-Expiry**: Scheduled automatic expiration of time-limited promotions
+- 🔄 **Spend Tracking**: Automatic tracking via payment webhook integration
+- 📈 **Admin Analytics**: Comprehensive statistics and claim monitoring
+- 🎮 **In-Game Integration**: Claim status tracking for server-side reward distribution
+
 ### 💻 Client Management
 - 🖥️ **Multi-Platform**: Windows, macOS, Linux client distribution
 - 📋 **Version Control**: Automatic version management and updates

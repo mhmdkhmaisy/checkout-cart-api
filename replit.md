@@ -29,6 +29,15 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
     - Advanced patch management tools include side-by-side comparison, changelog generation, file history tracking, and integrity verification.
 - **Multi-site Voting System:** Tracks votes and rewards.
 - **Client Management:** Facilitates distribution and management of game client versions.
+- **Deals & Promotions System:**
+    - Store gamification through time-based and spend-based promotional campaigns.
+    - Supports single-use and recurrent promotion types with configurable rewards.
+    - Real-time progress tracking visible on store page with visual progress bars.
+    - Per-user claim limits and global campaign caps for controlled distribution.
+    - Automatic spend tracking via payment webhook integration (PayPal and Coinbase).
+    - Auto-expiry scheduler runs hourly to deactivate time-limited promotions.
+    - Admin panel with comprehensive statistics, claim monitoring, and user progress tracking.
+    - Full CRUD operations for promotion management with validation and security checks.
 - **Public Homepage & Content System:**
     - Features an Events System with full management, status tracking, and display.
     - Includes an Updates/News System with a block-based content editor (header, paragraph, list, code, image, alert) and drag-and-drop functionality.
