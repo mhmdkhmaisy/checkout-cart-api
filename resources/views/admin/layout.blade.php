@@ -94,16 +94,10 @@
                         </a>
                     </li>
 
-                    <!-- Orders Section -->
+                    <!-- Store Management Section -->
                     <div class="pt-4">
-                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Payment System</h3>
+                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Store Management</h3>
                         <div class="mt-2 space-y-1">
-                            <a href="{{ route('admin.orders.index') }}" 
-                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.orders.index') || request()->routeIs('admin.orders.show') ? 'active' : '' }}">
-                                <i class="fas fa-shopping-cart mr-3"></i>
-                                All Orders
-                            </a>
-
                             <a href="{{ route('admin.products.index') }}" 
                                class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.products.index') || request()->routeIs('admin.products.show') ? 'active' : '' }}">
                                 <i class="fas fa-box mr-3"></i>
@@ -114,6 +108,24 @@
                                class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.categories.index') ? 'active' : '' }}">
                                 <i class="fas fa-tags mr-3"></i>
                                 Categories
+                            </a>
+
+                            <a href="{{ route('admin.promotions.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.promotions.*') ? 'active' : '' }}">
+                                <i class="fas fa-percent mr-3"></i>
+                                Promotions
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Orders Section -->
+                    <div class="pt-4">
+                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Payment System</h3>
+                        <div class="mt-2 space-y-1">
+                            <a href="{{ route('admin.orders.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.orders.index') || request()->routeIs('admin.orders.show') ? 'active' : '' }}">
+                                <i class="fas fa-shopping-cart mr-3"></i>
+                                All Orders
                             </a>
 
                             <a href="{{ route('admin.orders.logs') }}" 
