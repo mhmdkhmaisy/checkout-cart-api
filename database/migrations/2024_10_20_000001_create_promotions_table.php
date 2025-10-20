@@ -18,8 +18,8 @@ return new class extends Migration
             $table->integer('claim_limit_per_user')->nullable();
             $table->integer('global_claim_limit')->nullable();
             $table->integer('claimed_global')->default(0);
-            $table->timestamp('start_at');
-            $table->timestamp('end_at');
+            $table->timestamp('start_at')->useCurrent();
+            $table->timestamp('end_at')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             
