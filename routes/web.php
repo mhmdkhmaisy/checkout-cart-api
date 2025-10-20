@@ -15,6 +15,8 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\UpdateController;
 use App\Http\Controllers\Admin\PerformanceController;
+use App\Http\Controllers\Admin\PromotionController;
+use App\Http\Controllers\PromotionUserController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -126,6 +128,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/clear-all', [PerformanceController::class, 'clearAll'])->name('clear-all');
     });
 
+    // Promotions management
+    Route::resource('promotions', PromotionController::class);
+    Route::patch('promotions/{promotion}/toggle-active', [PromotionController::class, 'toggleActive'])->name('promotions.toggle-active');
+
 });
 
 // Payment completion pages (NEW ROUTES)
@@ -169,4 +175,11 @@ Route::prefix('vote')->name('vote.')->group(function () {
     Route::post('/set-username', [VoteController::class, 'setUsername'])->name('set-username');
     Route::get('/status', [VoteController::class, 'getStatus'])->name('status');
     Route::get('/stats', [VoteController::class, 'stats'])->name('stats');
+});
+
+// Public promotion routes
+Route::prefix('promotions')->name('promotions.')->group(function () {
+    Route::get('/active', [PromotionUserController::class, 'getActive'])->name('active');
+    Route::get('/progress/{username}', [PromotionUserController::class, 'getUserProgress'])->name('progress');
+    Route::post('/{promotion}/claim', [PromotionUserController::class, 'claim'])->name('claim');
 });

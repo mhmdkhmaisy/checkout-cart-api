@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderLog;
 use App\Models\OrderEvent;
 use App\Services\WebhookService;
+use App\Services\PromotionManager;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
@@ -16,10 +17,12 @@ use Illuminate\Support\Str;
 class WebhookController extends Controller
 {
     protected $webhookService;
+    protected $promotionManager;
 
-    public function __construct(WebhookService $webhookService)
+    public function __construct(WebhookService $webhookService, PromotionManager $promotionManager)
     {
         $this->webhookService = $webhookService;
+        $this->promotionManager = $promotionManager;
     }
 
     public function paypal(Request $request): JsonResponse
@@ -251,6 +254,11 @@ class WebhookController extends Controller
                 $payload
             );
 
+            // Track promotion progress
+            if ($order->username) {
+                $this->promotionManager->trackSpending($order->username, $order->total);
+            }
+
             Log::info("Order {$order->id} marked as paid with capture ID: {$captureId}");
             return response()->json(['success' => true, 'message' => 'Order marked as paid']);
         } else {
@@ -349,6 +357,12 @@ class WebhookController extends Controller
                             'paid',
                             $data
                         );
+                        
+                        // Track promotion progress
+                        if ($order->username) {
+                            $this->promotionManager->trackSpending($order->username, $order->total);
+                        }
+                        
                         Log::info("Order {$order->id} marked as paid via Coinbase");
                     }
                     break;

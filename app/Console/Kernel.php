@@ -26,6 +26,9 @@ class Kernel extends ConsoleKernel
         
         // Clean up old performance logs daily at 2 AM
         $schedule->command('performance:cleanup')->dailyAt('02:00');
+        
+        // Expire old promotions every hour
+        $schedule->command('promotions:expire')->hourly();
     }
 
     /**

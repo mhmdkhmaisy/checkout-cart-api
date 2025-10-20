@@ -341,6 +341,69 @@
 
     <!-- Store Layout: Products + Basket -->
     <div class="container">
+        <!-- Active Promotions Section -->
+        @if($promotions->count() > 0)
+        <div style="margin-bottom: 2rem;">
+            <div class="section-title">
+                <i class="fas fa-gift"></i> ACTIVE PROMOTIONS
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1rem;">
+                @foreach($promotions as $promo)
+                @php
+                    $progress = collect($userProgress)->firstWhere('promo.id', $promo->id);
+                @endphp
+                <div style="background: linear-gradient(135deg, rgba(212, 165, 116, 0.08) 0%, rgba(196, 30, 58, 0.08) 100%); border: 1px solid var(--border-gold); border-radius: 8px; padding: 1.25rem; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: -10px; right: -10px; background: var(--accent-gold); color: #000; padding: 0.25rem 2rem; transform: rotate(25deg); font-size: 0.65rem; font-weight: 800; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                        {{ strtoupper($promo->bonus_type) }}
+                    </div>
+                    
+                    <div style="margin-bottom: 0.75rem;">
+                        <h3 style="color: var(--text-gold); font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">
+                            <i class="fas fa-trophy"></i> {{ $promo->title }}
+                        </h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4;">{{ $promo->description }}</p>
+                    </div>
+                    
+                    <div style="background: rgba(0, 0, 0, 0.3); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.75rem;">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem; text-transform: uppercase;">
+                            Requirements:
+                        </div>
+                        <div style="color: var(--text-light); font-weight: 600; font-size: 0.9rem;">
+                            <i class="fas fa-dollar-sign"></i> Spend ${{ number_format($promo->min_amount, 2) }} or more
+                        </div>
+                    </div>
+                    
+                    @if($progress && session('cart_user'))
+                    <div style="margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Your Progress:</span>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-gold);">
+                                ${{ number_format($progress['progress_amount'], 2) }} / ${{ number_format($promo->min_amount, 2) }}
+                            </span>
+                        </div>
+                        <div style="background: rgba(0, 0, 0, 0.4); border-radius: 4px; height: 8px; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, var(--accent-gold) 0%, var(--accent-ember) 100%); height: 100%; width: {{ min(100, $progress['progress_percent']) }}%; transition: width 0.3s ease;"></div>
+                        </div>
+                        @if($progress['can_claim'])
+                        <button onclick="claimPromotion({{ $promo->id }})" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem; background: var(--accent-gold); color: #000; font-weight: 800; padding: 0.6rem; font-size: 0.8rem;">
+                            <i class="fas fa-gift"></i> CLAIM REWARD
+                        </button>
+                        @endif
+                    </div>
+                    @endif
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid rgba(212, 165, 116, 0.2); padding-top: 0.5rem;">
+                        <span><i class="fas fa-clock"></i> {{ $promo->time_remaining }}</span>
+                        @if($promo->global_claim_limit)
+                        <span><i class="fas fa-users"></i> {{ $promo->claimed_global }} / {{ $promo->global_claim_limit }} claimed</span>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         <div class="store-container">
             <!-- Products Section -->
             <div>
@@ -897,6 +960,41 @@ async function checkout(paymentMethod) {
             errorMessage += 'Please try again';
         }
         
+        alert(errorMessage);
+    }
+}
+
+// Claim promotion reward
+async function claimPromotion(promotionId) {
+    if (!currentUsername) {
+        alert('Please set your username first to claim rewards');
+        return;
+    }
+    
+    try {
+        const response = await $.ajax({
+            url: `/promotions/${promotionId}/claim`,
+            type: 'POST',
+            data: JSON.stringify({ username: currentUsername }),
+            contentType: 'application/json',
+            dataType: 'json'
+        });
+        
+        if (response.success) {
+            alert('🎉 ' + response.message + '\n\nRewards:\n' + response.rewards.map(r => `- ${r.item_name} x${r.item_amount}`).join('\n'));
+            // Reload the page to refresh promotion status
+            location.reload();
+        } else {
+            alert('Failed to claim promotion: ' + (response.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Claim error:', error);
+        let errorMessage = 'Failed to claim promotion: ';
+        if (error.responseJSON && error.responseJSON.message) {
+            errorMessage += error.responseJSON.message;
+        } else {
+            errorMessage += 'Please try again';
+        }
         alert(errorMessage);
     }
 }
