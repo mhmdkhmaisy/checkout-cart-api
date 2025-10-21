@@ -256,7 +256,7 @@ class WebhookController extends Controller
 
             // Track promotion progress
             if ($order->username) {
-                $this->promotionManager->trackSpending($order->username, $order->total);
+                $this->promotionManager->trackSpending($order->username, $order->amount);
             }
 
             Log::info("Order {$order->id} marked as paid with capture ID: {$captureId}");
@@ -360,7 +360,7 @@ class WebhookController extends Controller
                         
                         // Track promotion progress
                         if ($order->username) {
-                            $this->promotionManager->trackSpending($order->username, $order->total);
+                            $this->promotionManager->trackSpending($order->username, $order->amount);
                         }
                         
                         Log::info("Order {$order->id} marked as paid via Coinbase");

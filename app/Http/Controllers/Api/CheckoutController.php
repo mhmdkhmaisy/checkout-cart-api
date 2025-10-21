@@ -14,6 +14,10 @@ use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
+    /**
+     * Handle checkout request with rate limiting to prevent spam clicking
+     * Throttled to 1 request per second per user
+     */
     public function checkout(Request $request): JsonResponse
     {
         try {

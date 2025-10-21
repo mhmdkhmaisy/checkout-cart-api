@@ -28,7 +28,9 @@ Route::post('/webhooks/paypal', [WebhookController::class, 'paypal']);
 Route::post('/webhooks/coinbase', [WebhookController::class, 'coinbase']);
 
 // Checkout routes
-Route::post('/checkout', [CheckoutController::class, 'checkout']);
+// Throttle checkout to 1 request per second per user to prevent spam clicking
+Route::post('/checkout', [CheckoutController::class, 'checkout'])
+    ->middleware('throttle:1,1'); // 1 request per 1 second
 Route::get('/checkout/paypal/success', [CheckoutController::class, 'paypalSuccess']);
 Route::get('/checkout/paypal/cancel', [CheckoutController::class, 'paypalCancel']);
 Route::get('/checkout/coinbase/success', [CheckoutController::class, 'coinbaseSuccess']);
