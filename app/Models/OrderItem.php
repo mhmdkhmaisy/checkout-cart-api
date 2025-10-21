@@ -27,6 +27,10 @@ class OrderItem extends Model
         'claimed' => 'boolean'
     ];
 
+    protected $attributes = [
+        'product_id' => null
+    ];
+
     public function order()
     {
         return $this->belongsTo(Order::class);

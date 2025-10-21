@@ -65,7 +65,7 @@ class CheckoutController extends Controller
                         $qtyUnit = $product ? $product->qty_unit : 1;
 
                         $orderItemsData[] = [
-                            'product_id' => $item['product_id'],
+                            'product_id' => $product ? $product->id : null,
                             'product_name' => $productName,
                             'price' => $item['price'],
                             'qty_units' => $item['quantity'],
