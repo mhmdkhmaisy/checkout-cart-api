@@ -183,3 +183,6 @@ Route::prefix('promotions')->name('promotions.')->group(function () {
     Route::get('/progress/{username}', [PromotionUserController::class, 'getUserProgress'])->name('progress');
     Route::post('/{promotion}/claim', [PromotionUserController::class, 'claim'])->name('claim');
 });
+
+// Banner generation route
+Route::get('/banner/generate', [App\Http\Controllers\BannerController::class, 'generate'])->name('banner.generate');
