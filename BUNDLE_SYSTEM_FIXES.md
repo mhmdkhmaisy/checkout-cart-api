@@ -18,7 +18,14 @@ The `order_items` table had a strict foreign key constraint on `product_id` that
 
 This could cause the checkout process to fail.
 
-### 3. CheckoutController Not Handling Missing Products
+### 3. Auto-Increment Corruption
+The `orders` table had an auto-increment value of 36990, but the actual max order_id was only 72. This caused:
+- Foreign key constraint violations (trying to reference non-existent order_id 36990)
+- Order creation appearing to succeed (logged) but order_items failing
+
+This happens when records are deleted but auto-increment is never reset.
+
+### 4. CheckoutController Not Handling Missing Products
 The CheckoutController had fallback logic for missing products but still tried to insert invalid product_ids, causing constraint violations.
 
 ## Fixes Applied
@@ -77,15 +84,52 @@ The current bundle system:
 4. The `qty_unit` field is used to calculate `total_qty` (quantity × qty_unit)
 5. The `ClaimController` already handles null products correctly
 
+## Fix Auto-Increment Corruption
+
+If you're seeing order IDs that don't match your actual data (e.g., trying to create order 36990 when max is 72), you have two options:
+
+### Option 1: Reset All Store Data (Recommended for Testing/Development)
+
+This command will **DELETE ALL orders, order_items, and optionally products**, and reset auto-increment to 1:
+
+```bash
+# Reset orders and order_items only
+php artisan store:reset
+
+# Also reset products table
+php artisan store:reset --products
+```
+
+⚠️ **WARNING**: This deletes ALL store data! Only use in development/testing.
+
+### Option 2: Fix Auto-Increment Without Deleting Data
+
+Run this SQL to reset auto-increment counters to match your current data:
+
+```sql
+SET @max_order_id = (SELECT IFNULL(MAX(id), 0) + 1 FROM orders);
+SET @max_order_item_id = (SELECT IFNULL(MAX(id), 0) + 1 FROM order_items);
+SET @max_product_id = (SELECT IFNULL(MAX(id), 0) + 1 FROM products);
+
+ALTER TABLE orders AUTO_INCREMENT = @max_order_id;
+ALTER TABLE order_items AUTO_INCREMENT = @max_order_item_id;
+ALTER TABLE products AUTO_INCREMENT = @max_product_id;
+```
+
+Or use the pre-made SQL file: `fix_auto_increment.sql`
+
 ## Testing Instructions
 
-**IMPORTANT: Run BOTH migrations in order:**
+**IMPORTANT: Run migrations AND fix auto-increment:**
 
 ```bash
 # 1. First, convert tables to InnoDB (CRITICAL!)
 php artisan migrate
 
-# 2. Check that tables are now InnoDB
+# 2. Fix auto-increment (choose one option above)
+php artisan store:reset  # OR run the SQL manually
+
+# 3. Check that tables are now InnoDB
 mysql -u your_user -p your_database -e "SHOW TABLE STATUS WHERE Name IN ('orders', 'order_items', 'products');"
 ```
 
