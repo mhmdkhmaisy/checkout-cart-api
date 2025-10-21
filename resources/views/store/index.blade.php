@@ -232,7 +232,7 @@
     position: sticky;
     top: 140px;
     height: fit-content;
-    max-height: calc(100vh - 160px);
+    max-height: calc(140vh - 160px);
 }
 
 .basket-card {
@@ -242,11 +242,11 @@
     padding: 1.25rem;
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 160px);
+    max-height: calc(140vh - 160px);
 }
 
 .cart-items-container {
-    max-height: 400px;
+    max-height: 320px;
     overflow-y: auto;
     margin-bottom: 0.5rem;
     padding-right: 0.5rem;
