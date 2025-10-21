@@ -79,24 +79,39 @@ class CheckoutController extends Controller
                 return $order;
             });
 
-            // Refresh after transaction to get the actual database ID (fixes auto-increment mismatch)
+            // Get the actual database ID by querying for the order we just created
+            // We can't use refresh() because $order->id might be wrong (cached auto-increment)
             $cachedId = $order->id;
-            $order->refresh();
             
-            // If the ID changed after refresh, update order_items to use the correct ID
-            if ($cachedId != $order->id) {
+            // Find the order by username and most recent creation (the one we just made)
+            $actualOrder = Order::where('username', $validated['user_id'])
+                ->where('status', 'pending')
+                ->whereNull('payment_id')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+            
+            if (!$actualOrder) {
+                throw new \Exception('Order created but could not be found in database');
+            }
+            
+            // If the ID changed, update order_items to use the correct ID
+            if ($cachedId != $actualOrder->id) {
                 Log::warning("Order ID mismatch detected and fixed", [
                     'cached_id' => $cachedId,
-                    'actual_id' => $order->id
+                    'actual_id' => $actualOrder->id
                 ]);
                 
                 // Update all order items with the correct order_id
                 DB::table('order_items')
                     ->where('order_id', $cachedId)
-                    ->update(['order_id' => $order->id]);
+                    ->update(['order_id' => $actualOrder->id]);
             }
             
-            Log::info("Order ID after refresh", [
+            // Use the actual order from the database
+            $order = $actualOrder;
+            
+            Log::info("Order ID verified", [
                 'actual_order_id' => $order->id,
                 'user_id' => $validated['user_id']
             ]);
