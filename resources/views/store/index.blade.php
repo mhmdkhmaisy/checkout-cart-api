@@ -348,64 +348,6 @@
                 <i class="fas fa-gift"></i> ACTIVE PROMOTIONS
             </div>
 
-            <!-- Banner Carousel -->
-            <div style="position: relative; margin-bottom: 2rem;">
-                <div id="banner-carousel" style="width: 100%; height: 150px; border-radius: 12px; overflow: hidden; position: relative; background: rgba(20, 20, 20, 0.95); border: 2px solid var(--border-gold); box-shadow: 0 0 30px rgba(212, 165, 116, 0.3);">
-                    @foreach($promotions as $index => $promo)
-                    <div class="banner-slide" data-index="{{ $index }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: {{ $index === 0 ? 'flex' : 'none' }}; align-items: center; justify-content: center; padding: 2rem; background: linear-gradient(135deg, rgba(212, 165, 116, 0.08) 0%, rgba(196, 30, 58, 0.08) 100%); animation: edgeGlow 3s ease-in-out infinite alternate;">
-                        <div style="text-align: center;">
-                            <div style="font-family: 'Press Start 2P', monospace; font-size: 1.5rem; color: #FFD700; text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(255, 215, 0, 0.5); margin-bottom: 0.5rem; letter-spacing: 2px;">
-                                {{ strtoupper($promo->title) }}
-                            </div>
-                            <div style="font-size: 0.9rem; color: var(--text-muted); max-width: 600px; margin: 0 auto;">
-                                {{ $promo->description }}
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-
-                @if($promotions->count() > 1)
-                <!-- Navigation Controls -->
-                <button id="banner-prev" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: rgba(196, 30, 58, 0.8); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; z-index: 10; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <button id="banner-next" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(196, 30, 58, 0.8); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; z-index: 10; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-
-                <!-- Indicators -->
-                <div style="position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10;">
-                    @foreach($promotions as $index => $promo)
-                    <button class="banner-indicator" data-index="{{ $index }}" style="width: 10px; height: 10px; border-radius: 50%; background: {{ $index === 0 ? 'rgba(255, 215, 0, 0.9)' : 'rgba(255, 255, 255, 0.3)' }}; border: none; cursor: pointer; transition: all 0.3s ease;"></button>
-                    @endforeach
-                </div>
-                @endif
-            </div>
-
-            <style>
-                @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-                @keyframes edgeGlow {
-                    0% {
-                        box-shadow: inset 0 0 20px rgba(255, 182, 193, 0.3), inset 0 0 40px rgba(255, 182, 193, 0.1);
-                    }
-                    100% {
-                        box-shadow: inset 0 0 30px rgba(255, 182, 193, 0.5), inset 0 0 60px rgba(255, 182, 193, 0.2);
-                    }
-                }
-
-                #banner-prev:hover, #banner-next:hover {
-                    background: rgba(196, 30, 58, 1);
-                    transform: translateY(-50%) scale(1.1);
-                }
-
-                .banner-indicator.active {
-                    background: rgba(255, 215, 0, 0.9) !important;
-                    transform: scale(1.3);
-                }
-            </style>
-
             <!-- Promotion Details Grid -->
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1rem;">
                 @foreach($promotions as $promo)
