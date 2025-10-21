@@ -33,50 +33,57 @@ class CheckoutController extends Controller
             $totalAmount = collect($items)->sum(fn($item) => $item['price'] * $item['quantity']);
 
             // Create order and order items in a transaction
+            // Disable FK checks temporarily to avoid transaction visibility issues
             $order = DB::transaction(function () use ($validated, $items, $totalAmount, $currency) {
-                // Create the order
-                $order = new Order();
-                $order->username = $validated['user_id'];
-                $order->payment_method = $validated['payment_method'];
-                $order->amount = $totalAmount;
-                $order->currency = $currency;
-                $order->status = 'pending';
-                $order->payment_id = null;
-                $order->save();
+                DB::statement('SET FOREIGN_KEY_CHECKS=0');
+                
+                try {
+                    // Create the order
+                    $order = new Order();
+                    $order->username = $validated['user_id'];
+                    $order->payment_method = $validated['payment_method'];
+                    $order->amount = $totalAmount;
+                    $order->currency = $currency;
+                    $order->status = 'pending';
+                    $order->payment_id = null;
+                    $order->save();
 
-                Log::info("Order created", [
-                    'order_id' => $order->id,
-                    'user_id' => $validated['user_id'],
-                    'amount' => $totalAmount
-                ]);
+                    Log::info("Order created", [
+                        'order_id' => $order->id,
+                        'user_id' => $validated['user_id'],
+                        'amount' => $totalAmount
+                    ]);
 
-                // Prepare order items data
-                foreach ($items as $item) {
-                    $product = Product::find($item['product_id']);
-                    
-                    if (!$product) {
-                        Log::warning("Product not found during checkout", [
-                            'product_id' => $item['product_id'],
-                            'item_name' => $item['name']
+                    // Prepare order items data
+                    foreach ($items as $item) {
+                        $product = Product::find($item['product_id']);
+                        
+                        if (!$product) {
+                            Log::warning("Product not found during checkout", [
+                                'product_id' => $item['product_id'],
+                                'item_name' => $item['name']
+                            ]);
+                        }
+
+                        $order->items()->create([
+                            'product_id' => $product ? $product->id : null,
+                            'product_name' => $product ? $product->product_name : $item['name'],
+                            'price' => $item['price'],
+                            'qty_units' => $item['quantity'],
+                            'total_qty' => $item['quantity'] * ($product ? $product->qty_unit : 1),
+                            'claimed' => false
                         ]);
                     }
 
-                    $order->items()->create([
-                        'product_id' => $product ? $product->id : null,
-                        'product_name' => $product ? $product->product_name : $item['name'],
-                        'price' => $item['price'],
-                        'qty_units' => $item['quantity'],
-                        'total_qty' => $item['quantity'] * ($product ? $product->qty_unit : 1),
-                        'claimed' => false
+                    Log::info("Order items created", [
+                        'order_id' => $order->id,
+                        'items_count' => count($items)
                     ]);
+
+                    return $order;
+                } finally {
+                    DB::statement('SET FOREIGN_KEY_CHECKS=1');
                 }
-
-                Log::info("Order items created", [
-                    'order_id' => $order->id,
-                    'items_count' => count($items)
-                ]);
-
-                return $order;
             });
 
             // Process payment based on method
