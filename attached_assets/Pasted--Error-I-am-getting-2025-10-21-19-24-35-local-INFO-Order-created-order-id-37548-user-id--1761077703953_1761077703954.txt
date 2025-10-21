@@ -1,0 +1,118 @@
+
+Error I am getting: 
+[2025-10-21 19:24:35] local.INFO: Order created {"order_id":37548,"user_id":"aaasa","amount":5}
+[2025-10-21 19:24:35] local.ERROR: Checkout error: SQLSTATE[23000]: Integrity constraint violation: 1452 Cannot add or update a child row: a foreign key constraint fails (`rsps_donations`.`order_items`, CONSTRAINT `order_items_order_id_foreign` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE) (Connection: mysql, SQL: insert into `order_items` (`product_id`, `product_name`, `price`, `qty_units`, `total_qty`, `claimed`, `order_id`, `updated_at`, `created_at`) values (1, Dragon Claws, 5, 1, 5, 0, 37548, 2025-10-21 19:24:35, 2025-10-21 19:24:35)) {"trace":"#0 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Connection.php(783): Illuminate\\Database\\Connection->runQueryCallback('insert into `or...', Array, Object(Closure))
+#1 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\MySqlConnection.php(34): Illuminate\\Database\\Connection->run('insert into `or...', Array, Object(Closure))
+#2 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Processors\\MySqlProcessor.php(35): Illuminate\\Database\\MySqlConnection->insert('insert into `or...', Array, 'id')
+#3 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Query\\Builder.php(3549): Illuminate\\Database\\Query\\Processors\\MySqlProcessor->processInsertGetId(Object(Illuminate\\Database\\Query\\Builder), 'insert into `or...', Array, 'id')
+#4 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Builder.php(1982): Illuminate\\Database\\Query\\Builder->insertGetId(Array, 'id')
+#5 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1334): Illuminate\\Database\\Eloquent\\Builder->__call('insertGetId', Array)
+#6 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1299): Illuminate\\Database\\Eloquent\\Model->insertAndSetId(Object(Illuminate\\Database\\Eloquent\\Builder), Array)
+#7 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Model.php(1138): Illuminate\\Database\\Eloquent\\Model->performInsert(Object(Illuminate\\Database\\Eloquent\\Builder))
+#8 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Relations\\HasOneOrMany.php(342): Illuminate\\Database\\Eloquent\\Model->save()
+#9 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\helpers.php(320): Illuminate\\Database\\Eloquent\\Relations\\HasOneOrMany->Illuminate\\Database\\Eloquent\\Relations\\{closure}(Object(App\\Models\\OrderItem))
+#10 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Eloquent\\Relations\\HasOneOrMany.php(339): tap(Object(App\\Models\\OrderItem), Object(Closure))
+#11 C:\\xampp\\htdocs\\checkout-cart-api\\app\\Http\\Controllers\\Api\\CheckoutController.php(64): Illuminate\\Database\\Eloquent\\Relations\\HasOneOrMany->create(Array)
+#12 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\Concerns\\ManagesTransactions.php(30): App\\Http\\Controllers\\Api\\CheckoutController->App\\Http\\Controllers\\Api\\{closure}(Object(Illuminate\\Database\\MySqlConnection))
+#13 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Database\\DatabaseManager.php(509): Illuminate\\Database\\Connection->transaction(Object(Closure))
+#14 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\Facades\\Facade.php(355): Illuminate\\Database\\DatabaseManager->__call('transaction', Array)
+#15 C:\\xampp\\htdocs\\checkout-cart-api\\app\\Http\\Controllers\\Api\\CheckoutController.php(36): Illuminate\\Support\\Facades\\Facade::__callStatic('transaction', Array)
+#16 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Controller.php(54): App\\Http\\Controllers\\Api\\CheckoutController->checkout(Object(Illuminate\\Http\\Request))
+#17 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\ControllerDispatcher.php(43): Illuminate\\Routing\\Controller->callAction('checkout', Array)
+#18 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(259): Illuminate\\Routing\\ControllerDispatcher->dispatch(Object(Illuminate\\Routing\\Route), Object(App\\Http\\Controllers\\Api\\CheckoutController), 'checkout')
+#19 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(205): Illuminate\\Routing\\Route->runController()
+#20 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(806): Illuminate\\Routing\\Route->run()
+#21 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(144): Illuminate\\Routing\\Router->Illuminate\\Routing\\{closure}(Object(Illuminate\\Http\\Request))
+#22 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#23 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(183): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#24 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(159): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#25 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(125): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequest(Object(Illuminate\\Http\\Request), Object(Closure), Array)
+#26 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(87): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequestUsingNamedLimiter(Object(Illuminate\\Http\\Request), Object(Closure), 'api', Object(Closure))
+#27 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(183): Illuminate\\Routing\\Middleware\\ThrottleRequests->handle(Object(Illuminate\\Http\\Request), Object(Closure), 'api')
+#28 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(119): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#29 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(805): Illuminate\\Pipeline\\Pipeline->then(Object(Closure))
+#30 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(784): Illuminate\\Routing\\Router->runRouteWithinStack(Object(Illuminate\\Routing\\Route), Object(Illuminate\\Http\\Request))
+#31 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(748): Illuminate\\Routing\\Router->runRoute(Object(Illuminate\\Http\\Request), Object(Illuminate\\Routing\\Route))
+#32 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(737): Illuminate\\Routing\\Router->dispatchToRoute(Object(Illuminate\\Http\\Request))
+#33 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(200): Illuminate\\Routing\\Router->dispatch(Object(Illuminate\\Http\\Request))
+#34 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(144): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}(Object(Illuminate\\Http\\Request))
+#35 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#36 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#37 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(183): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#38 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#39 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php(40): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#40 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(183): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#41 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#42 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(183): Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#43 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php(99): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#44 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(183): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#45 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php(49): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#46 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(183): Illuminate\\Http\\Middleware\\HandleCors->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#47 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php(39): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#48 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(183): Illuminate\\Http\\Middleware\\TrustProxies->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#49 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(119): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#50 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(175): Illuminate\\Pipeline\\Pipeline->then(Object(Closure))
+#51 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(144): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter(Object(Illuminate\\Http\\Request))
+#52 C:\\xampp\\htdocs\\checkout-cart-api\\public\\index.php(36): Illuminate\\Foundation\\Http\\Kernel->handle(Object(Illuminate\\Http\\Request))
+#53 C:\\xampp\\htdocs\\checkout-cart-api\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('C:\\\\xampp\\\\htdocs...')
+#54 {main}"}
+
+
+I've added a temporary FK check disable during the transaction. This is a safe workaround for the MySQL transaction visibility issue.
+
+What Changed
+Added around the transaction:
+
+DB::statement('SET FOREIGN_KEY_CHECKS=0');  // Before creating records
+try {
+    // Create order and items
+} finally {
+    DB::statement('SET FOREIGN_KEY_CHECKS=1');  // Always re-enable
+}
+
+The Problem:
+
+Order created in transaction → gets ID 37542 (IDK why it's not auto-incrementing, id is in single digits currently)
+Try to create order_items → FK constraint checks IMMEDIATELY
+Parent order not visible to FK check yet (transaction not committed)
+BOOM → FK constraint violation → rollback
+Auto-increment stays at 37543 (lost number)
+The Solution:
+
+Temporarily disable FK checks only during this transaction
+Create order → gets ID
+Create order_items → no FK check, just inserts
+Re-enable FK checks (via finally block - always executes)
+Transaction commits → all data saved together
+Data integrity maintained because we control what goes in
+
+
+NOW another issue arise, the order_id: 37585, 37610 (is being randomly set OR is set by something??) is being sent to paypal/coinbase, while orders table is saving the order_id correctly. so when the webhooks callback it's not finding the order_id because the wrong one is being sent for some reason?
+
+[2025-10-21 20:02:21] local.INFO: Order created {"order_id":37585,"user_id":"aaasa","amount":10}
+[2025-10-21 20:02:21] local.INFO: Order items created {"order_id":37585,"items_count":1}
+[2025-10-21 20:02:23] local.INFO: Creating PayPal order {"order_id":37585,"amount":10,"currency":"USD"}
+[2025-10-21 20:02:24] local.INFO: PayPal order created successfully {"order_id":37585,"paypal_order_id":"9LR61359A45031523"}
+[2025-10-21 20:02:48] local.INFO: Payment success page accessed {"payment_id":"9LR61359A45031523","order_id":"37585","query_params":{"order_id":"37585","token":"9LR61359A45031523","PayerID":"T5B3Q4E6WK4KC"}}
+[2025-10-21 20:02:48] local.WARNING: Order not found for payment success {"payment_id":"9LR61359A45031523","order_id":"37585"}
+[2025-10-21 20:02:55] local.INFO: PayPal webhook received {"event_type":"CHECKOUT.ORDER.APPROVED","resource_id":"9LR61359A45031523"}
+[2025-10-21 20:02:55] local.WARNING: PayPal order approved but order not found: 9LR61359A45031523
+[2025-10-21 20:03:00] local.INFO: Payment success page accessed {"payment_id":"9LR61359A45031523","order_id":"37585","query_params":{"order_id":"37585","token":"9LR61359A45031523","PayerID":"T5B3Q4E6WK4KC"}}
+[2025-10-21 20:03:00] local.WARNING: Order not found for payment success {"payment_id":"9LR61359A45031523","order_id":"37585"}
+[2025-10-21 20:02:21] local.INFO: Order created {"order_id":37585,"user_id":"aaasa","amount":10}
+[2025-10-21 20:02:21] local.INFO: Order items created {"order_id":37585,"items_count":1}
+[2025-10-21 20:02:23] local.INFO: Creating PayPal order {"order_id":37585,"amount":10,"currency":"USD"}
+[2025-10-21 20:02:24] local.INFO: PayPal order created successfully {"order_id":37585,"paypal_order_id":"9LR61359A45031523"}
+[2025-10-21 20:02:48] local.INFO: Payment success page accessed {"payment_id":"9LR61359A45031523","order_id":"37585","query_params":{"order_id":"37585","token":"9LR61359A45031523","PayerID":"T5B3Q4E6WK4KC"}}
+[2025-10-21 20:02:48] local.WARNING: Order not found for payment success {"payment_id":"9LR61359A45031523","order_id":"37585"}
+[2025-10-21 20:02:55] local.INFO: PayPal webhook received {"event_type":"CHECKOUT.ORDER.APPROVED","resource_id":"9LR61359A45031523"}
+[2025-10-21 20:02:55] local.WARNING: PayPal order approved but order not found: 9LR61359A45031523
+[2025-10-21 20:03:00] local.INFO: Payment success page accessed {"payment_id":"9LR61359A45031523","order_id":"37585","query_params":{"order_id":"37585","token":"9LR61359A45031523","PayerID":"T5B3Q4E6WK4KC"}}
+[2025-10-21 20:03:00] local.WARNING: Order not found for payment success {"payment_id":"9LR61359A45031523","order_id":"37585"}
+
+[2025-10-21 20:10:18] local.INFO: Order created {"order_id":37610,"user_id":"aaasa","amount":10} 
+[2025-10-21 20:10:18] local.INFO: Order items created {"order_id":37610,"items_count":1} 
+[2025-10-21 20:10:24] local.INFO: Coinbase raw payload {"raw_body":"{\"attempt_number\":1,\"event\":{\"api_version\":\"2018-03-22\",\"created_at\":\"2025-10-21T20:10:22Z\",\"data\":{\"id\":\"25ab60e3-8ef5-4832-a9d0-616713e0e714\",\"code\":\"7B76QB3G\",\"name\":\"Order #37610\",\"pricing\":{\"local\":{\"amount\":\"10.00\",\"currency\":\"USD\"},\"settlement\":{\"amount\":\"10\",\"currency\":\"USDC\"}},\"metadata\":{\"user_id\":\"aaasa\",\"order_id\":\"37610.0\"},\"payments\":[],\"timeline\":[{\"time\":\"2025-10-21T20:10:22Z\",\"status\":\"NEW\"}],\"pwcb_only\":false,\"redirects\":{\"cancel_url\":\"http://www.aragon-data.live/payment/cancel?order_id=37610\",\"success_url\":\"http://www.aragon-data.live/payment/success?order_id=37610\",\"will_redirect_after_success\":true},\"web3_data\":{\"failure_events\":[],\"success_events\":[],\"transfer_intent\":null,\"contract_addresses\":{\"1\":\"0x1FA57f879417e029Ef57D7Ce915b0aA56A507C31\",\"137\":\"0x288844216a63638381784E0C1081A3826fD5a2E4\",\"8453\":\"0x03059433BCdB6144624cC2443159D9445C32b7a8\"},\"contract_caller_request_id\":\"\",\"settlement_currency_addresses\":{\"1\":\"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48\",\"137\":\"0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359\",\"8453\":\"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\"},\"subsidized_payments_chain_to_tokens\":{\"1\":{\"token_addresses\":[\"\"]},\"137\":{\"token_addresses\":[\"0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359\"]},\"8453\":{\"token_addresses\":[\"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\"]}}},\"created_at\":\"2025-10-21T20:10:22Z\",\"expires_at\":\"2025-10-23T20:10:22Z\",\"hosted_url\":\"https://commerce.coinbase.com/pay/25ab60e3-8ef5-4832-a9d0-616713e0e714\",\"brand_color\":\"#122332\",\"charge_kind\":\"WEB3\",\"description\":\"RSPS Store Purchase - 1 items\",\"pricing_type\":\"fixed_price\",\"support_email\":\"mhmdkhmaisy@outlook.com\",\"brand_logo_url\":\"\",\"collected_email\":false,\"organization_name\":\"\",\"ocs_points_override\":false,\"web3_retail_payment_metadata\":{\"fees\":[],\"quote_id\":\"\",\"source_amount\":{\"amount\":null,\"currency\":null},\"exchange_rate_with_spread\":{\"amount\":null,\"currency\":null},\"exchange_rate_without_spread\":{\"amount\":null,\"currency\":null},\"max_retail_payment_value_usd\":10000,\"high_value_payment_currencies\":[\"usdc\",\"btc\",\"eth\",\"sol\",\"xrp\"]},\"web3_retail_payments_enabled\":true},\"id\":\"294fced9-e053-40c3-b886-6674fd891ae2\",\"resource\":\"event\",\"type\":\"charge:created\"},\"id\":\"887477c8-5997-4fdc-a766-ec2bb8d7b499\",\"scheduled_for\":\"2025-10-21T20:10:22Z\"}","signature":"3ba7eab6d3f616741dda21a1eb0109750aa284ac85f619f9bd77e363fc0fa227"} 
+[2025-10-21 20:10:24] local.INFO: Coinbase webhook received {"event_type":"charge:created","charge_id":"25ab60e3-8ef5-4832-a9d0-616713e0e714"} 
+[2025-10-21 20:10:24] local.WARNING: Coinbase charge event but order not found: 25ab60e3-8ef5-4832-a9d0-616713e0e714  
+
