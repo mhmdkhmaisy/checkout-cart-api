@@ -24,6 +24,20 @@ class Order extends Model
         'amount' => 'decimal:2'
     ];
 
+    /**
+     * Boot method to handle cascade deletes at application level
+     * since we removed the database FK constraint to avoid transaction issues
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::deleting(function ($order) {
+            // Delete all associated order items when order is deleted
+            $order->items()->delete();
+        });
+    }
+
     public function items()
     {
         return $this->hasMany(OrderItem::class);
