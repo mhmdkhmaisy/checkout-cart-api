@@ -250,6 +250,8 @@
     overflow-y: auto;
     margin-bottom: 0.5rem;
     padding-right: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) rgba(10, 10, 10, 0.6);
 }
 
 .cart-items-container::-webkit-scrollbar {
@@ -269,11 +271,6 @@
 
 .cart-items-container::-webkit-scrollbar-thumb:hover {
     background: var(--primary-color);
-}
-
-.cart-items-container {
-    scrollbar-width: thin;
-    scrollbar-color: var(--primary-color) rgba(10, 10, 10, 0.6);
 }
 
 .basket-header {

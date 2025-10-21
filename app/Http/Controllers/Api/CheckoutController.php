@@ -35,56 +35,58 @@ class CheckoutController extends Controller
 
             // Use database transaction to ensure data consistency
             $result = DB::transaction(function () use ($request, $items, $totalAmount, $currency) {
-                // Create order record
-                $order = new Order([
-                    'username' => $request->user_id,
-                    'payment_method' => $request->payment_method,
-                    'amount' => $totalAmount,
-                    'currency' => $currency,
-                    'status' => 'pending',
-                    'payment_id' => null
-                ]);
-                
-                // Explicitly save and ensure we have an ID
-                $order->save();
-                $order->refresh();
-                
-                if (!$order->id) {
-                    throw new \Exception('Failed to create order - no ID generated');
-                }
-
-                Log::info("Order created", [
-                    'order_id' => $order->id,
-                    'user_id' => $request->user_id,
-                    'amount' => $totalAmount
-                ]);
-
-                // Create order items with individual claim states
-                foreach ($items as $item) {
-                    // Get product details from database if available
-                    $product = Product::find($item['product_id']);
-                    $productName = $product ? $product->product_name : $item['name'];
-                    $qtyUnit = $product ? $product->qty_unit : 1;
-
-                    $orderItem = new OrderItem([
-                        'order_id' => $order->id,
-                        'product_id' => $item['product_id'],
-                        'product_name' => $productName,
-                        'price' => $item['price'],
-                        'qty_units' => $item['quantity'],
-                        'total_qty' => $item['quantity'] * $qtyUnit,
-                        'claimed' => false
+                try {
+                    // Create order record
+                    $order = Order::create([
+                        'username' => $request->user_id,
+                        'payment_method' => $request->payment_method,
+                        'amount' => $totalAmount,
+                        'currency' => $currency,
+                        'status' => 'pending',
+                        'payment_id' => null
                     ]);
-                    
-                    $orderItem->save();
+
+                    if (!$order || !$order->id) {
+                        throw new \Exception('Failed to create order - no ID generated');
+                    }
+
+                    Log::info("Order created", [
+                        'order_id' => $order->id,
+                        'user_id' => $request->user_id,
+                        'amount' => $totalAmount
+                    ]);
+
+                    // Create order items with individual claim states
+                    foreach ($items as $item) {
+                        // Get product details from database if available
+                        $product = Product::find($item['product_id']);
+                        $productName = $product ? $product->product_name : $item['name'];
+                        $qtyUnit = $product ? $product->qty_unit : 1;
+
+                        OrderItem::create([
+                            'order_id' => $order->id,
+                            'product_id' => $item['product_id'],
+                            'product_name' => $productName,
+                            'price' => $item['price'],
+                            'qty_units' => $item['quantity'],
+                            'total_qty' => $item['quantity'] * $qtyUnit,
+                            'claimed' => false
+                        ]);
+                    }
+
+                    Log::info("Order items created", [
+                        'order_id' => $order->id,
+                        'items_count' => count($items)
+                    ]);
+
+                    return $order;
+                } catch (\Exception $e) {
+                    Log::error('Order creation failed within transaction', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    throw $e;
                 }
-
-                Log::info("Order items created", [
-                    'order_id' => $order->id,
-                    'items_count' => count($items)
-                ]);
-
-                return $order;
             });
 
             // Process payment based on method
