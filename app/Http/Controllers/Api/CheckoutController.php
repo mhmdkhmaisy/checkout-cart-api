@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +17,7 @@ class CheckoutController extends Controller
     public function checkout(Request $request): JsonResponse
     {
         try {
-            $request->validate([
+            $validated = $request->validate([
                 'user_id' => 'required|string',
                 'payment_method' => 'required|in:paypal,coinbase',
                 'items' => 'required|array|min:1',
@@ -26,89 +25,69 @@ class CheckoutController extends Controller
                 'items.*.name' => 'required|string',
                 'items.*.price' => 'required|numeric|min:0',
                 'items.*.quantity' => 'required|integer|min:1',
-                'currency' => 'string|in:USD,EUR,GBP'
+                'currency' => 'nullable|string|in:USD,EUR,GBP'
             ]);
 
-            $currency = $request->currency ?? 'USD';
-            $items = $request->items;
+            $currency = $validated['currency'] ?? 'USD';
+            $items = $validated['items'];
             $totalAmount = collect($items)->sum(fn($item) => $item['price'] * $item['quantity']);
 
-            // Use database transaction to ensure data consistency
-            $result = DB::transaction(function () use ($request, $items, $totalAmount, $currency) {
-                try {
-                    // Create order record
-                    $order = Order::create([
-                        'username' => $request->user_id,
-                        'payment_method' => $request->payment_method,
-                        'amount' => $totalAmount,
-                        'currency' => $currency,
-                        'status' => 'pending',
-                        'payment_id' => null
-                    ]);
+            // Create order and order items in a transaction
+            $order = DB::transaction(function () use ($validated, $items, $totalAmount, $currency) {
+                // Create the order
+                $order = new Order();
+                $order->username = $validated['user_id'];
+                $order->payment_method = $validated['payment_method'];
+                $order->amount = $totalAmount;
+                $order->currency = $currency;
+                $order->status = 'pending';
+                $order->payment_id = null;
+                $order->save();
 
-                    if (!$order || !$order->id) {
-                        throw new \Exception('Failed to create order - no ID generated');
+                Log::info("Order created", [
+                    'order_id' => $order->id,
+                    'user_id' => $validated['user_id'],
+                    'amount' => $totalAmount
+                ]);
+
+                // Prepare order items data
+                foreach ($items as $item) {
+                    $product = Product::find($item['product_id']);
+                    
+                    if (!$product) {
+                        Log::warning("Product not found during checkout", [
+                            'product_id' => $item['product_id'],
+                            'item_name' => $item['name']
+                        ]);
                     }
 
-                    Log::info("Order created", [
-                        'order_id' => $order->id,
-                        'user_id' => $request->user_id,
-                        'amount' => $totalAmount
+                    $order->items()->create([
+                        'product_id' => $product ? $product->id : null,
+                        'product_name' => $product ? $product->product_name : $item['name'],
+                        'price' => $item['price'],
+                        'qty_units' => $item['quantity'],
+                        'total_qty' => $item['quantity'] * ($product ? $product->qty_unit : 1),
+                        'claimed' => false
                     ]);
-
-                    // Create order items using relationship (fixes FK constraint timing issue)
-                    $orderItemsData = [];
-                    foreach ($items as $item) {
-                        // Get product details from database if available
-                        $product = Product::find($item['product_id']);
-                        
-                        if (!$product) {
-                            Log::warning("Product not found during checkout", [
-                                'product_id' => $item['product_id'],
-                                'item_name' => $item['name'] ?? 'unknown'
-                            ]);
-                        }
-                        
-                        $productName = $product ? $product->product_name : $item['name'];
-                        $qtyUnit = $product ? $product->qty_unit : 1;
-
-                        $orderItemsData[] = [
-                            'product_id' => $product ? $product->id : null,
-                            'product_name' => $productName,
-                            'price' => $item['price'],
-                            'qty_units' => $item['quantity'],
-                            'total_qty' => $item['quantity'] * $qtyUnit,
-                            'claimed' => false
-                        ];
-                    }
-
-                    // Use relationship to create items (better handles FK constraints)
-                    $order->items()->createMany($orderItemsData);
-
-                    Log::info("Order items created", [
-                        'order_id' => $order->id,
-                        'items_count' => count($orderItemsData)
-                    ]);
-
-                    return $order;
-                } catch (\Exception $e) {
-                    Log::error('Order creation failed within transaction', [
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                    throw $e;
                 }
+
+                Log::info("Order items created", [
+                    'order_id' => $order->id,
+                    'items_count' => count($items)
+                ]);
+
+                return $order;
             });
 
             // Process payment based on method
-            if ($request->payment_method === 'paypal') {
-                $paymentResponse = $this->createPayPalOrder($result, $items, $totalAmount, $currency);
+            if ($validated['payment_method'] === 'paypal') {
+                $paymentResponse = $this->createPayPalOrder($order, $items, $totalAmount, $currency);
             } else {
-                $paymentResponse = $this->createCoinbaseCharge($result, $items, $totalAmount, $currency);
+                $paymentResponse = $this->createCoinbaseCharge($order, $items, $totalAmount, $currency);
             }
 
             if (!$paymentResponse['success']) {
-                $result->update(['status' => 'failed']);
+                $order->update(['status' => 'failed']);
                 return response()->json([
                     'success' => false,
                     'error' => $paymentResponse['error']
@@ -116,11 +95,11 @@ class CheckoutController extends Controller
             }
 
             // Update order with payment ID
-            $result->update(['payment_id' => $paymentResponse['payment_id']]);
+            $order->update(['payment_id' => $paymentResponse['payment_id']]);
 
             return response()->json([
                 'success' => true,
-                'order_id' => $result->id,
+                'order_id' => $order->id,
                 'payment_url' => $paymentResponse['payment_url'],
                 'payment_id' => $paymentResponse['payment_id'],
                 'message' => 'Checkout initiated successfully'
@@ -133,7 +112,9 @@ class CheckoutController extends Controller
                 'details' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Checkout error: ' . $e->getMessage());
+            Log::error('Checkout error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'error' => 'Checkout processing failed'
@@ -184,14 +165,10 @@ class CheckoutController extends Controller
                 ]
             ];
 
-            // Enhanced debugging for PayPal order creation
-            Log::info('Creating PayPal order with CAPTURE intent', [
+            Log::info('Creating PayPal order', [
                 'order_id' => $order->id,
-                'intent' => $orderData['intent'],
-                'user_action' => $orderData['application_context']['user_action'],
                 'amount' => $amount,
-                'currency' => $currency,
-                'paypal_api_url' => $this->getPayPalApiUrl()
+                'currency' => $currency
             ]);
 
             $response = Http::withHeaders([
@@ -200,20 +177,11 @@ class CheckoutController extends Controller
                 'PayPal-Request-Id' => (string) Str::uuid(),
             ])->post($this->getPayPalApiUrl() . '/v2/checkout/orders', $orderData);
 
-            // Enhanced response logging
-            Log::info('PayPal order creation response', [
-                'order_id' => $order->id,
-                'status_code' => $response->status(),
-                'response_body' => $response->json(),
-                'successful' => $response->successful()
-            ]);
-
             if (!$response->successful()) {
                 Log::error('PayPal order creation failed', [
                     'order_id' => $order->id,
                     'status' => $response->status(),
-                    'response' => $response->json(),
-                    'request_data' => $orderData
+                    'response' => $response->json()
                 ]);
                 return [
                     'success' => false,
@@ -224,20 +192,12 @@ class CheckoutController extends Controller
             $responseData = $response->json();
             $approvalUrl = collect($responseData['links'])->firstWhere('rel', 'approve')['href'] ?? null;
 
-            // Log PayPal order details for debugging
             Log::info('PayPal order created successfully', [
                 'order_id' => $order->id,
-                'paypal_order_id' => $responseData['id'],
-                'status' => $responseData['status'] ?? 'unknown',
-                'approval_url' => $approvalUrl,
-                'links' => $responseData['links'] ?? []
+                'paypal_order_id' => $responseData['id']
             ]);
 
             if (!$approvalUrl) {
-                Log::error('PayPal approval URL not found in response', [
-                    'order_id' => $order->id,
-                    'response_links' => $responseData['links'] ?? []
-                ]);
                 return [
                     'success' => false,
                     'error' => 'PayPal approval URL not found'
@@ -253,8 +213,7 @@ class CheckoutController extends Controller
         } catch (\Exception $e) {
             Log::error('PayPal order creation error', [
                 'order_id' => $order->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
             return [
                 'success' => false,
@@ -335,12 +294,7 @@ class CheckoutController extends Controller
             throw new \Exception('PayPal authentication failed');
         }
 
-        $tokenData = $response->json();
-        Log::info('PayPal access token obtained successfully', [
-            'expires_in' => $tokenData['expires_in'] ?? 'unknown'
-        ]);
-
-        return $tokenData['access_token'];
+        return $response->json()['access_token'];
     }
 
     private function getPayPalApiUrl(): string
@@ -348,15 +302,12 @@ class CheckoutController extends Controller
         return config('services.paypal.base_url', 'https://api-m.sandbox.paypal.com');
     }
 
-    // Success/Cancel handlers with enhanced debugging
     public function paypalSuccess(Request $request): JsonResponse
     {
         Log::info('PayPal success callback received', [
-            'query_params' => $request->query(),
-            'all_data' => $request->all()
+            'query_params' => $request->query()
         ]);
 
-        // Check if we have a PayPal order ID to capture
         $paypalOrderId = $request->query('token');
         if ($paypalOrderId) {
             $this->capturePayPalOrder($paypalOrderId);
@@ -372,8 +323,7 @@ class CheckoutController extends Controller
     public function paypalCancel(Request $request): JsonResponse
     {
         Log::info('PayPal cancel callback received', [
-            'query_params' => $request->query(),
-            'all_data' => $request->all()
+            'query_params' => $request->query()
         ]);
 
         return response()->json([
@@ -392,7 +342,6 @@ class CheckoutController extends Controller
 
             $accessToken = $this->getPayPalAccessToken();
             
-            // FIXED: Send proper JSON body - empty object for capture endpoint
             $response = Http::withHeaders([
                 'Authorization' => "Bearer {$accessToken}",
                 'Content-Type' => 'application/json',
@@ -400,25 +349,17 @@ class CheckoutController extends Controller
             ])->withBody('{}', 'application/json')
             ->post($this->getPayPalApiUrl() . "/v2/checkout/orders/{$paypalOrderId}/capture");
 
-            Log::info('PayPal capture response', [
-                'paypal_order_id' => $paypalOrderId,
-                'status_code' => $response->status(),
-                'response_body' => $response->json(),
-                'successful' => $response->successful()
-            ]);
-
             $captureData = $response->json();
 
-            // ✅ Handle already-captured orders gracefully
             if (isset($captureData['name']) && $captureData['name'] === 'ORDER_ALREADY_CAPTURED') {
-                $captureId = $captureData['details'][0]['issue'] ?? null; // sometimes PayPal puts details
+                $captureId = $captureData['details'][0]['issue'] ?? null;
                 if (!$captureId && isset($captureData['purchase_units'][0]['payments']['captures'][0]['id'])) {
                     $captureId = $captureData['purchase_units'][0]['payments']['captures'][0]['id'];
                 }
 
                 Log::warning('PayPal order already captured', [
                     'paypal_order_id' => $paypalOrderId,
-                    'capture_id' => $captureId ?? 'null'
+                    'capture_id' => $captureId
                 ]);
 
                 $order = Order::where('payment_id', $paypalOrderId)->first();
@@ -427,7 +368,6 @@ class CheckoutController extends Controller
                         'status' => 'paid',
                         'paypal_capture_id' => $captureId
                     ]);
-                    Log::info("Local order {$order->id} marked as paid (already captured) with capture ID " . ($captureId ?? 'null'));
                 }
                 return;
             }
@@ -437,18 +377,15 @@ class CheckoutController extends Controller
 
                 Log::info('PayPal order captured successfully', [
                     'paypal_order_id' => $paypalOrderId,
-                    'capture_status' => $captureData['status'] ?? 'unknown',
-                    'capture_id' => $captureId ?? 'unknown'
+                    'capture_id' => $captureId
                 ]);
 
-                // Update local order status + store capture ID
                 $order = Order::where('payment_id', $paypalOrderId)->first();
                 if ($order) {
                     $order->update([
                         'status' => 'paid',
                         'paypal_capture_id' => $captureId
                     ]);
-                    Log::info("Local order {$order->id} marked as paid after manual capture with capture ID {$captureId}");
                 }
             } else {
                 Log::error('PayPal capture failed', [
@@ -460,13 +397,10 @@ class CheckoutController extends Controller
         } catch (\Exception $e) {
             Log::error('PayPal capture error', [
                 'paypal_order_id' => $paypalOrderId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
         }
     }
-
-
 
     public function coinbaseSuccess(Request $request): JsonResponse
     {
