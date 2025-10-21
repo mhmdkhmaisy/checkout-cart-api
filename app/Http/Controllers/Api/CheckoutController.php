@@ -50,20 +50,10 @@ class CheckoutController extends Controller
                         throw new \Exception('Failed to create order - no ID generated');
                     }
 
-                    // Refresh the model to ensure ID is properly set from database
-                    $order->refresh();
-
-                    // Verify order exists in database before proceeding
-                    $dbCheck = DB::selectOne('SELECT id FROM orders WHERE id = ?', [$order->id]);
-                    if (!$dbCheck) {
-                        throw new \Exception("Order {$order->id} was not found in database after creation");
-                    }
-
-                    Log::info("Order created and verified", [
+                    Log::info("Order created", [
                         'order_id' => $order->id,
                         'user_id' => $request->user_id,
-                        'amount' => $totalAmount,
-                        'db_verified' => true
+                        'amount' => $totalAmount
                     ]);
 
                     // Create order items using relationship (fixes FK constraint timing issue)
@@ -92,22 +82,12 @@ class CheckoutController extends Controller
                         ];
                     }
 
-                    Log::info("Prepared order items data", [
-                        'order_id' => $order->id,
-                        'items_count' => count($orderItemsData),
-                        'items_data' => $orderItemsData
-                    ]);
-
                     // Use relationship to create items (better handles FK constraints)
-                    $createdItems = $order->items()->createMany($orderItemsData);
+                    $order->items()->createMany($orderItemsData);
 
-                    if (count($createdItems) !== count($orderItemsData)) {
-                        throw new \Exception("Item count mismatch: expected " . count($orderItemsData) . " but created " . count($createdItems));
-                    }
-
-                    Log::info("Order items created successfully", [
+                    Log::info("Order items created", [
                         'order_id' => $order->id,
-                        'items_count' => count($createdItems)
+                        'items_count' => count($orderItemsData)
                     ]);
 
                     return $order;
