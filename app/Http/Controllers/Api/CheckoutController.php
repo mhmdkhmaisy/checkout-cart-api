@@ -36,13 +36,27 @@ class CheckoutController extends Controller
             // Use database transaction to ensure data consistency
             $result = DB::transaction(function () use ($request, $items, $totalAmount, $currency) {
                 // Create order record
-                $order = Order::create([
-                    'username' => $request->user_id, // Using username field from existing schema
+                $order = new Order([
+                    'username' => $request->user_id,
                     'payment_method' => $request->payment_method,
                     'amount' => $totalAmount,
                     'currency' => $currency,
                     'status' => 'pending',
-                    'payment_id' => null // Will be updated after payment provider response
+                    'payment_id' => null
+                ]);
+                
+                // Explicitly save and ensure we have an ID
+                $order->save();
+                $order->refresh();
+                
+                if (!$order->id) {
+                    throw new \Exception('Failed to create order - no ID generated');
+                }
+
+                Log::info("Order created", [
+                    'order_id' => $order->id,
+                    'user_id' => $request->user_id,
+                    'amount' => $totalAmount
                 ]);
 
                 // Create order items with individual claim states
@@ -52,22 +66,21 @@ class CheckoutController extends Controller
                     $productName = $product ? $product->product_name : $item['name'];
                     $qtyUnit = $product ? $product->qty_unit : 1;
 
-                    OrderItem::create([
+                    $orderItem = new OrderItem([
                         'order_id' => $order->id,
                         'product_id' => $item['product_id'],
-                        'product_name' => $productName, // Fixed: Added missing product_name field
+                        'product_name' => $productName,
                         'price' => $item['price'],
-                        'qty_units' => $item['quantity'], // DB expects qty_units
-                        'total_qty' => $item['quantity'] * $qtyUnit, // Calculate total based on product qty_unit
+                        'qty_units' => $item['quantity'],
+                        'total_qty' => $item['quantity'] * $qtyUnit,
                         'claimed' => false
                     ]);
+                    
+                    $orderItem->save();
                 }
 
-                Log::info("Order created with items", [
+                Log::info("Order items created", [
                     'order_id' => $order->id,
-                    'user_id' => $request->user_id,
-                    'amount' => $totalAmount,
-                    'payment_method' => $request->payment_method,
                     'items_count' => count($items)
                 ]);
 

@@ -233,7 +233,6 @@
     top: 140px;
     height: fit-content;
     max-height: calc(100vh - 160px);
-    overflow-y: auto;
 }
 
 .basket-card {
@@ -241,6 +240,40 @@
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 160px);
+}
+
+.cart-items-container {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.cart-items-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.cart-items-container::-webkit-scrollbar-track {
+    background: rgba(10, 10, 10, 0.6);
+    border-radius: 4px;
+}
+
+.cart-items-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--primary-color) 0%, rgba(212, 0, 0, 0.6) 100%);
+    border-radius: 4px;
+    border: 1px solid rgba(26, 26, 26, 0.8);
+}
+
+.cart-items-container::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+.cart-items-container {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) rgba(10, 10, 10, 0.6);
 }
 
 .basket-header {
@@ -529,10 +562,12 @@
                             
                             <!-- Cart Items -->
                             <div id="cart-items-section">
-                                <div id="cart-items">
-                                    <div style="text-align: center; padding: 2rem 1rem; opacity: 0.5;">
-                                        <i class="fas fa-shopping-basket" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.5rem;"></i>
-                                        <p class="text-muted" style="font-size: 0.85rem;">Your basket is empty</p>
+                                <div class="cart-items-container">
+                                    <div id="cart-items">
+                                        <div style="text-align: center; padding: 2rem 1rem; opacity: 0.5;">
+                                            <i class="fas fa-shopping-basket" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.5rem;"></i>
+                                            <p class="text-muted" style="font-size: 0.85rem;">Your basket is empty</p>
+                                        </div>
                                     </div>
                                 </div>
                                 
