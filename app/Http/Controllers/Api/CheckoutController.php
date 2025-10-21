@@ -56,27 +56,30 @@ class CheckoutController extends Controller
                         'amount' => $totalAmount
                     ]);
 
-                    // Create order items with individual claim states
+                    // Create order items using relationship (fixes FK constraint timing issue)
+                    $orderItemsData = [];
                     foreach ($items as $item) {
                         // Get product details from database if available
                         $product = Product::find($item['product_id']);
                         $productName = $product ? $product->product_name : $item['name'];
                         $qtyUnit = $product ? $product->qty_unit : 1;
 
-                        OrderItem::create([
-                            'order_id' => $order->id,
+                        $orderItemsData[] = [
                             'product_id' => $item['product_id'],
                             'product_name' => $productName,
                             'price' => $item['price'],
                             'qty_units' => $item['quantity'],
                             'total_qty' => $item['quantity'] * $qtyUnit,
                             'claimed' => false
-                        ]);
+                        ];
                     }
+
+                    // Use relationship to create items (better handles FK constraints)
+                    $order->items()->createMany($orderItemsData);
 
                     Log::info("Order items created", [
                         'order_id' => $order->id,
-                        'items_count' => count($items)
+                        'items_count' => count($orderItemsData)
                     ]);
 
                     return $order;
