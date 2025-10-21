@@ -44,10 +44,7 @@ class CheckoutController extends Controller
                 $order->payment_id = null;
                 $order->save();
 
-                // Refresh to get the actual database ID (fixes auto-increment mismatch issue)
-                $order->refresh();
-
-                Log::info("Order created", [
+                Log::info("Order created (cached ID)", [
                     'order_id' => $order->id,
                     'user_id' => $validated['user_id'],
                     'amount' => $totalAmount
@@ -81,6 +78,28 @@ class CheckoutController extends Controller
 
                 return $order;
             });
+
+            // Refresh after transaction to get the actual database ID (fixes auto-increment mismatch)
+            $cachedId = $order->id;
+            $order->refresh();
+            
+            // If the ID changed after refresh, update order_items to use the correct ID
+            if ($cachedId != $order->id) {
+                Log::warning("Order ID mismatch detected and fixed", [
+                    'cached_id' => $cachedId,
+                    'actual_id' => $order->id
+                ]);
+                
+                // Update all order items with the correct order_id
+                DB::table('order_items')
+                    ->where('order_id', $cachedId)
+                    ->update(['order_id' => $order->id]);
+            }
+            
+            Log::info("Order ID after refresh", [
+                'actual_order_id' => $order->id,
+                'user_id' => $validated['user_id']
+            ]);
 
             // Process payment based on method
             if ($validated['payment_method'] === 'paypal') {
