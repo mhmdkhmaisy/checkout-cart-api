@@ -118,19 +118,37 @@ ALTER TABLE products AUTO_INCREMENT = @max_product_id;
 
 Or use the pre-made SQL file: `fix_auto_increment.sql`
 
-## Testing Instructions
+## Quick Fix - All-in-One Solution
 
-**IMPORTANT: Run migrations AND fix auto-increment:**
+**Use this diagnostic command to check and fix everything automatically:**
 
 ```bash
-# 1. First, convert tables to InnoDB (CRITICAL!)
+# 1. Diagnose database issues
+php artisan db:diagnose
+
+# 2. Automatically fix all issues (converts to InnoDB, fixes auto-increment)
+php artisan db:diagnose --fix
+
+# 3. Verify the fix
+php artisan db:diagnose
+```
+
+## Testing Instructions
+
+**IMPORTANT: Fix table engines FIRST before testing checkout:**
+
+```bash
+# Method 1: Use diagnostic tool (RECOMMENDED)
+php artisan db:diagnose --fix
+
+# Method 2: Manual migration
 php artisan migrate
 
-# 2. Fix auto-increment (choose one option above)
-php artisan store:reset  # OR run the SQL manually
+# If needed, reset all data to start fresh
+php artisan store:reset
 
-# 3. Check that tables are now InnoDB
-mysql -u your_user -p your_database -e "SHOW TABLE STATUS WHERE Name IN ('orders', 'order_items', 'products');"
+# Verify tables are InnoDB
+php artisan db:diagnose
 ```
 
 Test scenarios:
