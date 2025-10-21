@@ -50,10 +50,20 @@ class CheckoutController extends Controller
                         throw new \Exception('Failed to create order - no ID generated');
                     }
 
-                    Log::info("Order created", [
+                    // Refresh the model to ensure ID is properly set from database
+                    $order->refresh();
+
+                    // Verify order exists in database before proceeding
+                    $dbCheck = DB::selectOne('SELECT id FROM orders WHERE id = ?', [$order->id]);
+                    if (!$dbCheck) {
+                        throw new \Exception("Order {$order->id} was not found in database after creation");
+                    }
+
+                    Log::info("Order created and verified", [
                         'order_id' => $order->id,
                         'user_id' => $request->user_id,
-                        'amount' => $totalAmount
+                        'amount' => $totalAmount,
+                        'db_verified' => true
                     ]);
 
                     // Create order items using relationship (fixes FK constraint timing issue)
@@ -61,6 +71,14 @@ class CheckoutController extends Controller
                     foreach ($items as $item) {
                         // Get product details from database if available
                         $product = Product::find($item['product_id']);
+                        
+                        if (!$product) {
+                            Log::warning("Product not found during checkout", [
+                                'product_id' => $item['product_id'],
+                                'item_name' => $item['name'] ?? 'unknown'
+                            ]);
+                        }
+                        
                         $productName = $product ? $product->product_name : $item['name'];
                         $qtyUnit = $product ? $product->qty_unit : 1;
 
@@ -74,12 +92,22 @@ class CheckoutController extends Controller
                         ];
                     }
 
-                    // Use relationship to create items (better handles FK constraints)
-                    $order->items()->createMany($orderItemsData);
-
-                    Log::info("Order items created", [
+                    Log::info("Prepared order items data", [
                         'order_id' => $order->id,
-                        'items_count' => count($orderItemsData)
+                        'items_count' => count($orderItemsData),
+                        'items_data' => $orderItemsData
+                    ]);
+
+                    // Use relationship to create items (better handles FK constraints)
+                    $createdItems = $order->items()->createMany($orderItemsData);
+
+                    if (count($createdItems) !== count($orderItemsData)) {
+                        throw new \Exception("Item count mismatch: expected " . count($orderItemsData) . " but created " . count($createdItems));
+                    }
+
+                    Log::info("Order items created successfully", [
+                        'order_id' => $order->id,
+                        'items_count' => count($createdItems)
                     ]);
 
                     return $order;
