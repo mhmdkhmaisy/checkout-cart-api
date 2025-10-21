@@ -1,7 +1,9 @@
 # Aragon RSPS Banner Generator
 
 ## Overview
-Dynamic banner generator with pixelated yellow text and animated pink dragon edges, matching the Aragon logo style.
+Dynamic SVG banner generator with pixelated yellow text and animated pink dragon edges, matching the Aragon logo style.
+
+**✅ No PHP Extensions Required** - Uses SVG instead of GD library, works on any PHP installation!
 
 ## Features
 - **Pixelated retro-style text** - Custom 5x5 pixel font renderer
@@ -9,6 +11,7 @@ Dynamic banner generator with pixelated yellow text and animated pink dragon edg
 - **Customizable dimensions** - Default 200x80px, fully adjustable
 - **Yellow text with shadow** - High contrast gold (#FFD700) text
 - **CSS animations** - Smooth pulsing edge effects
+- **SVG format** - Scalable, crisp at any size, no PHP extensions needed
 
 ## Usage
 

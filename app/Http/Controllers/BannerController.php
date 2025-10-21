@@ -57,65 +57,15 @@ class BannerController extends Controller
         $width = (int) $request->input('width', 200);
         $height = (int) $request->input('height', 80);
 
-        $image = imagecreatetruecolor($width, $height);
-        imagesavealpha($image, true);
+        $svg = $this->generateSvgBanner($text, $width, $height);
 
-        $bgColor = imagecolorallocate($image, 10, 10, 10);
-        imagefill($image, 0, 0, $bgColor);
-
-        $this->drawAnimatedEdges($image, $width, $height);
-        $this->drawPixelText($image, $text, $width, $height);
-
-        ob_start();
-        imagepng($image);
-        $imageData = ob_get_clean();
-
-        imagedestroy($image);
-
-        return response($imageData)
-            ->header('Content-Type', 'image/png')
+        return response($svg)
+            ->header('Content-Type', 'image/svg+xml')
             ->header('Cache-Control', 'public, max-age=3600');
     }
 
-    private function drawAnimatedEdges($image, $width, $height)
+    private function generateSvgBanner($text, $width, $height)
     {
-        $edgeWidth = 8;
-        
-        for ($i = 0; $i < $edgeWidth; $i++) {
-            $intensity = (($edgeWidth - $i) / $edgeWidth);
-            
-            $r = (int)(255 * $intensity * 0.8);
-            $g = (int)(100 * $intensity * 0.6);
-            $b = (int)(150 * $intensity * 0.7);
-            
-            $edgeColor = imagecolorallocate($image, $r, $g, $b);
-            
-            for ($y = 0; $y < $height; $y++) {
-                imagesetpixel($image, $i, $y, $edgeColor);
-                imagesetpixel($image, $width - 1 - $i, $y, $edgeColor);
-            }
-            
-            for ($x = 0; $x < $width; $x++) {
-                imagesetpixel($image, $x, $i, $edgeColor);
-                imagesetpixel($image, $x, $height - 1 - $i, $edgeColor);
-            }
-        }
-        
-        for ($i = 0; $i < 3; $i++) {
-            $glowColor = imagecolorallocate($image, 255, 150, 200);
-            
-            imagesetpixel($image, $edgeWidth + $i, $edgeWidth + $i, $glowColor);
-            imagesetpixel($image, $width - $edgeWidth - $i - 1, $edgeWidth + $i, $glowColor);
-            imagesetpixel($image, $edgeWidth + $i, $height - $edgeWidth - $i - 1, $glowColor);
-            imagesetpixel($image, $width - $edgeWidth - $i - 1, $height - $edgeWidth - $i - 1, $glowColor);
-        }
-    }
-
-    private function drawPixelText($image, $text, $width, $height)
-    {
-        $yellowColor = imagecolorallocate($image, 255, 215, 0);
-        $shadowColor = imagecolorallocate($image, 100, 80, 0);
-        
         $pixelSize = 2;
         $charSpacing = 2;
         $charWidth = 5 * $pixelSize;
@@ -130,9 +80,10 @@ class BannerController extends Controller
         }
         $totalTextWidth -= ($charSpacing * $pixelSize);
         
-        $startX = (int)(($width - $totalTextWidth) / 2);
-        $startY = (int)(($height - $charHeight) / 2);
+        $startX = ($width - $totalTextWidth) / 2;
+        $startY = ($height - $charHeight) / 2;
         
+        $pixels = [];
         $currentX = $startX;
         
         foreach ($chars as $char) {
@@ -148,29 +99,51 @@ class BannerController extends Controller
                     if ($charData[$row][$col] == 1) {
                         $pixelX = $currentX + ($col * $pixelSize);
                         $pixelY = $startY + ($row * $pixelSize);
-                        
-                        imagefilledrectangle(
-                            $image,
-                            $pixelX + 1,
-                            $pixelY + 1,
-                            $pixelX + $pixelSize,
-                            $pixelY + $pixelSize,
-                            $shadowColor
-                        );
-                        
-                        imagefilledrectangle(
-                            $image,
-                            $pixelX,
-                            $pixelY,
-                            $pixelX + $pixelSize - 1,
-                            $pixelY + $pixelSize - 1,
-                            $yellowColor
-                        );
+                        $pixels[] = ['x' => $pixelX, 'y' => $pixelY, 'size' => $pixelSize];
                     }
                 }
             }
             
             $currentX += $charWidth + ($charSpacing * $pixelSize);
         }
+        
+        $svg = '<?xml version="1.0" encoding="UTF-8"?>';
+        $svg .= '<svg xmlns="http://www.w3.org/2000/svg" width="' . $width . '" height="' . $height . '" viewBox="0 0 ' . $width . ' ' . $height . '">';
+        
+        $svg .= '<defs>';
+        $svg .= '<linearGradient id="edgeGradient" x1="0%" y1="0%" x2="100%" y2="0%">';
+        $svg .= '<stop offset="0%" style="stop-color:rgb(204,102,153);stop-opacity:0.6" />';
+        $svg .= '<stop offset="50%" style="stop-color:rgb(255,100,150);stop-opacity:0.8" />';
+        $svg .= '<stop offset="100%" style="stop-color:rgb(204,102,153);stop-opacity:0.6" />';
+        $svg .= '</linearGradient>';
+        
+        $svg .= '<filter id="glow">';
+        $svg .= '<feGaussianBlur stdDeviation="2" result="coloredBlur"/>';
+        $svg .= '<feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>';
+        $svg .= '</filter>';
+        $svg .= '</defs>';
+        
+        $svg .= '<rect width="' . $width . '" height="' . $height . '" fill="#0a0a0a"/>';
+        
+        for ($i = 0; $i < 8; $i++) {
+            $opacity = (8 - $i) / 8 * 0.8;
+            $color = 'rgba(' . (255 - $i * 10) . ',' . (100 - $i * 5) . ',' . (150 - $i * 8) . ',' . $opacity . ')';
+            
+            $svg .= '<rect x="' . $i . '" y="' . $i . '" width="' . ($width - 2 * $i) . '" height="' . ($height - 2 * $i) . '" fill="none" stroke="' . $color . '" stroke-width="1"/>';
+        }
+        
+        $svg .= '<animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/>';
+        
+        foreach ($pixels as $pixel) {
+            $svg .= '<rect x="' . ($pixel['x'] + 1) . '" y="' . ($pixel['y'] + 1) . '" width="' . $pixel['size'] . '" height="' . $pixel['size'] . '" fill="#645000" opacity="0.5"/>';
+        }
+        
+        foreach ($pixels as $pixel) {
+            $svg .= '<rect x="' . $pixel['x'] . '" y="' . $pixel['y'] . '" width="' . $pixel['size'] . '" height="' . $pixel['size'] . '" fill="#FFD700" filter="url(#glow)"/>';
+        }
+        
+        $svg .= '</svg>';
+        
+        return $svg;
     }
 }
