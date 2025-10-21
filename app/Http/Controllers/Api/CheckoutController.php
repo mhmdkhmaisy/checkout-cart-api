@@ -44,6 +44,9 @@ class CheckoutController extends Controller
                 $order->payment_id = null;
                 $order->save();
 
+                // Refresh to get the actual database ID (fixes auto-increment mismatch issue)
+                $order->refresh();
+
                 Log::info("Order created", [
                     'order_id' => $order->id,
                     'user_id' => $validated['user_id'],
