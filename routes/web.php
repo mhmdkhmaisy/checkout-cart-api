@@ -186,3 +186,6 @@ Route::prefix('promotions')->name('promotions.')->group(function () {
 
 // Banner generation route
 Route::get('/banner/generate', [App\Http\Controllers\BannerController::class, 'generate'])->name('banner.generate');
+Route::get('/banner/demo', function () {
+    return view('banner-demo');
+})->name('banner.demo');
