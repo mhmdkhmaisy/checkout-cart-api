@@ -53,6 +53,7 @@ class PromotionManager
             return [
                 'promo' => $promo,
                 'progress' => 0,
+                'progress_percent' => 0,
                 'progress_amount' => 0,
                 'can_claim' => false,
                 'claim_count' => 0,

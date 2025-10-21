@@ -380,13 +380,13 @@
                         <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
                             <span style="font-size: 0.75rem; color: var(--text-muted);">Your Progress:</span>
                             <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-gold);">
-                                ${{ number_format($progress['progress_amount'], 2) }} / ${{ number_format($promo->min_amount, 2) }}
+                                ${{ number_format($progress['progress_amount'] ?? 0, 2) }} / ${{ number_format($promo->min_amount, 2) }}
                             </span>
                         </div>
                         <div style="background: rgba(0, 0, 0, 0.4); border-radius: 4px; height: 8px; overflow: hidden;">
-                            <div style="background: linear-gradient(90deg, var(--accent-gold) 0%, var(--accent-ember) 100%); height: 100%; width: {{ min(100, $progress['progress_percent']) }}%; transition: width 0.3s ease;"></div>
+                            <div style="background: linear-gradient(90deg, var(--accent-gold) 0%, var(--accent-ember) 100%); height: 100%; width: {{ min(100, $progress['progress_percent'] ?? 0) }}%; transition: width 0.3s ease;"></div>
                         </div>
-                        @if($progress['can_claim'])
+                        @if($progress['can_claim'] ?? false)
                         <button onclick="claimPromotion({{ $promo->id }})" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem; background: var(--accent-gold); color: #000; font-weight: 800; padding: 0.6rem; font-size: 0.8rem;">
                             <i class="fas fa-gift"></i> CLAIM REWARD
                         </button>
