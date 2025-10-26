@@ -560,17 +560,14 @@
     <header class="header">
         <div class="container">
             <nav class="nav">
-                <a href="{{ route('vote.index') }}" class="logo">
+                <a href="{{ route('home') }}" class="logo">
                     <img src="{{ asset('assets/aragon_rsps_icon.png') }}" alt="Aragon RSPS">
                     Aragon RSPS
                 </a>
                 
                 <ul class="nav-links" id="navLinks">
-                    <li><a href="{{ route('vote.index') }}" class="{{ request()->routeIs('vote.index') ? 'active' : '' }}">
+                    <li><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}">
                         <i class="fas fa-home"></i> Home
-                    </a></li>
-                    <li><a href="#" class="">
-                        <i class="fas fa-gamepad"></i> Play
                     </a></li>
                     <li><a href="{{ route('store.index') }}" class="{{ request()->routeIs('store.*') ? 'active' : '' }}">
                         <i class="fas fa-store"></i> Store
@@ -584,7 +581,7 @@
                     <li><a href="#" class="">
                         <i class="fas fa-users"></i> Players
                     </a></li>
-                    <li><a href="#" class="btn btn-primary" style="margin-left: 1rem;">
+                    <li><a href="{{ route('play') }}" class="btn btn-primary" style="margin-left: 1rem;">
                         Play Now
                     </a></li>
                 </ul>
