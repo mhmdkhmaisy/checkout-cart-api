@@ -275,6 +275,15 @@ class CacheFileController extends Controller
      */
     public function store(Request $request)
     {
+        // Log IMMEDIATELY - even before try-catch
+        Log::info('Cache upload store() method called', [
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'has_files' => $request->hasFile('files'),
+            'has_folders' => $request->hasFile('folders'),
+            'all_inputs' => array_keys($request->all())
+        ]);
+
         try {
             // Increase memory and time limits for large uploads
             ini_set('memory_limit', '2G');
@@ -287,12 +296,21 @@ class CacheFileController extends Controller
                 'current_path' => $request->input('current_path', '')
             ]);
 
-            $request->validate([
-                'files.*' => 'required|file|max:1048576', // 1GB max per file - supports ALL file types
-                'folders.*' => 'file|max:1048576', // For folder uploads
-                'preserve_structure' => 'boolean',
-                'current_path' => 'nullable|string'
-            ]);
+            try {
+                $request->validate([
+                    'files.*' => 'required|file|max:1048576', // 1GB max per file - supports ALL file types
+                    'folders.*' => 'file|max:1048576', // For folder uploads
+                    'preserve_structure' => 'boolean',
+                    'current_path' => 'nullable|string'
+                ]);
+                Log::info('Cache upload validation passed');
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                Log::error('Cache upload validation failed', [
+                    'errors' => $e->errors(),
+                    'message' => $e->getMessage()
+                ]);
+                throw $e;
+            }
 
             $uploadedFiles = [];
             $skippedFiles = [];
@@ -405,7 +423,7 @@ class CacheFileController extends Controller
                 'error_count' => count($errors)
             ]);
 
-            return response()->json([
+            $response = response()->json([
                 'success' => !empty($uploadedFiles) || !empty($skippedFiles),
                 'message' => implode(' | ', $messages),
                 'uploaded_count' => count($uploadedFiles),
@@ -413,12 +431,15 @@ class CacheFileController extends Controller
                 'error_count' => count($errors)
             ]);
             
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Cache upload validation failed', [
-                'errors' => $e->errors(),
-                'message' => $e->getMessage()
+            Log::info('Cache upload response prepared', [
+                'success' => $response->getData()->success,
+                'uploaded' => count($uploadedFiles),
+                'skipped' => count($skippedFiles),
+                'errors' => count($errors)
             ]);
-            throw $e;
+            
+            return $response;
+            
         } catch (\Exception $e) {
             Log::error('Cache upload failed with exception', [
                 'error' => $e->getMessage(),
