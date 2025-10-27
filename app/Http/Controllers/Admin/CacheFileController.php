@@ -275,28 +275,41 @@ class CacheFileController extends Controller
      */
     public function store(Request $request)
     {
-        // Increase memory and time limits for large uploads
-        ini_set('memory_limit', '2G');
-        set_time_limit(600); // 10 minutes
+        try {
+            // Increase memory and time limits for large uploads
+            ini_set('memory_limit', '2G');
+            set_time_limit(600); // 10 minutes
 
-        $request->validate([
-            'files.*' => 'required|file|max:1048576', // 1GB max per file - supports ALL file types
-            'folders.*' => 'file|max:1048576', // For folder uploads
-            'preserve_structure' => 'boolean',
-            'current_path' => 'nullable|string'
-        ]);
+            Log::info('Cache file upload started', [
+                'has_files' => $request->hasFile('files'),
+                'has_folders' => $request->hasFile('folders'),
+                'preserve_structure' => $request->input('preserve_structure', true),
+                'current_path' => $request->input('current_path', '')
+            ]);
 
-        $uploadedFiles = [];
-        $skippedFiles = [];
-        $errors = [];
-        $preserveStructure = $request->input('preserve_structure', true);
-        $relativePaths = $request->input('relative_paths', []);
-        $recordsToInsert = [];
-        $currentPath = $request->input('current_path', '');
+            $request->validate([
+                'files.*' => 'required|file|max:1048576', // 1GB max per file - supports ALL file types
+                'folders.*' => 'file|max:1048576', // For folder uploads
+                'preserve_structure' => 'boolean',
+                'current_path' => 'nullable|string'
+            ]);
+
+            $uploadedFiles = [];
+            $skippedFiles = [];
+            $errors = [];
+            $preserveStructure = $request->input('preserve_structure', true);
+            $relativePaths = $request->input('relative_paths', []);
+            $recordsToInsert = [];
+            $currentPath = $request->input('current_path', '');
 
         // Handle individual files with enhanced multi-file support
         if ($request->hasFile('files')) {
             $files = $request->file('files');
+            
+            Log::info('Processing file uploads', [
+                'file_count' => count($files),
+                'preserve_structure' => $preserveStructure
+            ]);
 
             // OPTIMIZED: Batch process files to reduce DB queries
             $fileData = [];
@@ -310,10 +323,26 @@ class CacheFileController extends Controller
             }
 
             // Process in optimized batch
-            $result = $this->processBatchUpload($fileData, $preserveStructure, $currentPath);
-            $uploadedFiles = array_merge($uploadedFiles, $result['uploaded']);
-            $skippedFiles = array_merge($skippedFiles, $result['skipped']);
-            $errors = array_merge($errors, $result['errors']);
+            try {
+                $result = $this->processBatchUpload($fileData, $preserveStructure, $currentPath);
+                $uploadedFiles = array_merge($uploadedFiles, $result['uploaded']);
+                $skippedFiles = array_merge($skippedFiles, $result['skipped']);
+                $errors = array_merge($errors, $result['errors']);
+                
+                Log::info('File upload batch completed', [
+                    'uploaded' => count($result['uploaded']),
+                    'skipped' => count($result['skipped']),
+                    'errors' => count($result['errors'])
+                ]);
+            } catch (\Exception $e) {
+                $errorMsg = "Batch upload failed: " . $e->getMessage();
+                Log::error('Cache batch upload failed', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'file_count' => count($fileData)
+                ]);
+                $errors[] = $errorMsg;
+            }
         }
 
         // Handle folder uploads (ZIP files)
@@ -370,13 +399,43 @@ class CacheFileController extends Controller
                          (count($errors) > 5 ? ' and ' . (count($errors) - 5) . ' more errors' : '');
         }
 
-        return response()->json([
-            'success' => !empty($uploadedFiles) || !empty($skippedFiles),
-            'message' => implode(' | ', $messages),
-            'uploaded_count' => count($uploadedFiles),
-            'skipped_count' => count($skippedFiles),
-            'error_count' => count($errors)
-        ]);
+            Log::info('Cache file upload completed', [
+                'uploaded_count' => count($uploadedFiles),
+                'skipped_count' => count($skippedFiles),
+                'error_count' => count($errors)
+            ]);
+
+            return response()->json([
+                'success' => !empty($uploadedFiles) || !empty($skippedFiles),
+                'message' => implode(' | ', $messages),
+                'uploaded_count' => count($uploadedFiles),
+                'skipped_count' => count($skippedFiles),
+                'error_count' => count($errors)
+            ]);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Cache upload validation failed', [
+                'errors' => $e->errors(),
+                'message' => $e->getMessage()
+            ]);
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('Cache upload failed with exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => [
+                    'has_files' => $request->hasFile('files'),
+                    'has_folders' => $request->hasFile('folders')
+                ]
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Upload failed: ' . $e->getMessage(),
+                'uploaded_count' => 0,
+                'skipped_count' => 0,
+                'error_count' => 1
+            ], 500);
+        }
     }
 
     /**
@@ -385,12 +444,18 @@ class CacheFileController extends Controller
     public function finalizeUpload(Request $request)
     {
         try {
+            Log::info('Finalizing batch upload - generating manifest');
             Artisan::call('cache:generate-manifest');
+            Log::info('Batch upload finalized successfully');
             return response()->json([
                 'success' => true,
                 'message' => 'Upload finalized and manifest/patch generated successfully.'
             ]);
         } catch (\Exception $e) {
+            Log::error('Cache finalize upload failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to generate manifest/patch: ' . $e->getMessage()
