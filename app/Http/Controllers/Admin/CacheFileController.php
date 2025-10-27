@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use ZipArchive;
 use RecursiveIteratorIterator;
 use RecursiveDirectoryIterator;
@@ -324,7 +325,13 @@ class CacheFileController extends Controller
                     $skippedFiles = array_merge($skippedFiles, $result['skipped']);
                     $errors = array_merge($errors, $result['errors']);
                 } catch (\Exception $e) {
-                    $errors[] = "Failed to process folder '{$zipFile->getClientOriginalName()}': " . $e->getMessage();
+                    $errorMsg = "Failed to process folder '{$zipFile->getClientOriginalName()}': " . $e->getMessage();
+                    Log::error('Cache folder upload failed', [
+                        'folder' => $zipFile->getClientOriginalName(),
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    $errors[] = $errorMsg;
                 }
             }
         }
@@ -338,7 +345,13 @@ class CacheFileController extends Controller
             try {
                 Artisan::call('cache:generate-manifest');
             } catch (\Exception $e) {
-                $errors[] = "Files uploaded but manifest/patch generation failed: " . $e->getMessage();
+                $errorMsg = "Files uploaded but manifest/patch generation failed: " . $e->getMessage();
+                Log::error('Cache manifest generation failed after upload', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'uploaded_count' => count($uploadedFiles)
+                ]);
+                $errors[] = $errorMsg;
             }
         }
 
@@ -425,6 +438,11 @@ class CacheFileController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Cache TAR file upload failed', [
+                'file' => $tarFile->getClientOriginalName(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to process TAR file: ' . $e->getMessage()
@@ -643,7 +661,13 @@ class CacheFileController extends Controller
                         }
                         
                     } catch (\Exception $e) {
-                        $errors[] = "Failed to process '{$fileInfo->getFilename()}': " . $e->getMessage();
+                        $errorMsg = "Failed to process '{$fileInfo->getFilename()}': " . $e->getMessage();
+                        Log::error('Cache file extraction processing failed', [
+                            'file' => $fileInfo->getFilename(),
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
+                        $errors[] = $errorMsg;
                         $processed++;
                     }
                 }
@@ -657,7 +681,13 @@ class CacheFileController extends Controller
                 try {
                     Artisan::call('cache:generate-manifest');
                 } catch (\Exception $e) {
-                    $errors[] = "Files extracted but manifest generation failed: " . $e->getMessage();
+                    $errorMsg = "Files extracted but manifest generation failed: " . $e->getMessage();
+                    Log::error('Cache manifest generation failed after extraction', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                        'uploaded_count' => count($uploadedFiles)
+                    ]);
+                    $errors[] = $errorMsg;
                 }
             }
 
@@ -674,6 +704,11 @@ class CacheFileController extends Controller
 
         } catch (\Exception $e) {
             // Mark as failed
+            Log::error('Cache file extraction failed', [
+                'extraction_id' => $extractionId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             Cache::put("extraction_progress_{$extractionId}", [
                 'status' => 'failed',
                 'error' => $e->getMessage(),
@@ -692,6 +727,10 @@ class CacheFileController extends Controller
             $zip->extractTo($extractPath);
             $zip->close();
         } else {
+            Log::error('Cache ZIP extraction failed', [
+                'file_path' => $filePath,
+                'extract_path' => $extractPath
+            ]);
             throw new \Exception('Failed to open ZIP file');
         }
     }
@@ -701,8 +740,18 @@ class CacheFileController extends Controller
      */
     private function extractTarFile($filePath, $extractPath)
     {
-        $phar = new PharData($filePath);
-        $phar->extractTo($extractPath);
+        try {
+            $phar = new PharData($filePath);
+            $phar->extractTo($extractPath);
+        } catch (\Exception $e) {
+            Log::error('Cache TAR extraction failed', [
+                'file_path' => $filePath,
+                'extract_path' => $extractPath,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
     }
 
     /**
@@ -711,21 +760,39 @@ class CacheFileController extends Controller
     private function extractRarFile($filePath, $extractPath)
     {
         if (!extension_loaded('rar')) {
+            Log::error('Cache RAR extraction failed - extension not loaded', [
+                'file_path' => $filePath
+            ]);
             throw new \Exception('RAR extension not available. Please install php-rar extension.');
         }
 
         $rar = rar_open($filePath);
         if (!$rar) {
+            Log::error('Cache RAR extraction failed - cannot open file', [
+                'file_path' => $filePath,
+                'extract_path' => $extractPath
+            ]);
             throw new \Exception('Failed to open RAR file');
         }
 
-        $entries = rar_list($rar);
-        foreach ($entries as $entry) {
-            if (!$entry->isDirectory()) {
-                $entry->extract($extractPath);
+        try {
+            $entries = rar_list($rar);
+            foreach ($entries as $entry) {
+                if (!$entry->isDirectory()) {
+                    $entry->extract($extractPath);
+                }
             }
+            rar_close($rar);
+        } catch (\Exception $e) {
+            Log::error('Cache RAR extraction failed during extract', [
+                'file_path' => $filePath,
+                'extract_path' => $extractPath,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            rar_close($rar);
+            throw $e;
         }
-        rar_close($rar);
     }
 
     /**
@@ -740,6 +807,12 @@ class CacheFileController extends Controller
         exec($command, $output, $returnCode);
         
         if ($returnCode !== 0) {
+            Log::error('Cache 7Z extraction failed', [
+                'file_path' => $filePath,
+                'extract_path' => $extractPath,
+                'return_code' => $returnCode,
+                'output' => implode("\n", $output)
+            ]);
             throw new \Exception('Failed to extract 7Z file. Make sure 7zip is installed.');
         }
     }
@@ -856,7 +929,14 @@ class CacheFileController extends Controller
                         }
                         
                     } catch (\Exception $e) {
-                        $errors[] = "Failed to process '{$fileInfo->getFilename()}': " . $e->getMessage();
+                        $errorMsg = "Failed to process '{$fileInfo->getFilename()}': " . $e->getMessage();
+                        Log::error('Cache TAR file processing failed', [
+                            'file' => $fileInfo->getFilename(),
+                            'extraction_id' => $extractionId,
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
+                        $errors[] = $errorMsg;
                         $processed++;
                     }
                 }
@@ -871,7 +951,14 @@ class CacheFileController extends Controller
                 try {
                     Artisan::call('cache:generate-manifest');
                 } catch (\Exception $e) {
-                    $errors[] = "Files extracted but manifest generation failed: " . $e->getMessage();
+                    $errorMsg = "Files extracted but manifest generation failed: " . $e->getMessage();
+                    Log::error('Cache manifest generation failed after TAR extraction', [
+                        'extraction_id' => $extractionId,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                        'uploaded_count' => count($uploadedFiles)
+                    ]);
+                    $errors[] = $errorMsg;
                 }
             }
 
@@ -888,6 +975,11 @@ class CacheFileController extends Controller
 
         } catch (\Exception $e) {
             // Mark as failed
+            Log::error('Cache TAR extraction failed', [
+                'extraction_id' => $extractionId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             Cache::put("extraction_progress_{$extractionId}", [
                 'status' => 'failed',
                 'error' => $e->getMessage(),
@@ -1044,7 +1136,13 @@ class CacheFileController extends Controller
                 $uploadedFiles[] = $originalName;
 
             } catch (\Exception $e) {
-                $errors[] = "Failed to upload '{$data['filename']}': " . $e->getMessage();
+                $errorMsg = "Failed to upload '{$data['filename']}': " . $e->getMessage();
+                Log::error('Cache batch file upload failed', [
+                    'file' => $data['filename'],
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                $errors[] = $errorMsg;
             }
         }
 
@@ -1188,7 +1286,13 @@ class CacheFileController extends Controller
                             $errors[] = $result['error'];
                         }
                     } catch (\Exception $e) {
-                        $errors[] = "Failed to process '{$fileInfo->getFilename()}': " . $e->getMessage();
+                        $errorMsg = "Failed to process '{$fileInfo->getFilename()}': " . $e->getMessage();
+                        Log::error('Cache ZIP file processing failed', [
+                            'file' => $fileInfo->getFilename(),
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
+                        $errors[] = $errorMsg;
                     }
                 }
             }
@@ -1196,7 +1300,11 @@ class CacheFileController extends Controller
             // Clean up temporary directory
             $this->deleteDirectory($extractPath);
         } else {
-            $errors[] = "Failed to open ZIP file: " . $zipFile->getClientOriginalName();
+            $errorMsg = "Failed to open ZIP file: " . $zipFile->getClientOriginalName();
+            Log::error('Cache ZIP file open failed', [
+                'file' => $zipFile->getClientOriginalName()
+            ]);
+            $errors[] = $errorMsg;
         }
         
         return [
