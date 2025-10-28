@@ -566,6 +566,9 @@ class CacheFileController extends Controller
                 ], 404);
             }
 
+            // Get chunk size BEFORE moving (file object becomes invalid after move)
+            $chunkSize = $chunk->getSize();
+
             // Save chunk to temporary directory
             $chunk->move($uploadSession->temp_dir, "chunk_{$chunkIndex}");
 
@@ -577,7 +580,7 @@ class CacheFileController extends Controller
             
             $uploadSession->update([
                 'received_chunks' => $receivedChunks,
-                'uploaded_size' => $uploadSession->uploaded_size + $chunk->getSize()
+                'uploaded_size' => $uploadSession->uploaded_size + $chunkSize
             ]);
 
             Log::info('Chunk received', [
