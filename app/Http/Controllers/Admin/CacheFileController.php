@@ -689,8 +689,13 @@ class CacheFileController extends Controller
 
             // Mark as completed and cleanup
             $uploadSession->markAsCompleted();
+            
+            // Delete the reassembled file and temp directory
+            if (file_exists($finalPath)) {
+                unlink($finalPath);
+            }
             if (file_exists($uploadSession->temp_dir)) {
-                rmdir($uploadSession->temp_dir);
+                @rmdir($uploadSession->temp_dir);
             }
 
             Log::info('Chunked upload completed', [
