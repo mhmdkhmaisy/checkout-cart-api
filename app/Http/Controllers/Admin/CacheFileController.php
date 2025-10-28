@@ -387,9 +387,11 @@ class CacheFileController extends Controller
         // OPTIMIZED: Skip manifest generation during batch uploads to prevent multiple patches
         // Frontend will call finalizeUpload() once all batches are complete
         // Only auto-regenerate if this is NOT a batch upload (no relative_paths parameter)
+        // OR if this is part of a chunked upload session (is_chunked_session flag)
         $isBatchUpload = $request->has('relative_paths');
+        $isChunkedSession = $request->input('is_chunked_session', false);
         
-        if (!empty($uploadedFiles) && !$isBatchUpload) {
+        if (!empty($uploadedFiles) && !$isBatchUpload && !$isChunkedSession) {
             try {
                 Artisan::call('cache:generate-manifest');
             } catch (\Exception $e) {

@@ -2973,6 +2973,7 @@ async function uploadFileDirectly(file, index) {
         formData.append('files[]', file);
         formData.append('preserve_structure', document.getElementById('chunked-preserve-structure').checked ? '1' : '0');
         formData.append('current_path', currentNavigationPath);
+        formData.append('is_chunked_session', '1'); // Flag to prevent manifest generation
         
         if (relativePath) {
             formData.append('relative_paths[]', relativePath);
