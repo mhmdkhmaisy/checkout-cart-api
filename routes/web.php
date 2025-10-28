@@ -87,6 +87,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/extract-file', [CacheFileController::class, 'extractFile'])->name('extract-file');
         Route::post('/zip-extract-patch', [CacheFileController::class, 'zipExtractPatch'])->name('zip-extract-patch');
         Route::get('/extraction-progress', [CacheFileController::class, 'extractionProgress'])->name('extraction-progress');
+        Route::get('/zip-extraction-progress', [CacheFileController::class, 'zipExtractionProgress'])->name('zip-extraction-progress');
         Route::post('/bulk-delete', [CacheFileController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/delete-all', [CacheFileController::class, 'deleteAll'])->name('delete-all');
         Route::post('/regenerate-manifest', [CacheFileController::class, 'regenerateManifest'])->name('regenerate-manifest');

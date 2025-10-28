@@ -3272,50 +3272,119 @@ async function startZipPatchUpload() {
     document.getElementById('zip-cancel-btn').disabled = true;
     document.getElementById('zip-patch-progress-container').classList.remove('hidden');
     
+    const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+    const totalChunks = Math.ceil(zipSelectedFile.size / CHUNK_SIZE);
+    
     try {
-        // Step 1: Upload ZIP
-        updateZipStatus('upload', 'processing', 'Uploading ZIP file...');
+        // Step 1: Initialize chunked upload
+        updateZipStatus('upload', 'processing', 'Initializing upload...');
         
-        const formData = new FormData();
-        formData.append('zip_file', zipSelectedFile);
-        
-        const uploadResponse = await fetch('/admin/cache/zip-extract-patch', {
+        const initResponse = await fetch('/admin/cache/chunked-init', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: formData
+            body: JSON.stringify({
+                filename: zipSelectedFile.name,
+                total_size: zipSelectedFile.size,
+                total_chunks: totalChunks,
+                relative_path: ''
+            })
         });
         
-        const result = await uploadResponse.json();
-        
-        if (!result.success) {
-            throw new Error(result.message || 'Upload failed');
+        const initData = await initResponse.json();
+        if (!initData.success) {
+            throw new Error(initData.message || 'Failed to initialize upload');
         }
         
-        // Update all statuses as complete
-        updateZipStatus('upload', 'complete', 'Uploaded successfully');
-        updateZipStatus('extract', 'complete', `Extracted ${result.extracted_count || 0} files`);
-        updateZipStatus('patch', 'complete', `Patch v${result.patch_version} generated`);
-        updateZipStatus('cleanup', 'complete', 'Cleaned up temporary files');
+        const uploadId = initData.upload_id;
+        const uploadStartTime = Date.now();
         
-        // Show success result
-        const resultDiv = document.getElementById('zip-patch-result');
-        resultDiv.className = 'mt-6 p-4 rounded-lg bg-green-500/10 border border-green-500/30';
-        resultDiv.innerHTML = `
-            <div class="flex items-center mb-2">
-                <i class="fas fa-check-circle text-green-400 text-2xl mr-3"></i>
-                <div>
-                    <p class="text-green-400 font-medium">Success!</p>
-                    <p class="text-dragon-silver-dark text-sm">Patch v${result.patch_version} created with ${result.file_count || 0} files</p>
-                </div>
-            </div>
-            <button onclick="location.reload()" class="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors w-full">
-                <i class="fas fa-sync-alt mr-2"></i>Refresh Page
-            </button>
-        `;
-        resultDiv.classList.remove('hidden');
+        // Step 2: Upload chunks with progress tracking
+        updateZipStatus('upload', 'processing', 'Uploading: 0%');
+        
+        for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+            const start = chunkIndex * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, zipSelectedFile.size);
+            const chunk = zipSelectedFile.slice(start, end);
+            
+            const formData = new FormData();
+            formData.append('upload_id', uploadId);
+            formData.append('chunk_index', chunkIndex);
+            formData.append('chunk', chunk);
+            
+            const chunkResponse = await fetch('/admin/cache/chunked-upload', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+            
+            const chunkData = await chunkResponse.json();
+            if (!chunkData.success) {
+                throw new Error(chunkData.message || 'Failed to upload chunk');
+            }
+            
+            // Update progress
+            const uploadedBytes = (chunkIndex + 1) * CHUNK_SIZE;
+            const progress = Math.round(((chunkIndex + 1) / totalChunks) * 100);
+            const elapsed = (Date.now() - uploadStartTime) / 1000; // seconds
+            const speed = uploadedBytes / elapsed; // bytes per second
+            
+            updateZipStatus('upload', 'processing', `Uploading: ${progress}% (${formatSpeed(speed)})`);
+        }
+        
+        // Step 3: Complete chunked upload (reassemble file)
+        updateZipStatus('upload', 'processing', 'Finalizing upload...');
+        
+        const completeResponse = await fetch('/admin/cache/chunked-complete', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                upload_id: uploadId,
+                preserve_structure: true,
+                current_path: ''
+            })
+        });
+        
+        const completeData = await completeResponse.json();
+        if (!completeData.success) {
+            throw new Error(completeData.message || 'Failed to complete upload');
+        }
+        
+        updateZipStatus('upload', 'complete', 'Upload complete!');
+        
+        // Step 4: Start extraction and patch generation
+        updateZipStatus('extract', 'processing', 'Starting extraction...');
+        
+        const extractResponse = await fetch('/admin/cache/zip-extract-patch', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                upload_id: uploadId
+            })
+        });
+        
+        const extractData = await extractResponse.json();
+        if (!extractData.success) {
+            throw new Error(extractData.message || 'Failed to start extraction');
+        }
+        
+        // Step 5: Poll for extraction progress
+        const extractionId = extractData.extraction_id;
+        await pollZipExtractionProgress(extractionId);
         
     } catch (error) {
         console.error('ZIP → Patch error:', error);
@@ -3339,7 +3408,71 @@ async function startZipPatchUpload() {
         
         updateZipStatus('upload', 'error', 'Failed');
         document.getElementById('zip-cancel-btn').disabled = false;
+        zipIsProcessing = false;
     }
+}
+
+// Poll extraction progress
+async function pollZipExtractionProgress(extractionId) {
+    const pollInterval = 500; // Poll every 500ms
+    
+    return new Promise((resolve, reject) => {
+        const intervalId = setInterval(async () => {
+            try {
+                const response = await fetch(`/admin/cache/zip-extraction-progress?id=${extractionId}`, {
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const progress = await response.json();
+                
+                // Update UI based on phase
+                if (progress.phase === 'extraction' || progress.phase === 'processing_files') {
+                    const percent = progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 0;
+                    updateZipStatus('extract', 'processing', `${progress.message || 'Extracting...'} (${percent}%)`);
+                } else if (progress.phase === 'patch_generation') {
+                    updateZipStatus('extract', 'complete', `Processed ${progress.uploaded_count || 0} files`);
+                    updateZipStatus('patch', 'processing', progress.message || 'Generating patch...');
+                } else if (progress.phase === 'cleanup') {
+                    updateZipStatus('patch', 'complete', `Patch v${progress.patch_version} created`);
+                    updateZipStatus('cleanup', 'processing', progress.message || 'Cleaning up...');
+                } else if (progress.status === 'completed') {
+                    clearInterval(intervalId);
+                    updateZipStatus('extract', 'complete', `Processed ${progress.uploaded_count || 0} files`);
+                    updateZipStatus('patch', 'complete', `Patch v${progress.patch_version} created`);
+                    updateZipStatus('cleanup', 'complete', 'Cleanup complete!');
+                    
+                    // Show success result
+                    const resultDiv = document.getElementById('zip-patch-result');
+                    resultDiv.className = 'mt-6 p-4 rounded-lg bg-green-500/10 border border-green-500/30';
+                    resultDiv.innerHTML = `
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-check-circle text-green-400 text-2xl mr-3"></i>
+                            <div>
+                                <p class="text-green-400 font-medium">Success!</p>
+                                <p class="text-dragon-silver-dark text-sm">Patch v${progress.patch_version} created with ${progress.uploaded_count || 0} files</p>
+                            </div>
+                        </div>
+                        <button onclick="location.reload()" class="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors w-full">
+                            <i class="fas fa-sync-alt mr-2"></i>Refresh Page
+                        </button>
+                    `;
+                    resultDiv.classList.remove('hidden');
+                    zipIsProcessing = false;
+                    resolve(progress);
+                } else if (progress.status === 'failed') {
+                    clearInterval(intervalId);
+                    throw new Error(progress.error || 'Extraction failed');
+                }
+            } catch (error) {
+                clearInterval(intervalId);
+                updateZipStatus('extract', 'error', 'Extraction failed');
+                reject(error);
+            }
+        }, pollInterval);
+    });
 }
 
 function updateZipStatus(step, status, message) {

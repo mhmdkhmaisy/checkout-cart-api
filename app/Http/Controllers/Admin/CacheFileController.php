@@ -863,113 +863,88 @@ class CacheFileController extends Controller
     }
 
     /**
-     * Upload ZIP → Extract → Generate Patch → Cleanup
+     * Upload ZIP → Extract → Generate Patch → Cleanup (with chunked upload support)
      */
     public function zipExtractPatch(Request $request)
     {
         try {
             $request->validate([
-                'zip_file' => 'required|file|mimes:zip'
+                'upload_id' => 'required|string'
             ]);
 
-            $zipFile = $request->file('zip_file');
-            $tempDir = storage_path('app/temp_zip_extract_' . uniqid());
+            $uploadKey = $request->input('upload_id');
             
-            // Step 1: Save ZIP file temporarily
-            $zipPath = $zipFile->store('temp_zips');
-            $fullZipPath = storage_path('app/' . $zipPath);
-
-            // Step 2: Extract ZIP
-            if (!mkdir($tempDir, 0755, true)) {
-                throw new \Exception('Failed to create extraction directory');
+            // Get upload session from database
+            $uploadSession = UploadSession::where('upload_key', $uploadKey)->first();
+            if (!$uploadSession) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload session not found'
+                ], 404);
             }
 
-            $zip = new \ZipArchive;
-            if ($zip->open($fullZipPath) !== true) {
-                throw new \Exception('Failed to open ZIP file');
+            // Verify the file exists and is reassembled
+            $zipPath = $uploadSession->temp_dir . '/' . $uploadSession->filename;
+            if (!file_exists($zipPath)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ZIP file not found. Please complete upload first.'
+                ], 404);
             }
 
-            $zip->extractTo($tempDir);
-            $extractedCount = $zip->numFiles;
-            $zip->close();
-
-            // Step 3: Process extracted files and add to database
-            $uploadedFiles = [];
-            $skippedFiles = [];
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($tempDir, \RecursiveDirectoryIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::LEAVES_ONLY
-            );
-
-            foreach ($iterator as $fileInfo) {
-                if ($fileInfo->isFile()) {
-                    $fullPath = $fileInfo->getPathname();
-                    $relativePath = str_replace($tempDir . DIRECTORY_SEPARATOR, '', $fullPath);
-                    $relativePath = str_replace('\\', '/', $relativePath);
-                    
-                    $result = $this->processExtractedFile($fileInfo, $relativePath);
-                    if ($result['success']) {
-                        if ($result['skipped']) {
-                            $skippedFiles[] = $result['filename'];
-                        } else {
-                            $uploadedFiles[] = $result['filename'];
-                        }
-                    }
-                }
-            }
-
-            // Step 4: Generate patch
-            $patchService = new \App\Services\CachePatchService();
-            $patchData = $patchService->generatePatchFromDatabase();
+            // Generate extraction ID for progress tracking
+            $extractionId = uniqid('zip_extract_');
             
-            $patchVersion = null;
-            if (!isset($patchData['no_changes']) || !$patchData['no_changes']) {
-                \App\Models\CachePatch::create([
-                    'version' => $patchData['version'],
-                    'base_version' => $patchData['base_version'],
-                    'path' => $patchData['path'],
-                    'file_manifest' => $patchData['file_manifest'],
-                    'file_count' => $patchData['file_count'],
-                    'size' => $patchData['size'],
-                    'is_base' => $patchData['is_base'],
-                ]);
-                $patchVersion = $patchData['version'];
-            } else {
-                $patchVersion = $patchData['version'];
-            }
+            // Initialize progress tracking
+            Cache::put("zip_extraction_progress_{$extractionId}", [
+                'status' => 'starting',
+                'phase' => 'extraction',
+                'processed' => 0,
+                'total' => 0,
+                'files_count' => 0,
+                'started_at' => now()
+            ], 3600);
 
-            // Step 5: Cleanup
-            Storage::deleteDirectory('temp_zips');
-            $this->deleteDirectory($tempDir);
+            // Dispatch background job for processing
+            \App\Jobs\ProcessZipExtraction::dispatch($zipPath, $uploadSession, $extractionId);
 
             return response()->json([
                 'success' => true,
-                'message' => 'ZIP file processed successfully',
-                'extracted_count' => $extractedCount,
-                'file_count' => count($uploadedFiles),
-                'skipped_count' => count($skippedFiles),
-                'patch_version' => $patchVersion
+                'message' => 'ZIP extraction started',
+                'extraction_id' => $extractionId
             ]);
 
         } catch (\Exception $e) {
-            // Cleanup on error
-            if (isset($zipPath)) {
-                Storage::delete($zipPath);
-            }
-            if (isset($tempDir) && is_dir($tempDir)) {
-                $this->deleteDirectory($tempDir);
-            }
-
-            Log::error('ZIP → Extract → Patch failed', [
+            Log::error('ZIP → Extract → Patch init failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to process ZIP file: ' . $e->getMessage()
+                'message' => 'Failed to start ZIP processing: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get ZIP extraction progress
+     */
+    public function zipExtractionProgress(Request $request)
+    {
+        $extractionId = $request->get('id');
+        
+        if (!$extractionId) {
+            return response()->json(['error' => 'Extraction ID required'], 400);
+        }
+
+        $progress = Cache::get("zip_extraction_progress_{$extractionId}");
+        
+        if (!$progress) {
+            return response()->json(['error' => 'Extraction not found'], 404);
+        }
+
+        return response()->json($progress);
     }
 
     /**
