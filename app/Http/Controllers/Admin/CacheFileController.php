@@ -1028,6 +1028,9 @@ class CacheFileController extends Controller
                 // Commit transaction - all database changes are now permanent
                 \DB::commit();
                 
+                // Clear patch caches after successful commit
+                $this->clearPatchCaches();
+                
                 Log::info('Database transaction committed successfully', [
                     'uploaded_files' => count($uploadedFiles),
                     'patch_version' => $patchVersion
@@ -2087,6 +2090,29 @@ class CacheFileController extends Controller
     }
 
     /**
+     * Clear all patch-related caches
+     */
+    private function clearPatchCaches(): void
+    {
+        // Clear latest version cache
+        \Cache::forget('patch_latest_version');
+        
+        // Clear all check-updates caches (pattern-based)
+        // Get all cache keys that match our pattern and clear them
+        $cachePrefix = 'patch_check_updates_';
+        
+        // For Laravel file/database cache drivers, we need to manually track versions
+        // For now, clear known versions (you could also store active versions in a set)
+        $commonVersions = ['0.0.0', '1.0.0', '2.0.0', '3.0.0']; // Add more as needed
+        
+        foreach ($commonVersions as $version) {
+            \Cache::forget("{$cachePrefix}{$version}");
+        }
+        
+        Log::info('Patch caches cleared');
+    }
+
+    /**
      * Recursively delete directory with error handling for locked files
      */
     private function deleteDirectory($dir): bool
@@ -2130,21 +2156,29 @@ class CacheFileController extends Controller
 
     public function getLatestVersion()
     {
-        $latestVersion = CachePatch::getLatestVersion();
-        $patches = CachePatch::latest()->get();
+        // Cache the version info for 5 minutes to reduce DB queries
+        $cacheKey = 'patch_latest_version';
+        
+        $data = \Cache::remember($cacheKey, 300, function() {
+            $latestVersion = CachePatch::getLatestVersion();
+            $patches = CachePatch::latest()->get();
 
-        return response()->json([
-            'latest_version' => $latestVersion ?? '0.0.0',
-            'patches' => $patches->map(function($patch) {
-                return [
-                    'version' => $patch->version,
-                    'is_base' => $patch->is_base,
-                    'size' => $patch->size,
-                    'file_count' => $patch->file_count,
-                    'created_at' => $patch->created_at->toISOString(),
-                ];
-            })
-        ]);
+            return [
+                'latest_version' => $latestVersion ?? '0.0.0',
+                'patches' => $patches->map(function($patch) {
+                    return [
+                        'version' => $patch->version,
+                        'is_base' => $patch->is_base,
+                        'size' => $patch->size,
+                        'file_count' => $patch->file_count,
+                        'created_at' => $patch->created_at->toISOString(),
+                    ];
+                })->toArray()
+            ];
+        });
+
+        return response()->json($data)
+            ->header('Cache-Control', 'public, max-age=300'); // Browser cache for 5 minutes
     }
 
     public function checkForUpdates(Request $request)
@@ -2154,38 +2188,47 @@ class CacheFileController extends Controller
         ]);
 
         $currentVersion = $request->input('current_version');
-        $latestVersion = CachePatch::getLatestVersion();
+        
+        // Cache per client version for 5 minutes
+        $cacheKey = "patch_check_updates_{$currentVersion}";
+        
+        $data = \Cache::remember($cacheKey, 300, function() use ($currentVersion) {
+            $latestVersion = CachePatch::getLatestVersion();
 
-        if (!$latestVersion || version_compare($currentVersion, $latestVersion) >= 0) {
-            return response()->json([
-                'has_updates' => false,
-                'current_version' => $currentVersion,
-                'latest_version' => $latestVersion ?? $currentVersion
-            ]);
-        }
-
-        $patches = CachePatch::all()
-            ->filter(function($patch) use ($currentVersion) {
-                return version_compare($patch->version, $currentVersion, '>');
-            })
-            ->sortBy(function($patch) {
-                return $patch->version;
-            }, SORT_NATURAL)
-            ->values();
-
-        return response()->json([
-            'has_updates' => true,
-            'current_version' => $currentVersion,
-            'latest_version' => $latestVersion,
-            'patches' => $patches->map(function($patch) {
+            if (!$latestVersion || version_compare($currentVersion, $latestVersion) >= 0) {
                 return [
-                    'version' => $patch->version,
-                    'path' => $patch->path,
-                    'size' => $patch->size,
-                    'file_count' => $patch->file_count,
+                    'has_updates' => false,
+                    'current_version' => $currentVersion,
+                    'latest_version' => $latestVersion ?? $currentVersion
                 ];
-            })
-        ]);
+            }
+
+            $patches = CachePatch::all()
+                ->filter(function($patch) use ($currentVersion) {
+                    return version_compare($patch->version, $currentVersion, '>');
+                })
+                ->sortBy(function($patch) {
+                    return $patch->version;
+                }, SORT_NATURAL)
+                ->values();
+
+            return [
+                'has_updates' => true,
+                'current_version' => $currentVersion,
+                'latest_version' => $latestVersion,
+                'patches' => $patches->map(function($patch) {
+                    return [
+                        'version' => $patch->version,
+                        'path' => $patch->path,
+                        'size' => $patch->size,
+                        'file_count' => $patch->file_count,
+                    ];
+                })->toArray()
+            ];
+        });
+
+        return response()->json($data)
+            ->header('Cache-Control', 'public, max-age=300');
     }
 
     public function downloadPatch(CachePatch $patch)
@@ -2240,6 +2283,9 @@ class CacheFileController extends Controller
             $newBase = $patchService->mergePatches();
 
             if ($newBase) {
+                // Clear patch caches after merge
+                $this->clearPatchCaches();
+                
                 return redirect()->route('admin.cache.index')
                     ->with('success', "Patches merged successfully into new base version {$newBase->version}.");
             }
@@ -2263,6 +2309,9 @@ class CacheFileController extends Controller
 
             $patch->deleteFile();
             $patch->delete();
+            
+            // Clear patch caches
+            $this->clearPatchCaches();
 
             return redirect()->route('admin.cache.index')
                 ->with('success', "Patch {$patch->version} deleted successfully.");
@@ -2310,6 +2359,9 @@ class CacheFileController extends Controller
             Storage::makeDirectory('cache/patches');
             Storage::makeDirectory('cache/manifests');
             Storage::makeDirectory('cache/files');
+            
+            // Clear patch caches
+            $this->clearPatchCaches();
 
             return response()->json([
                 'success' => true,
