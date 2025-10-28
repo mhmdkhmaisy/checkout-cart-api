@@ -910,10 +910,13 @@ class CacheFileController extends Controller
     }
 
     /**
-     * Upload ZIP → Extract → Generate Patch → Cleanup (with chunked upload support)
+     * Upload ZIP → Extract → Generate Patch → Cleanup (synchronous, no background job)
      */
     public function zipExtractPatch(Request $request)
     {
+        set_time_limit(600); // 10 minutes for large ZIPs
+        ini_set('memory_limit', '2G');
+
         try {
             $request->validate([
                 'upload_id' => 'required|string'
@@ -950,25 +953,123 @@ class CacheFileController extends Controller
                 ], 404);
             }
 
-            // Dispatch background job for processing (no tracking)
-            $extractionId = uniqid('zip_extract_');
-            \App\Jobs\ProcessZipExtraction::dispatch($zipPath, $uploadSession, $extractionId);
+            $tempDir = storage_path('app/temp_zip_extract_' . uniqid());
+            
+            Log::info('ZIP extraction started (synchronous)', [
+                'upload_key' => $uploadKey,
+                'zip_path' => $zipPath
+            ]);
+
+            // Step 1: Extract ZIP
+            if (!mkdir($tempDir, 0755, true)) {
+                throw new \Exception('Failed to create extraction directory');
+            }
+
+            $zip = new ZipArchive;
+            if ($zip->open($zipPath) !== true) {
+                throw new \Exception('Failed to open ZIP file');
+            }
+
+            $extractedCount = $zip->numFiles;
+            $zip->extractTo($tempDir);
+            $zip->close();
+
+            // Step 2: Process extracted files and add to database
+            $uploadedFiles = [];
+            $skippedFiles = [];
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($tempDir, RecursiveDirectoryIterator::SKIP_DOTS),
+                RecursiveIteratorIterator::LEAVES_ONLY
+            );
+
+            foreach ($iterator as $fileInfo) {
+                if ($fileInfo->isFile()) {
+                    $fullPath = $fileInfo->getPathname();
+                    $relativePath = str_replace($tempDir . DIRECTORY_SEPARATOR, '', $fullPath);
+                    $relativePath = str_replace('\\', '/', $relativePath);
+                    
+                    $result = $this->processExtractedFile($fileInfo, $relativePath);
+                    if ($result['success']) {
+                        if ($result['skipped']) {
+                            $skippedFiles[] = $result['filename'];
+                        } else {
+                            $uploadedFiles[] = $result['filename'];
+                        }
+                    }
+                }
+            }
+
+            // Step 3: Generate patch
+            $patchService = new CachePatchService();
+            $patchData = $patchService->generatePatchFromDatabase();
+            
+            $patchVersion = null;
+            if (!isset($patchData['no_changes']) || !$patchData['no_changes']) {
+                CachePatch::create([
+                    'version' => $patchData['version'],
+                    'base_version' => $patchData['base_version'],
+                    'path' => $patchData['path'],
+                    'file_manifest' => $patchData['file_manifest'],
+                    'file_count' => $patchData['file_count'],
+                    'size' => $patchData['size'],
+                    'is_base' => $patchData['is_base'],
+                ]);
+                $patchVersion = $patchData['version'];
+            } else {
+                $patchVersion = $patchData['version'];
+            }
+
+            // Step 4: Cleanup
+            Storage::deleteDirectory('temp_zips');
+            Storage::deleteDirectory('temp_uploads');
+            $this->deleteDirectory($tempDir);
+            
+            // Clean up upload session temp directory
+            if (is_dir($uploadSession->temp_dir)) {
+                $this->deleteDirectory($uploadSession->temp_dir);
+            }
+            
+            // Mark upload session as completed
+            $uploadSession->markAsCompleted();
+
+            Log::info('ZIP extraction completed successfully (synchronous)', [
+                'upload_key' => $uploadKey,
+                'extracted_count' => $extractedCount,
+                'uploaded_count' => count($uploadedFiles),
+                'skipped_count' => count($skippedFiles),
+                'patch_version' => $patchVersion
+            ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'ZIP extraction started. Check your patch list in a few moments for the new patch.',
-                'status' => 'processing'
+                'message' => 'ZIP file processed successfully',
+                'extracted_count' => $extractedCount,
+                'file_count' => count($uploadedFiles),
+                'skipped_count' => count($skippedFiles),
+                'patch_version' => $patchVersion
             ]);
 
         } catch (\Exception $e) {
-            Log::error('ZIP → Extract → Patch init failed', [
+            // Cleanup on error
+            if (isset($tempDir) && is_dir($tempDir)) {
+                $this->deleteDirectory($tempDir);
+            }
+            
+            Storage::deleteDirectory('temp_zips');
+            Storage::deleteDirectory('temp_uploads');
+            
+            if (isset($uploadSession) && is_dir($uploadSession->temp_dir)) {
+                $this->deleteDirectory($uploadSession->temp_dir);
+            }
+
+            Log::error('ZIP → Extract → Patch failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to start ZIP processing: ' . $e->getMessage()
+                'message' => 'Failed to process ZIP file: ' . $e->getMessage()
             ], 500);
         }
     }
