@@ -485,6 +485,231 @@ class CacheFileController extends Controller
     }
 
     /**
+     * Initialize chunked upload - creates temporary directory and returns upload session
+     */
+    public function chunkedUploadInit(Request $request)
+    {
+        try {
+            $request->validate([
+                'filename' => 'required|string',
+                'total_size' => 'required|integer',
+                'total_chunks' => 'required|integer',
+                'relative_path' => 'nullable|string'
+            ]);
+
+            $uploadId = uniqid('chunked_');
+            $tempDir = storage_path('app/temp_chunked/' . $uploadId);
+            
+            if (!file_exists($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+
+            // Store upload metadata
+            Cache::put("chunked_upload_{$uploadId}", [
+                'filename' => $request->input('filename'),
+                'total_size' => $request->input('total_size'),
+                'total_chunks' => $request->input('total_chunks'),
+                'relative_path' => $request->input('relative_path', ''),
+                'received_chunks' => [],
+                'temp_dir' => $tempDir,
+                'created_at' => now()
+            ], 7200); // 2 hours
+
+            Log::info('Chunked upload initialized', [
+                'upload_id' => $uploadId,
+                'filename' => $request->input('filename'),
+                'total_size' => $request->input('total_size'),
+                'total_chunks' => $request->input('total_chunks')
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'upload_id' => $uploadId,
+                'message' => 'Upload session created'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Chunked upload init failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to initialize upload: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle individual chunk upload
+     */
+    public function chunkedUpload(Request $request)
+    {
+        try {
+            $request->validate([
+                'upload_id' => 'required|string',
+                'chunk_index' => 'required|integer',
+                'chunk' => 'required|file'
+            ]);
+
+            $uploadId = $request->input('upload_id');
+            $chunkIndex = $request->input('chunk_index');
+            $chunk = $request->file('chunk');
+
+            // Get upload metadata
+            $uploadMeta = Cache::get("chunked_upload_{$uploadId}");
+            if (!$uploadMeta) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload session not found or expired'
+                ], 404);
+            }
+
+            // Save chunk to temporary directory
+            $chunkPath = $uploadMeta['temp_dir'] . "/chunk_{$chunkIndex}";
+            $chunk->move($uploadMeta['temp_dir'], "chunk_{$chunkIndex}");
+
+            // Update received chunks list
+            $uploadMeta['received_chunks'][] = $chunkIndex;
+            $uploadMeta['received_chunks'] = array_unique($uploadMeta['received_chunks']);
+            sort($uploadMeta['received_chunks']);
+            Cache::put("chunked_upload_{$uploadId}", $uploadMeta, 7200);
+
+            Log::info('Chunk received', [
+                'upload_id' => $uploadId,
+                'chunk_index' => $chunkIndex,
+                'received_count' => count($uploadMeta['received_chunks']),
+                'total_chunks' => $uploadMeta['total_chunks']
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Chunk uploaded successfully',
+                'received_chunks' => count($uploadMeta['received_chunks']),
+                'total_chunks' => $uploadMeta['total_chunks']
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Chunk upload failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload chunk: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Complete chunked upload - reassemble chunks and process file
+     */
+    public function chunkedUploadComplete(Request $request)
+    {
+        try {
+            $request->validate([
+                'upload_id' => 'required|string',
+                'preserve_structure' => 'boolean',
+                'current_path' => 'nullable|string'
+            ]);
+
+            $uploadId = $request->input('upload_id');
+            $preserveStructure = $request->input('preserve_structure', true);
+            $currentPath = $request->input('current_path', '');
+
+            // Get upload metadata
+            $uploadMeta = Cache::get("chunked_upload_{$uploadId}");
+            if (!$uploadMeta) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Upload session not found or expired'
+                ], 404);
+            }
+
+            // Verify all chunks received
+            if (count($uploadMeta['received_chunks']) !== $uploadMeta['total_chunks']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not all chunks received',
+                    'received' => count($uploadMeta['received_chunks']),
+                    'expected' => $uploadMeta['total_chunks']
+                ], 400);
+            }
+
+            // Reassemble file from chunks
+            $finalPath = $uploadMeta['temp_dir'] . '/' . $uploadMeta['filename'];
+            $finalFile = fopen($finalPath, 'wb');
+
+            for ($i = 0; $i < $uploadMeta['total_chunks']; $i++) {
+                $chunkPath = $uploadMeta['temp_dir'] . "/chunk_{$i}";
+                if (!file_exists($chunkPath)) {
+                    fclose($finalFile);
+                    throw new \Exception("Missing chunk: {$i}");
+                }
+                $chunkData = file_get_contents($chunkPath);
+                fwrite($finalFile, $chunkData);
+                unlink($chunkPath); // Delete chunk after merging
+            }
+
+            fclose($finalFile);
+
+            Log::info('File reassembled from chunks', [
+                'upload_id' => $uploadId,
+                'filename' => $uploadMeta['filename'],
+                'file_size' => filesize($finalPath)
+            ]);
+
+            // Create UploadedFile object
+            $uploadedFile = new \Illuminate\Http\UploadedFile(
+                $finalPath,
+                $uploadMeta['filename'],
+                mime_content_type($finalPath),
+                null,
+                true
+            );
+
+            // Process file using existing upload logic
+            $relativePath = $uploadMeta['relative_path'] ?: null;
+            $fileData = [[
+                'file' => $uploadedFile,
+                'relativePath' => $relativePath,
+                'index' => 0
+            ]];
+
+            $result = $this->processBatchUpload($fileData, $preserveStructure, $currentPath);
+
+            // Cleanup
+            Cache::forget("chunked_upload_{$uploadId}");
+            if (file_exists($uploadMeta['temp_dir'])) {
+                rmdir($uploadMeta['temp_dir']);
+            }
+
+            Log::info('Chunked upload completed', [
+                'upload_id' => $uploadId,
+                'filename' => $uploadMeta['filename'],
+                'uploaded' => count($result['uploaded']),
+                'skipped' => count($result['skipped']),
+                'errors' => count($result['errors'])
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'File uploaded successfully',
+                'uploaded_count' => count($result['uploaded']),
+                'skipped_count' => count($result['skipped']),
+                'error_count' => count($result['errors'])
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Chunked upload complete failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to complete upload: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Handle TAR file upload with real-time extraction progress
      */
     public function storeTar(Request $request)

@@ -726,6 +726,106 @@
     </div>
 </div>
 
+<!-- Chunked Upload Modal -->
+<div id="chunked-upload-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-dragon-black border border-dragon-border rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-dragon-silver flex items-center">
+                <i class="fas fa-bolt text-yellow-400 mr-3"></i>
+                Chunked Upload - Fast & Resumable
+            </h3>
+            <button onclick="hideChunkedUploadModal()" class="text-dragon-silver-dark hover:text-dragon-silver">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Unified Upload Section -->
+        <div class="glass-effect rounded-lg p-8 mb-6">
+            <div id="chunked-drop-zone" class="border-2 border-dashed border-yellow-500/50 rounded-lg p-12 text-center transition-colors hover:border-yellow-400">
+                <i class="fas fa-rocket text-5xl text-yellow-400 mb-4"></i>
+                <h4 class="text-xl font-medium text-dragon-silver mb-3">
+                    Drop files or folders here
+                </h4>
+                <p class="text-dragon-silver-dark mb-2">
+                    <i class="fas fa-check text-green-400 mr-1"></i> Best for slow or unreliable connections
+                </p>
+                <p class="text-dragon-silver-dark mb-6">
+                    <i class="fas fa-check text-green-400 mr-1"></i> Supports all file types and directories
+                </p>
+                <div class="flex justify-center gap-4 mb-4">
+                    <button type="button" onclick="document.getElementById('chunked-files-input').click()" 
+                            class="px-6 py-3 bg-yellow-600 hover:bg-yellow-500 text-black font-medium rounded-lg transition-colors inline-flex items-center">
+                        <i class="fas fa-file mr-2"></i>Browse Files
+                    </button>
+                    <button type="button" onclick="document.getElementById('chunked-folder-input').click()" 
+                            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors inline-flex items-center">
+                        <i class="fas fa-folder mr-2"></i>Browse Folders
+                    </button>
+                </div>
+                <input type="file" id="chunked-files-input" multiple class="hidden">
+                <input type="file" id="chunked-folder-input" webkitdirectory directory multiple class="hidden">
+                <p class="text-xs text-dragon-silver-dark mt-4">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Files are split into chunks and uploaded progressively • Ideal for large files and slow connections
+                </p>
+            </div>
+        </div>
+
+        <!-- Upload Options -->
+        <div class="glass-effect rounded-lg p-4 mb-6">
+            <div class="flex items-center justify-between">
+                <label class="flex items-center">
+                    <input type="checkbox" id="chunked-preserve-structure" checked class="mr-2">
+                    <span class="text-dragon-silver">Preserve directory structure</span>
+                </label>
+                <div class="text-sm text-dragon-silver-dark">
+                    <span id="chunked-selected-files-count">0 files selected</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Progress -->
+        <div id="chunked-upload-progress-container" class="hidden">
+            <div class="glass-effect rounded-lg p-6 mb-6">
+                <h4 class="text-lg font-medium text-dragon-silver mb-4">Upload Progress</h4>
+                
+                <!-- Overall Progress -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-dragon-silver-dark">Overall Progress</span>
+                        <span id="chunked-overall-progress-text" class="text-dragon-silver">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-3">
+                        <div id="chunked-overall-progress-bar" class="bg-gradient-to-r from-yellow-600 to-yellow-400 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between text-sm text-dragon-silver-dark mt-2">
+                        <span id="chunked-upload-stats">0 / 0 files</span>
+                        <span id="chunked-upload-speed">0 KB/s</span>
+                    </div>
+                </div>
+
+                <!-- Individual File Progress -->
+                <div id="chunked-file-progress-list" class="space-y-3 max-h-64 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-between">
+            <button onclick="hideChunkedUploadModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                Cancel
+            </button>
+            <div class="flex gap-3">
+                <button id="chunked-clear-queue-btn" onclick="clearChunkedUploadQueue()" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors hidden">
+                    <i class="fas fa-trash mr-2"></i>Clear All
+                </button>
+                <button id="chunked-start-upload-btn" onclick="startChunkedBatchUpload()" class="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 text-black font-medium rounded-lg transition-colors" disabled>
+                    <i class="fas fa-rocket mr-2"></i>Start Chunked Upload
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 let selectedFiles = [];
@@ -741,6 +841,15 @@ let selectedFileItems = new Set();
 let contextMenuTarget = null;
 let confirmationCallback = null;
 let currentNavigationPath = '{{ $currentPath }}';
+
+// Chunked upload state
+let chunkedSelectedFiles = [];
+let chunkedIsUploading = false;
+let chunkedUploadStartTime = 0;
+let chunkedCompletedUploads = 0;
+let chunkedTotalUploads = 0;
+let chunkedModalClosing = false;
+let chunkedUploadCompleted = false;
 
 // Extractable file extensions
 const extractableExtensions = ['zip', 'tar', 'gz', 'rar', '7z', 'tgz'];
@@ -2533,6 +2642,323 @@ function showIntegrityResults(data) {
 function hideIntegrityModal() {
     document.getElementById('integrity-modal').classList.add('hidden');
 }
+
+// ===========================
+// CHUNKED UPLOAD FUNCTIONS
+// ===========================
+
+// Chunked upload modal functions
+function showChunkedUploadModal() {
+    chunkedModalClosing = false;
+    chunkedUploadCompleted = false;
+    document.getElementById('chunked-upload-modal').classList.remove('hidden');
+    resetChunkedUploadState();
+    setupChunkedUploadHandlers();
+}
+
+function hideChunkedUploadModal() {
+    if (chunkedIsUploading && !chunkedModalClosing && !chunkedUploadCompleted) {
+        if (!confirm('Upload in progress. Are you sure you want to cancel?')) {
+            return;
+        }
+    }
+    chunkedModalClosing = true;
+    document.getElementById('chunked-upload-modal').classList.add('hidden');
+    resetChunkedUploadState();
+}
+
+function resetChunkedUploadState() {
+    chunkedSelectedFiles = [];
+    chunkedIsUploading = false;
+    chunkedCompletedUploads = 0;
+    chunkedTotalUploads = 0;
+    updateChunkedSelectedFilesCount();
+    document.getElementById('chunked-start-upload-btn').disabled = true;
+    document.getElementById('chunked-upload-progress-container').classList.add('hidden');
+    document.getElementById('chunked-clear-queue-btn').classList.add('hidden');
+    document.getElementById('chunked-file-progress-list').innerHTML = '';
+}
+
+function setupChunkedUploadHandlers() {
+    const filesInput = document.getElementById('chunked-files-input');
+    const folderInput = document.getElementById('chunked-folder-input');
+    const dropZone = document.getElementById('chunked-drop-zone');
+
+    // Remove old listeners
+    filesInput.replaceWith(filesInput.cloneNode(true));
+    folderInput.replaceWith(folderInput.cloneNode(true));
+    
+    // Get fresh references
+    const newFilesInput = document.getElementById('chunked-files-input');
+    const newFolderInput = document.getElementById('chunked-folder-input');
+    
+    // Add event listeners
+    newFilesInput.addEventListener('change', (e) => {
+        handleChunkedFileSelection(Array.from(e.target.files));
+    });
+    
+    newFolderInput.addEventListener('change', (e) => {
+        handleChunkedFileSelection(Array.from(e.target.files));
+    });
+    
+    // Drag and drop
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-yellow-400', 'bg-yellow-400/10');
+    });
+    
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-yellow-400', 'bg-yellow-400/10');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-yellow-400', 'bg-yellow-400/10');
+        
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) {
+            handleChunkedFileSelection(files);
+        }
+    });
+}
+
+function handleChunkedFileSelection(files) {
+    files.forEach(file => {
+        chunkedSelectedFiles.push(file);
+    });
+    
+    updateChunkedSelectedFilesCount();
+    document.getElementById('chunked-start-upload-btn').disabled = chunkedSelectedFiles.length === 0;
+}
+
+function updateChunkedSelectedFilesCount() {
+    const count = chunkedSelectedFiles.length;
+    const totalSize = chunkedSelectedFiles.reduce((sum, file) => sum + file.size, 0);
+    document.getElementById('chunked-selected-files-count').textContent = 
+        `${count} files selected (${formatBytes(totalSize)})`;
+}
+
+function clearChunkedUploadQueue() {
+    if (confirm('Are you sure you want to clear all selected files?')) {
+        resetChunkedUploadState();
+    }
+}
+
+// Start chunked batch upload
+async function startChunkedBatchUpload() {
+    if (chunkedSelectedFiles.length === 0) return;
+    
+    chunkedIsUploading = true;
+    chunkedUploadCompleted = false;
+    chunkedUploadStartTime = Date.now();
+    chunkedTotalUploads = chunkedSelectedFiles.length;
+    chunkedCompletedUploads = 0;
+    
+    // Show progress container
+    document.getElementById('chunked-upload-progress-container').classList.remove('hidden');
+    document.getElementById('chunked-clear-queue-btn').classList.remove('hidden');
+    document.getElementById('chunked-start-upload-btn').disabled = true;
+    
+    // Create progress items for each file
+    const progressList = document.getElementById('chunked-file-progress-list');
+    progressList.innerHTML = '';
+    
+    chunkedSelectedFiles.forEach((file, index) => {
+        const progressItem = createChunkedFileProgressItem(file, index);
+        progressList.appendChild(progressItem);
+    });
+    
+    // Upload files one by one with chunking
+    for (let i = 0; i < chunkedSelectedFiles.length; i++) {
+        await uploadFileInChunks(chunkedSelectedFiles[i], i);
+    }
+    
+    // All uploads completed - finalize to generate manifest/patch
+    chunkedUploadCompleted = true;
+    chunkedIsUploading = false;
+    
+    // Call finalize endpoint
+    try {
+        const response = await fetch('/admin/cache/finalize-upload', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await response.json();
+        console.log('Chunked upload finalized:', data);
+    } catch (error) {
+        console.error('Failed to finalize chunked upload:', error);
+    }
+    
+    setTimeout(() => {
+        hideChunkedUploadModal();
+        location.reload();
+    }, 2000);
+}
+
+function createChunkedFileProgressItem(file, index) {
+    const div = document.createElement('div');
+    div.id = `chunked-file-progress-${index}`;
+    div.className = 'bg-dragon-black/30 rounded-lg p-4';
+    
+    div.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+            <span class="text-dragon-silver font-medium truncate flex-1 mr-4">
+                <i class="fas fa-file text-yellow-400 mr-2"></i>${file.name}
+            </span>
+            <span class="text-dragon-silver-dark text-sm">${formatBytes(file.size)}</span>
+        </div>
+        <div class="flex items-center mb-1">
+            <div class="flex-1 bg-gray-700 rounded-full h-2 mr-3">
+                <div class="bg-gradient-to-r from-yellow-600 to-yellow-400 h-2 rounded-full transition-all duration-300" 
+                     style="width: 0%" id="chunked-progress-bar-${index}"></div>
+            </div>
+            <span class="text-dragon-silver-dark text-sm min-w-[50px]" id="chunked-progress-text-${index}">0%</span>
+        </div>
+        <div class="flex justify-between text-xs text-dragon-silver-dark">
+            <span id="chunked-status-${index}">Pending...</span>
+            <span id="chunked-speed-${index}">--</span>
+        </div>
+        ${file.webkitRelativePath ? `<div class="text-xs text-blue-400 mt-1">Path: ${file.webkitRelativePath}</div>` : ''}
+    `;
+    return div;
+}
+
+// Upload file in chunks with progress tracking
+async function uploadFileInChunks(file, index) {
+    const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const relativePath = file.webkitRelativePath || '';
+    
+    updateChunkedFileStatus(index, 'Initializing...', 'text-yellow-400');
+    
+    try {
+        // Step 1: Initialize upload
+        const initResponse = await fetch('/admin/cache/chunked-init', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                filename: file.name,
+                total_size: file.size,
+                total_chunks: totalChunks,
+                relative_path: relativePath
+            })
+        });
+        
+        const initData = await initResponse.json();
+        if (!initData.success) {
+            throw new Error(initData.message || 'Failed to initialize upload');
+        }
+        
+        const uploadId = initData.upload_id;
+        updateChunkedFileStatus(index, 'Uploading chunks...', 'text-yellow-400');
+        
+        // Step 2: Upload chunks
+        for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+            const start = chunkIndex * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunk = file.slice(start, end);
+            
+            const formData = new FormData();
+            formData.append('upload_id', uploadId);
+            formData.append('chunk_index', chunkIndex);
+            formData.append('chunk', chunk);
+            
+            const chunkResponse = await fetch('/admin/cache/chunked-upload', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+            
+            const chunkData = await chunkResponse.json();
+            if (!chunkData.success) {
+                throw new Error(chunkData.message || 'Failed to upload chunk');
+            }
+            
+            // Update progress
+            const percent = Math.round(((chunkIndex + 1) / totalChunks) * 100);
+            updateChunkedFileProgress(index, percent);
+            updateChunkedFileStatus(index, `Uploading chunk ${chunkIndex + 1}/${totalChunks}`, 'text-yellow-400');
+            updateChunkedOverallProgress();
+        }
+        
+        // Step 3: Complete upload
+        updateChunkedFileStatus(index, 'Assembling file...', 'text-yellow-400');
+        
+        const completeResponse = await fetch('/admin/cache/chunked-complete', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                upload_id: uploadId,
+                preserve_structure: document.getElementById('chunked-preserve-structure').checked ? 1 : 0,
+                current_path: currentNavigationPath
+            })
+        });
+        
+        const completeData = await completeResponse.json();
+        if (completeData.success) {
+            updateChunkedFileProgress(index, 100);
+            updateChunkedFileStatus(index, 'Completed', 'text-green-400');
+        } else {
+            throw new Error(completeData.message || 'Failed to complete upload');
+        }
+        
+    } catch (error) {
+        console.error('Chunked upload error:', error);
+        updateChunkedFileStatus(index, 'Failed: ' + error.message, 'text-red-400');
+    } finally {
+        chunkedCompletedUploads++;
+        updateChunkedOverallProgress();
+    }
+}
+
+function updateChunkedFileProgress(index, percent) {
+    const progressBar = document.getElementById(`chunked-progress-bar-${index}`);
+    const progressText = document.getElementById(`chunked-progress-text-${index}`);
+    
+    if (progressBar) progressBar.style.width = percent + '%';
+    if (progressText) progressText.textContent = percent + '%';
+}
+
+function updateChunkedFileStatus(index, status, className = '') {
+    const statusEl = document.getElementById(`chunked-status-${index}`);
+    if (statusEl) {
+        statusEl.textContent = status;
+        statusEl.className = `text-xs ${className}`;
+    }
+}
+
+function updateChunkedOverallProgress() {
+    const overallPercent = Math.round((chunkedCompletedUploads / chunkedTotalUploads) * 100);
+    document.getElementById('chunked-overall-progress-bar').style.width = overallPercent + '%';
+    document.getElementById('chunked-overall-progress-text').textContent = overallPercent + '%';
+    document.getElementById('chunked-upload-stats').textContent = `${chunkedCompletedUploads} / ${chunkedTotalUploads} files`;
+    
+    if (chunkedCompletedUploads > 0) {
+        const elapsed = (Date.now() - chunkedUploadStartTime) / 1000;
+        const totalBytes = chunkedSelectedFiles.reduce((sum, file) => sum + file.size, 0);
+        const uploadedBytes = chunkedSelectedFiles.slice(0, chunkedCompletedUploads).reduce((sum, file) => sum + file.size, 0);
+        
+        const speed = uploadedBytes / elapsed;
+        document.getElementById('chunked-upload-speed').textContent = formatSpeed(speed);
+    }
+}
+
 </script>
 @endpush
 
