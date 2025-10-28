@@ -1,0 +1,18 @@
+[2025-10-28 18:26:50] local.INFO: Chunked upload initialized {"upload_key":"chunked_69010aea76094","filename":"Aragon.zip","total_size":21707715,"total_chunks":5} 
+[2025-10-28 18:26:58] local.INFO: Chunk received {"upload_key":"chunked_69010aea76094","chunk_index":"0","received_count":1,"total_chunks":5} 
+[2025-10-28 18:27:06] local.INFO: Chunk received {"upload_key":"chunked_69010aea76094","chunk_index":"1","received_count":2,"total_chunks":5} 
+[2025-10-28 18:27:14] local.INFO: Chunk received {"upload_key":"chunked_69010aea76094","chunk_index":"2","received_count":3,"total_chunks":5} 
+[2025-10-28 18:27:20] local.INFO: Chunk received {"upload_key":"chunked_69010aea76094","chunk_index":"3","received_count":4,"total_chunks":5} 
+[2025-10-28 18:27:20] local.INFO: Chunk received {"upload_key":"chunked_69010aea76094","chunk_index":"4","received_count":5,"total_chunks":5} 
+[2025-10-28 18:27:21] local.INFO: File reassembled from chunks {"upload_key":"chunked_69010aea76094","filename":"Aragon.zip","file_size":21707715} 
+[2025-10-28 18:27:21] local.INFO: Chunked upload completed {"upload_key":"chunked_69010aea76094","filename":"Aragon.zip","uploaded":1,"skipped":0,"errors":0} 
+[2025-10-28 18:27:22] local.INFO: ZIP extraction progress requested {"extraction_id":"zip_extract_69010b096e663","cache_key":"zip_extraction_progress_zip_extract_69010b096e663"} 
+[2025-10-28 18:27:22] local.WARNING: ZIP extraction progress not found in cache {"extraction_id":"zip_extract_69010b096e663","cache_key":"zip_extraction_progress_zip_extract_69010b096e663","cache_driver":null} 
+[2025-10-28 18:27:22] local.INFO: ZIP extraction progress requested {"extraction_id":"zip_extract_69010b096e663","cache_key":"zip_extraction_progress_zip_extract_69010b096e663"} 
+[2025-10-28 18:27:22] local.WARNING: ZIP extraction progress not found in cache {"extraction_id":"zip_extract_69010b096e663","cache_key":"zip_extraction_progress_zip_extract_69010b096e663","cache_driver":null} 
+[2025-10-28 18:27:23] local.INFO: ZIP extraction progress requested {"extraction_id":"zip_extract_69010b096e663","cache_key":"zip_extraction_progress_zip_extract_69010b096e663"} 
+[2025-10-28 18:27:23] local.WARNING: ZIP extraction progress not found in cache {"extraction_id":"zip_extract_69010b096e663","cache_key":"zip_extraction_progress_zip_extract_69010b096e663","cache_driver":null} 
+[2025-10-28 18:27:23] local.INFO: ZIP extraction progress requested {"extraction_id":"zip_extract_69010b096e663","cache_key":"zip_extraction_progress_zip_extract_69010b096e663"} 
+[2025-10-28 18:27:23] local.WARNING: ZIP extraction progress not found in cache {"extraction_id":"zip_extract_69010b096e663","cache_key":"zip_extraction_progress_zip_extract_69010b096e663","cache_driver":null} 
+[2025-10-28 18:27:24] local.INFO: ZIP extraction progress requested {"extraction_id":"zip_extract_69010b096e663","cache_key":"zip_extraction_progress_zip_extract_69010b096e663"} 
+[2025-10-28 18:27:24] local.WARNING: ZIP extraction progress not found in cache {"extraction_id":"zip_extract_69010b096e663","cache_key":"zip_extraction_progress_zip_extract_69010b096e663","cache_driver":null} 
