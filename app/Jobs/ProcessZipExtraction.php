@@ -42,15 +42,10 @@ class ProcessZipExtraction implements ShouldQueue
         try {
             $tempDir = storage_path('app/temp_zip_extract_' . $this->extractionId);
             
-            // Update progress: Extracting
-            Cache::put("zip_extraction_progress_{$this->extractionId}", [
-                'status' => 'extracting',
-                'phase' => 'extraction',
-                'processed' => 0,
-                'total' => 0,
-                'message' => 'Extracting ZIP file...',
-                'started_at' => now()
-            ], 3600);
+            Log::info('ZIP extraction started', [
+                'extraction_id' => $this->extractionId,
+                'zip_path' => $this->zipPath
+            ]);
 
             // Step 1: Extract ZIP
             if (!mkdir($tempDir, 0755, true)) {
@@ -66,16 +61,6 @@ class ProcessZipExtraction implements ShouldQueue
             $zip->extractTo($tempDir);
             $zip->close();
 
-            // Update progress: Processing files
-            Cache::put("zip_extraction_progress_{$this->extractionId}", [
-                'status' => 'processing',
-                'phase' => 'processing_files',
-                'processed' => 0,
-                'total' => $totalFiles,
-                'message' => 'Processing extracted files...',
-                'started_at' => now()
-            ], 3600);
-
             // Step 2: Process extracted files and add to database
             $uploadedFiles = [];
             $skippedFiles = [];
@@ -84,7 +69,6 @@ class ProcessZipExtraction implements ShouldQueue
                 RecursiveIteratorIterator::LEAVES_ONLY
             );
 
-            $processed = 0;
             foreach ($iterator as $fileInfo) {
                 if ($fileInfo->isFile()) {
                     $fullPath = $fileInfo->getPathname();
@@ -99,36 +83,8 @@ class ProcessZipExtraction implements ShouldQueue
                             $uploadedFiles[] = $result['filename'];
                         }
                     }
-
-                    $processed++;
-                    
-                    // Update progress every 10 files
-                    if ($processed % 10 === 0 || $processed === $totalFiles) {
-                        Cache::put("zip_extraction_progress_{$this->extractionId}", [
-                            'status' => 'processing',
-                            'phase' => 'processing_files',
-                            'processed' => $processed,
-                            'total' => $totalFiles,
-                            'uploaded_count' => count($uploadedFiles),
-                            'skipped_count' => count($skippedFiles),
-                            'message' => "Processing files: {$processed}/{$totalFiles}",
-                            'started_at' => now()
-                        ], 3600);
-                    }
                 }
             }
-
-            // Update progress: Generating patch
-            Cache::put("zip_extraction_progress_{$this->extractionId}", [
-                'status' => 'generating_patch',
-                'phase' => 'patch_generation',
-                'processed' => $totalFiles,
-                'total' => $totalFiles,
-                'uploaded_count' => count($uploadedFiles),
-                'skipped_count' => count($skippedFiles),
-                'message' => 'Generating patch...',
-                'started_at' => now()
-            ], 3600);
 
             // Step 3: Generate patch
             $patchService = new CachePatchService();
@@ -150,20 +106,7 @@ class ProcessZipExtraction implements ShouldQueue
                 $patchVersion = $patchData['version'];
             }
 
-            // Update progress: Cleaning up
-            Cache::put("zip_extraction_progress_{$this->extractionId}", [
-                'status' => 'cleaning_up',
-                'phase' => 'cleanup',
-                'processed' => $totalFiles,
-                'total' => $totalFiles,
-                'uploaded_count' => count($uploadedFiles),
-                'skipped_count' => count($skippedFiles),
-                'patch_version' => $patchVersion,
-                'message' => 'Cleaning up temporary files...',
-                'started_at' => now()
-            ], 3600);
-
-            // Step 4: Cleanup - FIXED: Clean up ALL temporary directories
+            // Step 4: Cleanup
             Storage::deleteDirectory('temp_zips');
             Storage::deleteDirectory('temp_uploads');
             $this->deleteDirectory($tempDir);
@@ -176,25 +119,12 @@ class ProcessZipExtraction implements ShouldQueue
             // Mark upload session as completed
             $this->uploadSession->markAsCompleted();
 
-            // Mark as completed
-            $completedData = [
-                'status' => 'completed',
-                'phase' => 'completed',
-                'processed' => $totalFiles,
-                'total' => $totalFiles,
+            Log::info('ZIP extraction completed successfully', [
+                'extraction_id' => $this->extractionId,
+                'total_files' => $totalFiles,
                 'uploaded_count' => count($uploadedFiles),
                 'skipped_count' => count($skippedFiles),
-                'patch_version' => $patchVersion,
-                'message' => 'Processing completed successfully',
-                'completed_at' => now()
-            ];
-            
-            Cache::put("zip_extraction_progress_{$this->extractionId}", $completedData, 3600);
-            
-            Log::info('ZIP extraction completed and cached', [
-                'extraction_id' => $this->extractionId,
-                'cache_key' => "zip_extraction_progress_{$this->extractionId}",
-                'data' => $completedData
+                'patch_version' => $patchVersion
             ]);
 
         } catch (\Exception $e) {
@@ -210,19 +140,13 @@ class ProcessZipExtraction implements ShouldQueue
                 $this->deleteDirectory($this->uploadSession->temp_dir);
             }
 
-            Log::error('ZIP → Extract → Patch background processing failed', [
+            Log::error('ZIP extraction failed', [
                 'extraction_id' => $this->extractionId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            // Mark as failed
-            Cache::put("zip_extraction_progress_{$this->extractionId}", [
-                'status' => 'failed',
-                'phase' => 'error',
-                'error' => $e->getMessage(),
-                'failed_at' => now()
-            ], 3600);
+            throw $e;
         }
     }
 

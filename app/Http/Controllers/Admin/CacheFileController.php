@@ -921,26 +921,15 @@ class CacheFileController extends Controller
                 ], 404);
             }
 
-            // Generate extraction ID for progress tracking
+            // Generate extraction ID
             $extractionId = uniqid('zip_extract_');
-            
-            // Initialize progress tracking
-            Cache::put("zip_extraction_progress_{$extractionId}", [
-                'status' => 'starting',
-                'phase' => 'extraction',
-                'processed' => 0,
-                'total' => 0,
-                'files_count' => 0,
-                'started_at' => now()
-            ], 3600);
 
             // Dispatch background job for processing
             \App\Jobs\ProcessZipExtraction::dispatch($zipPath, $uploadSession, $extractionId);
 
             return response()->json([
                 'success' => true,
-                'message' => 'ZIP extraction started',
-                'extraction_id' => $extractionId
+                'message' => 'ZIP extraction started. Processing in background...'
             ]);
 
         } catch (\Exception $e) {
@@ -957,40 +946,14 @@ class CacheFileController extends Controller
     }
 
     /**
-     * Get ZIP extraction progress
+     * Get ZIP extraction progress (simplified - no tracking)
      */
     public function zipExtractionProgress(Request $request)
     {
-        $extractionId = $request->get('id');
-        
-        Log::info('ZIP extraction progress requested', [
-            'extraction_id' => $extractionId,
-            'cache_key' => "zip_extraction_progress_{$extractionId}"
+        return response()->json([
+            'status' => 'processing',
+            'message' => 'Extraction is processing in the background. Please check your patch list for completion.'
         ]);
-        
-        if (!$extractionId) {
-            Log::warning('ZIP extraction progress - missing extraction ID');
-            return response()->json(['error' => 'Extraction ID required'], 400);
-        }
-
-        $cacheKey = "zip_extraction_progress_{$extractionId}";
-        $progress = Cache::get($cacheKey);
-        
-        if (!$progress) {
-            Log::warning('ZIP extraction progress not found in cache', [
-                'extraction_id' => $extractionId,
-                'cache_key' => $cacheKey,
-                'cache_driver' => config('cache.default')
-            ]);
-            return response()->json(['error' => 'Extraction not found'], 404);
-        }
-
-        Log::info('ZIP extraction progress found', [
-            'extraction_id' => $extractionId,
-            'status' => $progress['status'] ?? 'unknown'
-        ]);
-
-        return response()->json($progress);
     }
 
     /**
