@@ -2745,7 +2745,7 @@ function clearChunkedUploadQueue() {
     }
 }
 
-// Start chunked batch upload
+// Start chunked batch upload with dynamic strategy
 async function startChunkedBatchUpload() {
     if (chunkedSelectedFiles.length === 0) return;
     
@@ -2769,9 +2769,44 @@ async function startChunkedBatchUpload() {
         progressList.appendChild(progressItem);
     });
     
-    // Upload files one by one with chunking
-    for (let i = 0; i < chunkedSelectedFiles.length; i++) {
-        await uploadFileInChunks(chunkedSelectedFiles[i], i);
+    // Categorize files by size for optimal upload strategy
+    const LARGE_FILE_THRESHOLD = 5 * 1024 * 1024; // 5MB
+    const SMALL_FILE_THRESHOLD = 1 * 1024 * 1024; // 1MB
+    const CONCURRENT_SMALL_FILES = 5; // Upload 5 small files at once
+    const CONCURRENT_MEDIUM_FILES = 2; // Upload 2 medium files at once
+    
+    const largeFiles = [];
+    const mediumFiles = [];
+    const smallFiles = [];
+    
+    chunkedSelectedFiles.forEach((file, index) => {
+        const fileWithIndex = { file, index };
+        if (file.size > LARGE_FILE_THRESHOLD) {
+            largeFiles.push(fileWithIndex);
+        } else if (file.size > SMALL_FILE_THRESHOLD) {
+            mediumFiles.push(fileWithIndex);
+        } else {
+            smallFiles.push(fileWithIndex);
+        }
+    });
+    
+    console.log(`Upload strategy: ${smallFiles.length} small, ${mediumFiles.length} medium, ${largeFiles.length} large files`);
+    
+    // Upload small files in parallel batches (5 at a time)
+    for (let i = 0; i < smallFiles.length; i += CONCURRENT_SMALL_FILES) {
+        const batch = smallFiles.slice(i, i + CONCURRENT_SMALL_FILES);
+        await Promise.all(batch.map(({file, index}) => uploadFileDirectly(file, index)));
+    }
+    
+    // Upload medium files in parallel batches (2 at a time)
+    for (let i = 0; i < mediumFiles.length; i += CONCURRENT_MEDIUM_FILES) {
+        const batch = mediumFiles.slice(i, i + CONCURRENT_MEDIUM_FILES);
+        await Promise.all(batch.map(({file, index}) => uploadFileDirectly(file, index)));
+    }
+    
+    // Upload large files one by one with chunking
+    for (const {file, index} of largeFiles) {
+        await uploadFileInChunks(file, index);
     }
     
     // All uploads completed - finalize to generate manifest/patch
@@ -2828,9 +2863,9 @@ function createChunkedFileProgressItem(file, index) {
     return div;
 }
 
-// Upload file in chunks with progress tracking
+// Upload file in chunks with progress tracking (for large files)
 async function uploadFileInChunks(file, index) {
-    const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
+    const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks for large files
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     const relativePath = file.webkitRelativePath || '';
     
@@ -2920,6 +2955,75 @@ async function uploadFileInChunks(file, index) {
         
     } catch (error) {
         console.error('Chunked upload error:', error);
+        updateChunkedFileStatus(index, 'Failed: ' + error.message, 'text-red-400');
+    } finally {
+        chunkedCompletedUploads++;
+        updateChunkedOverallProgress();
+    }
+}
+
+// Upload small/medium files directly without chunking (faster for small files)
+async function uploadFileDirectly(file, index) {
+    const relativePath = file.webkitRelativePath || '';
+    
+    updateChunkedFileStatus(index, 'Uploading...', 'text-yellow-400');
+    
+    try {
+        const formData = new FormData();
+        formData.append('files[]', file);
+        formData.append('preserve_structure', document.getElementById('chunked-preserve-structure').checked ? '1' : '0');
+        formData.append('current_path', currentNavigationPath);
+        
+        if (relativePath) {
+            formData.append('relative_paths[]', relativePath);
+        }
+        
+        const xhr = new XMLHttpRequest();
+        
+        // Track upload progress
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                updateChunkedFileProgress(index, percent);
+                updateChunkedFileStatus(index, `Uploading ${percent}%`, 'text-yellow-400');
+            }
+        });
+        
+        // Handle completion
+        const uploadPromise = new Promise((resolve, reject) => {
+            xhr.addEventListener('load', () => {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        updateChunkedFileProgress(index, 100);
+                        updateChunkedFileStatus(index, 'Completed', 'text-green-400');
+                        resolve(response);
+                    } else {
+                        reject(new Error(response.message || 'Upload failed'));
+                    }
+                } else {
+                    reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+                }
+            });
+            
+            xhr.addEventListener('error', () => {
+                reject(new Error('Network error'));
+            });
+            
+            xhr.addEventListener('abort', () => {
+                reject(new Error('Upload cancelled'));
+            });
+        });
+        
+        xhr.open('POST', '/admin/cache');
+        xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.send(formData);
+        
+        await uploadPromise;
+        
+    } catch (error) {
+        console.error('Direct upload error:', error);
         updateChunkedFileStatus(index, 'Failed: ' + error.message, 'text-red-400');
     } finally {
         chunkedCompletedUploads++;
