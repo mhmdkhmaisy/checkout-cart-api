@@ -2772,7 +2772,7 @@ async function startChunkedBatchUpload() {
     // Categorize files by size for optimal upload strategy
     const LARGE_FILE_THRESHOLD = 5 * 1024 * 1024; // 5MB
     const SMALL_FILE_THRESHOLD = 1 * 1024 * 1024; // 1MB
-    const CONCURRENT_SMALL_FILES = 5; // Upload 5 small files at once
+    const CONCURRENT_SMALL_FILES = 20; // Upload 20 small files at once
     const CONCURRENT_MEDIUM_FILES = 2; // Upload 2 medium files at once
     
     const largeFiles = [];
