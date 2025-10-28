@@ -2054,7 +2054,7 @@ class CacheFileController extends Controller
     }
 
     /**
-     * Recursively delete directory
+     * Recursively delete directory with error handling for locked files
      */
     private function deleteDirectory($dir): bool
     {
@@ -2065,10 +2065,30 @@ class CacheFileController extends Controller
         $files = array_diff(scandir($dir), ['.', '..']);
         foreach ($files as $file) {
             $path = $dir . '/' . $file;
-            is_dir($path) ? $this->deleteDirectory($path) : unlink($path);
+            try {
+                if (is_dir($path)) {
+                    $this->deleteDirectory($path);
+                } else {
+                    @unlink($path);
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to delete file during cleanup', [
+                    'path' => $path,
+                    'error' => $e->getMessage()
+                ]);
+            }
         }
 
-        return rmdir($dir);
+        try {
+            @rmdir($dir);
+            return true;
+        } catch (\Exception $e) {
+            Log::warning('Failed to delete directory during cleanup', [
+                'dir' => $dir,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
     }
 
     // ===========================
