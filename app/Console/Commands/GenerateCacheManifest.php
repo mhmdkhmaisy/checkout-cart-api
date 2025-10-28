@@ -7,6 +7,8 @@ use App\Models\CacheFile;
 use App\Models\CachePatch;
 use App\Services\CachePatchService;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class GenerateCacheManifest extends Command
 {
@@ -161,6 +163,10 @@ class GenerateCacheManifest extends Command
                         $this->line('   Run: php artisan cache:merge-patches');
                     }
                 }
+                
+                // Clear patch-related caches after manifest and patch generation
+                $this->clearPatchCaches();
+                $this->info('🔄 Patch caches cleared');
                 
                 // Clean up temporary upload files after patch creation (keep database records)
                 $this->info('');
@@ -372,5 +378,27 @@ class GenerateCacheManifest extends Command
         if (count($filesToDelete) > 0) {
             $this->info("✨ Cleaned up " . count($filesToDelete) . " old manifest backup(s)");
         }
+    }
+
+    /**
+     * Clear all patch-related caches
+     */
+    private function clearPatchCaches(): void
+    {
+        // Clear latest version cache (old key)
+        Cache::forget('patch_latest_version');
+        
+        // Clear latest version with manifest cache (new key)
+        Cache::forget('patch_latest_version_with_manifest');
+        
+        // Clear all check-updates caches
+        $cachePrefix = 'patch_check_updates_';
+        $commonVersions = ['0.0.0', '1.0.0', '2.0.0', '3.0.0'];
+        
+        foreach ($commonVersions as $version) {
+            Cache::forget("{$cachePrefix}{$version}");
+        }
+        
+        Log::info('Patch caches cleared after manifest generation');
     }
 }

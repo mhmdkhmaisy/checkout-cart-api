@@ -2094,8 +2094,11 @@ class CacheFileController extends Controller
      */
     private function clearPatchCaches(): void
     {
-        // Clear latest version cache
+        // Clear latest version cache (old key)
         \Cache::forget('patch_latest_version');
+        
+        // Clear latest version with manifest cache (new key)
+        \Cache::forget('patch_latest_version_with_manifest');
         
         // Clear all check-updates caches (pattern-based)
         // Get all cache keys that match our pattern and clear them
@@ -2109,7 +2112,7 @@ class CacheFileController extends Controller
             \Cache::forget("{$cachePrefix}{$version}");
         }
         
-        Log::info('Patch caches cleared');
+        Log::info('Patch caches cleared (including manifest)');
     }
 
     /**
@@ -2156,12 +2159,21 @@ class CacheFileController extends Controller
 
     public function getLatestVersion()
     {
-        // Cache the version info for 5 minutes to reduce DB queries
-        $cacheKey = 'patch_latest_version';
+        // Cache the version info and manifest for 5 minutes to reduce DB queries and file I/O
+        $cacheKey = 'patch_latest_version_with_manifest';
         
         $data = \Cache::remember($cacheKey, 300, function() {
             $latestVersion = CachePatch::getLatestVersion();
             $patches = CachePatch::latest()->get();
+            
+            // Load the manifest file if it exists
+            $manifestPath = storage_path('app/manifests/cache_manifest.json');
+            $manifest = null;
+            
+            if (file_exists($manifestPath)) {
+                $manifestContent = file_get_contents($manifestPath);
+                $manifest = json_decode($manifestContent, true);
+            }
 
             return [
                 'latest_version' => $latestVersion ?? '0.0.0',
@@ -2173,7 +2185,8 @@ class CacheFileController extends Controller
                         'file_count' => $patch->file_count,
                         'created_at' => $patch->created_at->toISOString(),
                     ];
-                })->toArray()
+                })->toArray(),
+                'manifest' => $manifest
             ];
         });
 
