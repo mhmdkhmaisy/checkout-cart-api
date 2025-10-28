@@ -85,6 +85,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/chunked-upload', [CacheFileController::class, 'chunkedUpload'])->name('chunked-upload');
         Route::post('/chunked-complete', [CacheFileController::class, 'chunkedUploadComplete'])->name('chunked-complete');
         Route::post('/extract-file', [CacheFileController::class, 'extractFile'])->name('extract-file');
+        Route::post('/zip-extract-patch', [CacheFileController::class, 'zipExtractPatch'])->name('zip-extract-patch');
         Route::get('/extraction-progress', [CacheFileController::class, 'extractionProgress'])->name('extraction-progress');
         Route::post('/bulk-delete', [CacheFileController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/delete-all', [CacheFileController::class, 'deleteAll'])->name('delete-all');

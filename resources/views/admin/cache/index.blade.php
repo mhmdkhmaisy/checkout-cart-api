@@ -84,12 +84,21 @@
                                     </div>
                                 </div>
                             </button>
-                            <button onclick="showUploadModal(); hideUploadMenu();" class="w-full px-4 py-3 text-left hover:bg-dragon-red/20 transition-colors">
+                            <button onclick="showUploadModal(); hideUploadMenu();" class="w-full px-4 py-3 text-left hover:bg-dragon-red/20 transition-colors border-b border-dragon-border">
                                 <div class="flex items-center">
                                     <i class="fas fa-upload text-blue-400 mr-3 text-lg"></i>
                                     <div>
                                         <p class="text-dragon-silver font-medium">Standard Upload</p>
                                         <p class="text-xs text-dragon-silver-dark">Traditional upload method</p>
+                                    </div>
+                                </div>
+                            </button>
+                            <button onclick="showZipPatchModal(); hideUploadMenu();" class="w-full px-4 py-3 text-left hover:bg-dragon-red/20 transition-colors">
+                                <div class="flex items-center">
+                                    <i class="fas fa-file-archive text-purple-400 mr-3 text-lg"></i>
+                                    <div>
+                                        <p class="text-dragon-silver font-medium">ZIP → Extract → Patch</p>
+                                        <p class="text-xs text-dragon-silver-dark">Upload .zip, auto-extract & create patch</p>
                                     </div>
                                 </div>
                             </button>
@@ -826,6 +835,102 @@
     </div>
 </div>
 
+<!-- ZIP → Extract → Patch Modal -->
+<div id="zip-patch-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-dragon-black border border-dragon-border rounded-lg p-8 max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-dragon-silver flex items-center">
+                <i class="fas fa-file-archive text-purple-400 mr-3"></i>
+                ZIP → Extract → Patch
+            </h3>
+            <button onclick="hideZipPatchModal()" class="text-dragon-silver-dark hover:text-dragon-silver">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="glass-effect rounded-lg p-8 mb-6">
+            <div id="zip-drop-zone" class="border-2 border-dashed border-purple-500/50 rounded-lg p-12 text-center transition-colors hover:border-purple-400">
+                <i class="fas fa-file-zipper text-5xl text-purple-400 mb-4"></i>
+                <h4 class="text-xl font-medium text-dragon-silver mb-3">
+                    Drop a .zip file here
+                </h4>
+                <p class="text-dragon-silver-dark mb-2">
+                    <i class="fas fa-check text-green-400 mr-1"></i> Automatically extracts contents
+                </p>
+                <p class="text-dragon-silver-dark mb-2">
+                    <i class="fas fa-check text-green-400 mr-1"></i> Generates patch from extracted files
+                </p>
+                <p class="text-dragon-silver-dark mb-6">
+                    <i class="fas fa-check text-green-400 mr-1"></i> Cleans up temporary files
+                </p>
+                <div class="flex justify-center gap-4 mb-4">
+                    <button type="button" onclick="document.getElementById('zip-file-input').click()" 
+                            class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors inline-flex items-center">
+                        <i class="fas fa-file-zipper mr-2"></i>Select ZIP File
+                    </button>
+                </div>
+                <input type="file" id="zip-file-input" accept=".zip" class="hidden">
+                <p class="text-xs text-dragon-silver-dark mt-4">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Only .zip files are supported for this method
+                </p>
+            </div>
+            
+            <div id="zip-file-selected" class="hidden mt-4 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-file-zipper text-purple-400 mr-3 text-2xl"></i>
+                        <div>
+                            <p class="text-dragon-silver font-medium" id="zip-file-name"></p>
+                            <p class="text-dragon-silver-dark text-sm" id="zip-file-size"></p>
+                        </div>
+                    </div>
+                    <button onclick="clearZipFile()" class="text-red-400 hover:text-red-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div id="zip-patch-progress-container" class="hidden">
+            <div class="glass-effect rounded-lg p-6 mb-6">
+                <h4 class="text-lg font-medium text-dragon-silver mb-4">Processing</h4>
+                <div class="space-y-4">
+                    <div class="flex items-center" id="zip-upload-status">
+                        <i class="fas fa-circle-notch fa-spin text-purple-400 mr-3"></i>
+                        <span class="text-dragon-silver">Uploading ZIP file...</span>
+                    </div>
+                    <div class="flex items-center text-dragon-silver-dark" id="zip-extract-status">
+                        <i class="far fa-circle text-dragon-silver-dark mr-3"></i>
+                        <span>Extracting files...</span>
+                    </div>
+                    <div class="flex items-center text-dragon-silver-dark" id="zip-patch-status">
+                        <i class="far fa-circle text-dragon-silver-dark mr-3"></i>
+                        <span>Generating patch...</span>
+                    </div>
+                    <div class="flex items-center text-dragon-silver-dark" id="zip-cleanup-status">
+                        <i class="far fa-circle text-dragon-silver-dark mr-3"></i>
+                        <span>Cleaning up...</span>
+                    </div>
+                </div>
+                <div id="zip-patch-result" class="hidden mt-6 p-4 rounded-lg"></div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-between">
+            <button onclick="hideZipPatchModal()" id="zip-cancel-btn" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                Cancel
+            </button>
+            <button id="zip-start-btn" onclick="startZipPatchUpload()" class="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors" disabled>
+                <i class="fas fa-rocket mr-2"></i>Start Process
+            </button>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 let selectedFiles = [];
@@ -850,6 +955,10 @@ let chunkedCompletedUploads = 0;
 let chunkedTotalUploads = 0;
 let chunkedModalClosing = false;
 let chunkedUploadCompleted = false;
+
+// ZIP → Patch state
+let zipSelectedFile = null;
+let zipIsProcessing = false;
 
 // Extractable file extensions
 const extractableExtensions = ['zip', 'tar', 'gz', 'rar', '7z', 'tgz'];
@@ -3061,6 +3170,204 @@ function updateChunkedOverallProgress() {
         
         const speed = uploadedBytes / elapsed;
         document.getElementById('chunked-upload-speed').textContent = formatSpeed(speed);
+    }
+}
+
+// ===========================
+// ZIP → PATCH FUNCTIONS
+// ===========================
+
+function showZipPatchModal() {
+    zipSelectedFile = null;
+    zipIsProcessing = false;
+    document.getElementById('zip-patch-modal').classList.remove('hidden');
+    resetZipPatchState();
+    setupZipPatchHandlers();
+}
+
+function hideZipPatchModal() {
+    if (zipIsProcessing) {
+        if (!confirm('Processing in progress. Are you sure you want to cancel?')) {
+            return;
+        }
+    }
+    document.getElementById('zip-patch-modal').classList.add('hidden');
+    resetZipPatchState();
+}
+
+function resetZipPatchState() {
+    zipSelectedFile = null;
+    zipIsProcessing = false;
+    document.getElementById('zip-file-selected').classList.add('hidden');
+    document.getElementById('zip-patch-progress-container').classList.add('hidden');
+    document.getElementById('zip-start-btn').disabled = true;
+    document.getElementById('zip-file-input').value = '';
+}
+
+function setupZipPatchHandlers() {
+    const fileInput = document.getElementById('zip-file-input');
+    const dropZone = document.getElementById('zip-drop-zone');
+    
+    // Remove old listeners
+    fileInput.replaceWith(fileInput.cloneNode(true));
+    
+    // Get fresh reference
+    const newFileInput = document.getElementById('zip-file-input');
+    
+    // File input change
+    newFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleZipFileSelection(e.target.files[0]);
+        }
+    });
+    
+    // Drag and drop
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-purple-400', 'bg-purple-400/10');
+    });
+    
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-purple-400', 'bg-purple-400/10');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-purple-400', 'bg-purple-400/10');
+        
+        const files = Array.from(e.dataTransfer.files);
+        const zipFile = files.find(f => f.name.toLowerCase().endsWith('.zip'));
+        
+        if (zipFile) {
+            handleZipFileSelection(zipFile);
+        } else {
+            alert('Please select a .zip file');
+        }
+    });
+}
+
+function handleZipFileSelection(file) {
+    if (!file.name.toLowerCase().endsWith('.zip')) {
+        alert('Only .zip files are supported for this method');
+        return;
+    }
+    
+    zipSelectedFile = file;
+    document.getElementById('zip-file-name').textContent = file.name;
+    document.getElementById('zip-file-size').textContent = formatBytes(file.size);
+    document.getElementById('zip-file-selected').classList.remove('hidden');
+    document.getElementById('zip-start-btn').disabled = false;
+}
+
+function clearZipFile() {
+    resetZipPatchState();
+}
+
+async function startZipPatchUpload() {
+    if (!zipSelectedFile) return;
+    
+    zipIsProcessing = true;
+    document.getElementById('zip-start-btn').disabled = true;
+    document.getElementById('zip-cancel-btn').disabled = true;
+    document.getElementById('zip-patch-progress-container').classList.remove('hidden');
+    
+    try {
+        // Step 1: Upload ZIP
+        updateZipStatus('upload', 'processing', 'Uploading ZIP file...');
+        
+        const formData = new FormData();
+        formData.append('zip_file', zipSelectedFile);
+        
+        const uploadResponse = await fetch('/admin/cache/zip-extract-patch', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        });
+        
+        const result = await uploadResponse.json();
+        
+        if (!result.success) {
+            throw new Error(result.message || 'Upload failed');
+        }
+        
+        // Update all statuses as complete
+        updateZipStatus('upload', 'complete', 'Uploaded successfully');
+        updateZipStatus('extract', 'complete', `Extracted ${result.extracted_count || 0} files`);
+        updateZipStatus('patch', 'complete', `Patch v${result.patch_version} generated`);
+        updateZipStatus('cleanup', 'complete', 'Cleaned up temporary files');
+        
+        // Show success result
+        const resultDiv = document.getElementById('zip-patch-result');
+        resultDiv.className = 'mt-6 p-4 rounded-lg bg-green-500/10 border border-green-500/30';
+        resultDiv.innerHTML = `
+            <div class="flex items-center mb-2">
+                <i class="fas fa-check-circle text-green-400 text-2xl mr-3"></i>
+                <div>
+                    <p class="text-green-400 font-medium">Success!</p>
+                    <p class="text-dragon-silver-dark text-sm">Patch v${result.patch_version} created with ${result.file_count || 0} files</p>
+                </div>
+            </div>
+            <button onclick="location.reload()" class="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors w-full">
+                <i class="fas fa-sync-alt mr-2"></i>Refresh Page
+            </button>
+        `;
+        resultDiv.classList.remove('hidden');
+        
+    } catch (error) {
+        console.error('ZIP → Patch error:', error);
+        
+        // Show error
+        const resultDiv = document.getElementById('zip-patch-result');
+        resultDiv.className = 'mt-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30';
+        resultDiv.innerHTML = `
+            <div class="flex items-center mb-2">
+                <i class="fas fa-exclamation-circle text-red-400 text-2xl mr-3"></i>
+                <div>
+                    <p class="text-red-400 font-medium">Error</p>
+                    <p class="text-dragon-silver-dark text-sm">${error.message}</p>
+                </div>
+            </div>
+            <button onclick="hideZipPatchModal()" class="mt-3 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors w-full">
+                Close
+            </button>
+        `;
+        resultDiv.classList.remove('hidden');
+        
+        updateZipStatus('upload', 'error', 'Failed');
+        document.getElementById('zip-cancel-btn').disabled = false;
+    }
+}
+
+function updateZipStatus(step, status, message) {
+    const statusMap = {
+        'upload': 'zip-upload-status',
+        'extract': 'zip-extract-status',
+        'patch': 'zip-patch-status',
+        'cleanup': 'zip-cleanup-status'
+    };
+    
+    const el = document.getElementById(statusMap[step]);
+    if (!el) return;
+    
+    const icon = el.querySelector('i');
+    const text = el.querySelector('span');
+    
+    if (status === 'processing') {
+        icon.className = 'fas fa-circle-notch fa-spin text-purple-400 mr-3';
+        el.className = 'flex items-center';
+        text.textContent = message;
+    } else if (status === 'complete') {
+        icon.className = 'fas fa-check-circle text-green-400 mr-3';
+        el.className = 'flex items-center text-green-400';
+        text.textContent = message;
+    } else if (status === 'error') {
+        icon.className = 'fas fa-times-circle text-red-400 mr-3';
+        el.className = 'flex items-center text-red-400';
+        text.textContent = message;
     }
 }
 
