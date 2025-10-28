@@ -689,15 +689,33 @@ class CacheFileController extends Controller
 
             $result = $this->processBatchUpload($fileData, $preserveStructure, $currentPath);
 
-            // Mark as completed and cleanup
+            // Store the final file path in metadata for later access (e.g., zipExtractPatch)
+            $uploadSession->update([
+                'metadata' => array_merge($uploadSession->metadata ?? [], [
+                    'final_file_path' => $finalPath,
+                    'processing_result' => [
+                        'uploaded' => count($result['uploaded']),
+                        'skipped' => count($result['skipped']),
+                        'errors' => count($result['errors'])
+                    ]
+                ])
+            ]);
+            
+            // Mark as completed
             $uploadSession->markAsCompleted();
             
-            // Delete the reassembled file and temp directory
-            if (file_exists($finalPath)) {
-                unlink($finalPath);
-            }
-            if (file_exists($uploadSession->temp_dir)) {
-                @rmdir($uploadSession->temp_dir);
+            // DO NOT delete the reassembled file yet - keep it for potential ZIP extraction/patch generation
+            // The file will be cleaned up after zipExtractPatch completes or by a cleanup job
+            // Note: Only delete chunks directory to save space
+            $chunksDir = $uploadSession->temp_dir;
+            if (file_exists($chunksDir)) {
+                // Delete only chunk files, not the reassembled file
+                $files = glob($chunksDir . '/chunk_*');
+                foreach ($files as $file) {
+                    if (is_file($file)) {
+                        unlink($file);
+                    }
+                }
             }
 
             Log::info('Chunked upload completed', [
@@ -883,9 +901,20 @@ class CacheFileController extends Controller
                 ], 404);
             }
 
-            // Verify the file exists and is reassembled
-            $zipPath = $uploadSession->temp_dir . '/' . $uploadSession->filename;
+            // Get the file path from metadata (stored by chunkedUploadComplete)
+            $metadata = $uploadSession->metadata ?? [];
+            $zipPath = $metadata['final_file_path'] ?? ($uploadSession->temp_dir . '/' . $uploadSession->filename);
+            
+            // Verify the file exists
             if (!file_exists($zipPath)) {
+                Log::error('ZIP file not found for extraction', [
+                    'upload_key' => $uploadKey,
+                    'expected_path' => $zipPath,
+                    'temp_dir' => $uploadSession->temp_dir,
+                    'filename' => $uploadSession->filename,
+                    'metadata' => $metadata
+                ]);
+                
                 return response()->json([
                     'success' => false,
                     'message' => 'ZIP file not found. Please complete upload first.'
