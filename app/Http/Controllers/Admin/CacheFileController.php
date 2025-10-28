@@ -670,46 +670,72 @@ class CacheFileController extends Controller
                 'file_size' => filesize($finalPath)
             ]);
 
-            // Create UploadedFile object
-            $uploadedFile = new \Illuminate\Http\UploadedFile(
-                $finalPath,
-                $uploadSession->filename,
-                mime_content_type($finalPath),
-                null,
-                true
-            );
+            // Check if this is a ZIP file meant for extraction (not to be stored as a cache file)
+            $extension = strtolower(pathinfo($uploadSession->filename, PATHINFO_EXTENSION));
+            $isZipForExtraction = $extension === 'zip';
 
-            // Process file using existing upload logic
-            $relativePath = $uploadSession->relative_path ?: null;
-            $fileData = [[
-                'file' => $uploadedFile,
-                'relativePath' => $relativePath,
-                'index' => 0
-            ]];
+            // Initialize result counters
+            $uploadedCount = 0;
+            $skippedCount = 0;
+            $errorCount = 0;
 
-            $result = $this->processBatchUpload($fileData, $preserveStructure, $currentPath);
+            if ($isZipForExtraction) {
+                // For ZIP files: DO NOT add to database - only keep for extraction
+                Log::info('ZIP file reassembled - ready for extraction, NOT adding to cache files', [
+                    'upload_key' => $uploadKey,
+                    'filename' => $uploadSession->filename,
+                    'file_path' => $finalPath
+                ]);
+                
+                // Just store the file path for zipExtractPatch to use later
+                $uploadSession->update([
+                    'metadata' => array_merge($uploadSession->metadata ?? [], [
+                        'final_file_path' => $finalPath,
+                        'is_zip_for_extraction' => true
+                    ])
+                ]);
+            } else {
+                // For non-ZIP files: Process normally and add to database
+                $uploadedFile = new \Illuminate\Http\UploadedFile(
+                    $finalPath,
+                    $uploadSession->filename,
+                    mime_content_type($finalPath),
+                    null,
+                    true
+                );
 
-            // Store the final file path in metadata for later access (e.g., zipExtractPatch)
-            $uploadSession->update([
-                'metadata' => array_merge($uploadSession->metadata ?? [], [
-                    'final_file_path' => $finalPath,
-                    'processing_result' => [
-                        'uploaded' => count($result['uploaded']),
-                        'skipped' => count($result['skipped']),
-                        'errors' => count($result['errors'])
-                    ]
-                ])
-            ]);
+                $relativePath = $uploadSession->relative_path ?: null;
+                $fileData = [[
+                    'file' => $uploadedFile,
+                    'relativePath' => $relativePath,
+                    'index' => 0
+                ]];
+
+                $result = $this->processBatchUpload($fileData, $preserveStructure, $currentPath);
+                
+                $uploadedCount = count($result['uploaded']);
+                $skippedCount = count($result['skipped']);
+                $errorCount = count($result['errors']);
+
+                // Store the final file path in metadata
+                $uploadSession->update([
+                    'metadata' => array_merge($uploadSession->metadata ?? [], [
+                        'final_file_path' => $finalPath,
+                        'processing_result' => [
+                            'uploaded' => $uploadedCount,
+                            'skipped' => $skippedCount,
+                            'errors' => $errorCount
+                        ]
+                    ])
+                ]);
+            }
             
             // Mark as completed
             $uploadSession->markAsCompleted();
             
-            // DO NOT delete the reassembled file yet - keep it for potential ZIP extraction/patch generation
-            // The file will be cleaned up after zipExtractPatch completes or by a cleanup job
-            // Note: Only delete chunks directory to save space
+            // Delete chunk files to save space
             $chunksDir = $uploadSession->temp_dir;
             if (file_exists($chunksDir)) {
-                // Delete only chunk files, not the reassembled file
                 $files = glob($chunksDir . '/chunk_*');
                 foreach ($files as $file) {
                     if (is_file($file)) {
@@ -721,17 +747,20 @@ class CacheFileController extends Controller
             Log::info('Chunked upload completed', [
                 'upload_key' => $uploadKey,
                 'filename' => $uploadSession->filename,
-                'uploaded' => count($result['uploaded']),
-                'skipped' => count($result['skipped']),
-                'errors' => count($result['errors'])
+                'is_zip_for_extraction' => $isZipForExtraction,
+                'uploaded' => $uploadedCount,
+                'skipped' => $skippedCount,
+                'errors' => $errorCount
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'File uploaded successfully',
-                'uploaded_count' => count($result['uploaded']),
-                'skipped_count' => count($result['skipped']),
-                'error_count' => count($result['errors'])
+                'message' => $isZipForExtraction 
+                    ? 'ZIP file uploaded successfully. Ready for extraction.' 
+                    : 'File uploaded successfully',
+                'uploaded_count' => $uploadedCount,
+                'skipped_count' => $skippedCount,
+                'error_count' => $errorCount
             ]);
         } catch (\Exception $e) {
             Log::error('Chunked upload complete failed', [
@@ -929,7 +958,8 @@ class CacheFileController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'ZIP extraction started. Processing in background...'
+                'message' => 'ZIP extraction started. Processing in background...',
+                'extraction_id' => $extractionId
             ]);
 
         } catch (\Exception $e) {
