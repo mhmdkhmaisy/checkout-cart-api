@@ -1,0 +1,112 @@
+[2025-10-28 07:40:12] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:12] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:12] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:12] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:14] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:14] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:14] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:14] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:16] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:16] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:16] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:16] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:19] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:19] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:19] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:19] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:21] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:21] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:21] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:21] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:23] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:23] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:23] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:23] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:26] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:26] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:26] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:26] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:28] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:28] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:28] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:28] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:30] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:30] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:30] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:30] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:32] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:32] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:32] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:32] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:34] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:34] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:34] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:34] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:37] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:37] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:37] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:37] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:39] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:39] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:39] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:39] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:41] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:41] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:41] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:41] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:44] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:44] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:44] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:44] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:46] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:46] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:46] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:46] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:48] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:48] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:48] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:48] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:50] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:50] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:50] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:50] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:52] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:52] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:52] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:52] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:54] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:54] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:54] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:54] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:56] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:56] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:56] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:56] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:40:58] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:40:58] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:40:58] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:40:58] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:41:00] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:41:00] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:41:01] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:41:01] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:41:03] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:41:03] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:41:03] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:41:03] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:41:05] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:41:05] production.INFO: Processing file uploads {"file_count":15,"preserve_structure":"1"} 
+[2025-10-28 07:41:05] production.INFO: File upload batch completed {"uploaded":15,"skipped":0,"errors":0} 
+[2025-10-28 07:41:05] production.INFO: Cache file upload completed {"uploaded_count":15,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:41:06] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:41:06] production.INFO: Processing file uploads {"file_count":9,"preserve_structure":"1"} 
+[2025-10-28 07:41:06] production.INFO: File upload batch completed {"uploaded":9,"skipped":0,"errors":0} 
+[2025-10-28 07:41:06] production.INFO: Cache file upload completed {"uploaded_count":9,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:41:06] production.INFO: Finalizing batch upload - generating manifest  
+[2025-10-28 07:41:08] production.INFO: Batch upload finalized successfully  
+[2025-10-28 07:42:24] production.INFO: Cache file upload started {"has_files":true,"has_folders":false,"preserve_structure":"1","current_path":null} 
+[2025-10-28 07:42:24] production.INFO: Processing file uploads {"file_count":11,"preserve_structure":"1"} 
+[2025-10-28 07:42:25] production.INFO: File upload batch completed {"uploaded":11,"skipped":0,"errors":0} 
+[2025-10-28 07:42:25] production.INFO: Cache file upload completed {"uploaded_count":11,"skipped_count":0,"error_count":0} 
+[2025-10-28 07:42:26] production.INFO: Finalizing batch upload - generating manifest  
+[2025-10-28 07:42:26] production.INFO: Batch upload finalized successfully  

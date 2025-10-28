@@ -79,6 +79,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/finalize-upload', [CacheFileController::class, 'finalizeUpload'])->name('finalize-upload');
         Route::post('/check-duplicates', [CacheFileController::class, 'checkDuplicates'])->name('check-duplicates');
         Route::post('/store-tar', [CacheFileController::class, 'storeTar'])->name('store-tar');
+        
+        // Chunked upload routes
+        Route::post('/chunked-init', [CacheFileController::class, 'chunkedUploadInit'])->name('chunked-init');
+        Route::post('/chunked-upload', [CacheFileController::class, 'chunkedUpload'])->name('chunked-upload');
+        Route::post('/chunked-complete', [CacheFileController::class, 'chunkedUploadComplete'])->name('chunked-complete');
         Route::post('/extract-file', [CacheFileController::class, 'extractFile'])->name('extract-file');
         Route::get('/extraction-progress', [CacheFileController::class, 'extractionProgress'])->name('extraction-progress');
         Route::post('/bulk-delete', [CacheFileController::class, 'bulkDelete'])->name('bulk-delete');
