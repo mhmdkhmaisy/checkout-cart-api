@@ -974,49 +974,76 @@ class CacheFileController extends Controller
             $zip->extractTo($tempDir);
             $zip->close();
 
-            // Step 2: Process extracted files and add to database
+            // Step 2 & 3: Process files and generate patch within a database transaction
+            // This ensures that if anything fails, no partial data is left in the database
             $uploadedFiles = [];
             $skippedFiles = [];
-            $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($tempDir, RecursiveDirectoryIterator::SKIP_DOTS),
-                RecursiveIteratorIterator::LEAVES_ONLY
-            );
+            $patchVersion = null;
+            
+            \DB::beginTransaction();
+            
+            try {
+                // Process extracted files and add to database
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($tempDir, RecursiveDirectoryIterator::SKIP_DOTS),
+                    RecursiveIteratorIterator::LEAVES_ONLY
+                );
 
-            foreach ($iterator as $fileInfo) {
-                if ($fileInfo->isFile()) {
-                    $fullPath = $fileInfo->getPathname();
-                    $relativePath = str_replace($tempDir . DIRECTORY_SEPARATOR, '', $fullPath);
-                    $relativePath = str_replace('\\', '/', $relativePath);
-                    
-                    $result = $this->processExtractedFile($fileInfo, $relativePath);
-                    if ($result['success']) {
-                        if ($result['skipped']) {
-                            $skippedFiles[] = $result['filename'];
-                        } else {
-                            $uploadedFiles[] = $result['filename'];
+                foreach ($iterator as $fileInfo) {
+                    if ($fileInfo->isFile()) {
+                        $fullPath = $fileInfo->getPathname();
+                        $relativePath = str_replace($tempDir . DIRECTORY_SEPARATOR, '', $fullPath);
+                        $relativePath = str_replace('\\', '/', $relativePath);
+                        
+                        $result = $this->processExtractedFile($fileInfo, $relativePath);
+                        if ($result['success']) {
+                            if ($result['skipped']) {
+                                $skippedFiles[] = $result['filename'];
+                            } else {
+                                $uploadedFiles[] = $result['filename'];
+                            }
                         }
                     }
                 }
-            }
 
-            // Step 3: Generate patch
-            $patchService = new CachePatchService();
-            $patchData = $patchService->generatePatchFromDatabase();
-            
-            $patchVersion = null;
-            if (!isset($patchData['no_changes']) || !$patchData['no_changes']) {
-                CachePatch::create([
-                    'version' => $patchData['version'],
-                    'base_version' => $patchData['base_version'],
-                    'path' => $patchData['path'],
-                    'file_manifest' => $patchData['file_manifest'],
-                    'file_count' => $patchData['file_count'],
-                    'size' => $patchData['size'],
-                    'is_base' => $patchData['is_base'],
+                // Generate patch
+                $patchService = new CachePatchService();
+                $patchData = $patchService->generatePatchFromDatabase();
+                
+                if (!isset($patchData['no_changes']) || !$patchData['no_changes']) {
+                    CachePatch::create([
+                        'version' => $patchData['version'],
+                        'base_version' => $patchData['base_version'],
+                        'path' => $patchData['path'],
+                        'file_manifest' => $patchData['file_manifest'],
+                        'file_count' => $patchData['file_count'],
+                        'size' => $patchData['size'],
+                        'is_base' => $patchData['is_base'],
+                    ]);
+                    $patchVersion = $patchData['version'];
+                } else {
+                    $patchVersion = $patchData['version'];
+                }
+                
+                // Commit transaction - all database changes are now permanent
+                \DB::commit();
+                
+                Log::info('Database transaction committed successfully', [
+                    'uploaded_files' => count($uploadedFiles),
+                    'patch_version' => $patchVersion
                 ]);
-                $patchVersion = $patchData['version'];
-            } else {
-                $patchVersion = $patchData['version'];
+                
+            } catch (\Exception $dbException) {
+                // Rollback transaction - no database changes will be saved
+                \DB::rollBack();
+                
+                Log::error('Database transaction rolled back due to error', [
+                    'error' => $dbException->getMessage(),
+                    'trace' => $dbException->getTraceAsString()
+                ]);
+                
+                // Re-throw to be caught by outer catch block
+                throw new \Exception('Database operation failed: ' . $dbException->getMessage());
             }
 
             // Step 4: Cleanup
@@ -1050,6 +1077,12 @@ class CacheFileController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            // Ensure any uncommitted database transaction is rolled back
+            if (\DB::transactionLevel() > 0) {
+                \DB::rollBack();
+                Log::warning('Rolled back uncommitted transaction in outer catch block');
+            }
+            
             // Cleanup on error
             if (isset($tempDir) && is_dir($tempDir)) {
                 $this->deleteDirectory($tempDir);
