@@ -544,8 +544,7 @@ class CacheFileController extends Controller
     }
 
     /**
-     * Handle individual chunk upload - OPTIMIZED for low I/O environments
-     * Uses rename() when possible (near-zero I/O on same filesystem)
+     * Handle individual chunk upload
      */
     public function chunkedUpload(Request $request)
     {
@@ -569,31 +568,11 @@ class CacheFileController extends Controller
                 ], 404);
             }
 
+            // Get chunk size BEFORE moving (file object becomes invalid after move)
             $chunkSize = $chunk->getSize();
-            $sourcePath = $chunk->getRealPath();
-            $destDir = $uploadSession->temp_dir;
-            $chunkFilename = "chunk_{$chunkIndex}";
-            $chunkPath = $destDir . "/" . $chunkFilename;
-            
-            // OPTIMIZATION: Try rename() first (atomic, near-zero I/O if same filesystem)
-            // Falls back to move() if rename fails (different partition)
-            $renamedSuccessfully = @rename($sourcePath, $chunkPath);
-            
-            if (!$renamedSuccessfully) {
-                // Fallback: Use Laravel's move which handles cross-filesystem transfers
-                $chunk->move($destDir, $chunkFilename);
-            }
-            
-            // INTEGRITY CHECK: Verify chunk was saved correctly (applies to BOTH paths)
-            if (!file_exists($chunkPath)) {
-                throw new \Exception("Chunk file not created at: {$chunkPath}");
-            }
-            
-            $actualSize = filesize($chunkPath);
-            if ($actualSize !== $chunkSize) {
-                @unlink($chunkPath);
-                throw new \Exception("Chunk size mismatch: expected {$chunkSize}, got {$actualSize}");
-            }
+
+            // Save chunk to temporary directory
+            $chunk->move($uploadSession->temp_dir, "chunk_{$chunkIndex}");
 
             // Update received chunks list
             $receivedChunks = $uploadSession->received_chunks ?? [];
@@ -610,9 +589,7 @@ class CacheFileController extends Controller
                 'upload_key' => $uploadKey,
                 'chunk_index' => $chunkIndex,
                 'received_count' => count($receivedChunks),
-                'total_chunks' => $uploadSession->total_chunks,
-                'method' => $renamedSuccessfully ? 'rename' : 'move',
-                'verified_size' => $actualSize
+                'total_chunks' => $uploadSession->total_chunks
             ]);
 
             return response()->json([
@@ -669,16 +646,9 @@ class CacheFileController extends Controller
                 ], 400);
             }
 
-            // OPTIMIZED: Reassemble file from chunks with minimal I/O
-            // Uses buffered streaming to reduce memory while maintaining integrity
+            // Reassemble file from chunks
             $finalPath = $uploadSession->temp_dir . '/' . $uploadSession->filename;
             $finalFile = fopen($finalPath, 'wb');
-
-            if (!$finalFile) {
-                throw new \Exception("Failed to create final file at: {$finalPath}");
-            }
-
-            $totalBytesWritten = 0;
 
             for ($i = 0; $i < $uploadSession->total_chunks; $i++) {
                 $chunkPath = $uploadSession->temp_dir . "/chunk_{$i}";
@@ -687,42 +657,12 @@ class CacheFileController extends Controller
                     $uploadSession->markAsFailed("Missing chunk: {$i}");
                     throw new \Exception("Missing chunk: {$i}");
                 }
-                
-                $expectedChunkSize = filesize($chunkPath);
-                $chunkStream = fopen($chunkPath, 'rb');
-                
-                if (!$chunkStream) {
-                    fclose($finalFile);
-                    throw new \Exception("Failed to open chunk: {$i}");
-                }
-                
-                // OPTIMIZATION: Stream with 8KB buffer (balance between memory and I/O)
-                $bytesWritten = stream_copy_to_stream($chunkStream, $finalFile);
-                fclose($chunkStream);
-                
-                // INTEGRITY CHECK: Verify bytes written
-                if ($bytesWritten !== $expectedChunkSize) {
-                    fclose($finalFile);
-                    throw new \Exception("Chunk {$i} write failed: expected {$expectedChunkSize} bytes, wrote {$bytesWritten}");
-                }
-                
-                $totalBytesWritten += $bytesWritten;
-                
-                // Delete chunk after successful copy
-                @unlink($chunkPath);
+                $chunkData = file_get_contents($chunkPath);
+                fwrite($finalFile, $chunkData);
+                unlink($chunkPath); // Delete chunk after merging
             }
 
             fclose($finalFile);
-            
-            // FINAL INTEGRITY CHECK: Verify total file size
-            $finalSize = filesize($finalPath);
-            if ($finalSize !== $uploadSession->total_size) {
-                Log::warning('File size mismatch after assembly', [
-                    'expected' => $uploadSession->total_size,
-                    'actual' => $finalSize,
-                    'bytes_written' => $totalBytesWritten
-                ]);
-            }
 
             Log::info('File reassembled from chunks', [
                 'upload_key' => $uploadKey,

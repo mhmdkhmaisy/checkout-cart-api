@@ -2865,7 +2865,7 @@ function createChunkedFileProgressItem(file, index) {
 
 // Upload file in chunks with progress tracking (for large files)
 async function uploadFileInChunks(file, index) {
-    const CHUNK_SIZE = 15 * 1024 * 1024; // 15MB chunks optimized for shared hosting
+    const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks for large files
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     const relativePath = file.webkitRelativePath || '';
     
