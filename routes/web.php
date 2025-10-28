@@ -88,7 +88,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/extraction-progress', [CacheFileController::class, 'extractionProgress'])->name('extraction-progress');
         Route::post('/bulk-delete', [CacheFileController::class, 'bulkDelete'])->name('bulk-delete');
         Route::post('/delete-all', [CacheFileController::class, 'deleteAll'])->name('delete-all');
-        Route::delete('/{cacheFile}', [CacheFileController::class, 'destroy'])->name('destroy');
         Route::post('/regenerate-manifest', [CacheFileController::class, 'regenerateManifest'])->name('regenerate-manifest');
         Route::get('/download-manifest', [CacheFileController::class, 'downloadManifest'])->name('download-manifest');
         Route::get('/upload-progress', [CacheFileController::class, 'uploadProgress'])->name('upload-progress');
@@ -111,6 +110,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/file-history', [CacheFileController::class, 'getFileHistory'])->name('file-history');
             Route::get('/{patch}/verify', [CacheFileController::class, 'verifyIntegrity'])->name('verify');
         });
+        
+        // Wildcard delete route must be LAST to avoid catching specific routes
+        Route::delete('/{cacheFile}', [CacheFileController::class, 'destroy'])->name('destroy');
     });
 
     // Event management
