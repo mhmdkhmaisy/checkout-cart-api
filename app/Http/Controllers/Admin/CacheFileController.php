@@ -950,16 +950,14 @@ class CacheFileController extends Controller
                 ], 404);
             }
 
-            // Generate extraction ID
+            // Dispatch background job for processing (no tracking)
             $extractionId = uniqid('zip_extract_');
-
-            // Dispatch background job for processing
             \App\Jobs\ProcessZipExtraction::dispatch($zipPath, $uploadSession, $extractionId);
 
             return response()->json([
                 'success' => true,
-                'message' => 'ZIP extraction started. Processing in background...',
-                'extraction_id' => $extractionId
+                'message' => 'ZIP extraction started. Check your patch list in a few moments for the new patch.',
+                'status' => 'processing'
             ]);
 
         } catch (\Exception $e) {
