@@ -2244,29 +2244,45 @@ class CacheFileController extends Controller
     {
         try {
             $patches = CachePatch::all();
-            $count = $patches->count();
+            $patchCount = $patches->count();
+            
+            // Also clear cache files
+            $cacheFiles = CacheFile::all();
+            $fileCount = $cacheFiles->count();
 
-            if ($count === 0) {
+            if ($patchCount === 0 && $fileCount === 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No patches to clear.'
+                    'message' => 'No patches or files to clear.'
                 ]);
             }
 
+            // Delete all patches
             foreach ($patches as $patch) {
                 $patch->deleteFile();
                 $patch->delete();
             }
 
+            // Delete all cache files
+            foreach ($cacheFiles as $file) {
+                if ($file->existsOnDisk()) {
+                    Storage::delete($file->path);
+                }
+                $file->delete();
+            }
+
             Storage::deleteDirectory('cache/patches');
             Storage::deleteDirectory('cache/manifests');
+            Storage::deleteDirectory('cache/files');
             Storage::makeDirectory('cache/patches');
             Storage::makeDirectory('cache/manifests');
+            Storage::makeDirectory('cache/files');
 
             return response()->json([
                 'success' => true,
-                'message' => "Successfully cleared all {$count} patches. Next upload will create a new base patch.",
-                'cleared_count' => $count
+                'message' => "Successfully cleared {$patchCount} patches and {$fileCount} cache files. Next upload will create a new base patch.",
+                'cleared_patches' => $patchCount,
+                'cleared_files' => $fileCount
             ]);
 
         } catch (\Exception $e) {
