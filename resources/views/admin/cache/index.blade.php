@@ -3382,9 +3382,28 @@ async function startZipPatchUpload() {
             throw new Error(extractData.message || 'Failed to start extraction');
         }
         
-        // Step 5: Poll for extraction progress
-        const extractionId = extractData.extraction_id;
-        await pollZipExtractionProgress(extractionId);
+        // Step 5: Process completed extraction result
+        updateZipStatus('extract', 'complete', `Processed ${extractData.file_count || 0} files`);
+        updateZipStatus('patch', 'complete', `Patch v${extractData.patch_version} created`);
+        updateZipStatus('cleanup', 'complete', 'Cleanup complete!');
+        
+        // Show success result
+        const resultDiv = document.getElementById('zip-patch-result');
+        resultDiv.className = 'mt-6 p-4 rounded-lg bg-green-500/10 border border-green-500/30';
+        resultDiv.innerHTML = `
+            <div class="flex items-center mb-2">
+                <i class="fas fa-check-circle text-green-400 text-2xl mr-3"></i>
+                <div>
+                    <p class="text-green-400 font-medium">Success!</p>
+                    <p class="text-dragon-silver-dark text-sm">Patch v${extractData.patch_version} created with ${extractData.file_count || 0} files</p>
+                </div>
+            </div>
+            <button onclick="location.reload()" class="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors w-full">
+                <i class="fas fa-sync-alt mr-2"></i>Refresh Page
+            </button>
+        `;
+        resultDiv.classList.remove('hidden');
+        zipIsProcessing = false;
         
     } catch (error) {
         console.error('ZIP → Patch error:', error);
@@ -3412,68 +3431,6 @@ async function startZipPatchUpload() {
     }
 }
 
-// Poll extraction progress
-async function pollZipExtractionProgress(extractionId) {
-    const pollInterval = 500; // Poll every 500ms
-    
-    return new Promise((resolve, reject) => {
-        const intervalId = setInterval(async () => {
-            try {
-                const response = await fetch(`/admin/cache/zip-extraction-progress?id=${extractionId}`, {
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                
-                const progress = await response.json();
-                
-                // Update UI based on phase
-                if (progress.phase === 'extraction' || progress.phase === 'processing_files') {
-                    const percent = progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 0;
-                    updateZipStatus('extract', 'processing', `${progress.message || 'Extracting...'} (${percent}%)`);
-                } else if (progress.phase === 'patch_generation') {
-                    updateZipStatus('extract', 'complete', `Processed ${progress.uploaded_count || 0} files`);
-                    updateZipStatus('patch', 'processing', progress.message || 'Generating patch...');
-                } else if (progress.phase === 'cleanup') {
-                    updateZipStatus('patch', 'complete', `Patch v${progress.patch_version} created`);
-                    updateZipStatus('cleanup', 'processing', progress.message || 'Cleaning up...');
-                } else if (progress.status === 'completed') {
-                    clearInterval(intervalId);
-                    updateZipStatus('extract', 'complete', `Processed ${progress.uploaded_count || 0} files`);
-                    updateZipStatus('patch', 'complete', `Patch v${progress.patch_version} created`);
-                    updateZipStatus('cleanup', 'complete', 'Cleanup complete!');
-                    
-                    // Show success result
-                    const resultDiv = document.getElementById('zip-patch-result');
-                    resultDiv.className = 'mt-6 p-4 rounded-lg bg-green-500/10 border border-green-500/30';
-                    resultDiv.innerHTML = `
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-check-circle text-green-400 text-2xl mr-3"></i>
-                            <div>
-                                <p class="text-green-400 font-medium">Success!</p>
-                                <p class="text-dragon-silver-dark text-sm">Patch v${progress.patch_version} created with ${progress.uploaded_count || 0} files</p>
-                            </div>
-                        </div>
-                        <button onclick="location.reload()" class="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors w-full">
-                            <i class="fas fa-sync-alt mr-2"></i>Refresh Page
-                        </button>
-                    `;
-                    resultDiv.classList.remove('hidden');
-                    zipIsProcessing = false;
-                    resolve(progress);
-                } else if (progress.status === 'failed') {
-                    clearInterval(intervalId);
-                    throw new Error(progress.error || 'Extraction failed');
-                }
-            } catch (error) {
-                clearInterval(intervalId);
-                updateZipStatus('extract', 'error', 'Extraction failed');
-                reject(error);
-            }
-        }, pollInterval);
-    });
-}
 
 function updateZipStatus(step, status, message) {
     const statusMap = {
