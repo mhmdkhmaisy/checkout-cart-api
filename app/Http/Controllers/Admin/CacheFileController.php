@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CacheFile;
 use App\Models\CachePatch;
+use App\Models\UploadSession;
 use App\Services\CachePatchService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -497,26 +498,27 @@ class CacheFileController extends Controller
                 'relative_path' => 'nullable|string'
             ]);
 
-            $uploadId = uniqid('chunked_');
-            $tempDir = storage_path('app/temp_chunked/' . $uploadId);
+            $uploadKey = uniqid('chunked_');
+            $tempDir = storage_path('app/temp_chunked/' . $uploadKey);
             
             if (!file_exists($tempDir)) {
                 mkdir($tempDir, 0755, true);
             }
 
-            // Store upload metadata
-            Cache::put("chunked_upload_{$uploadId}", [
+            // Create upload session in database
+            $uploadSession = UploadSession::create([
+                'upload_key' => $uploadKey,
                 'filename' => $request->input('filename'),
                 'total_size' => $request->input('total_size'),
                 'total_chunks' => $request->input('total_chunks'),
                 'relative_path' => $request->input('relative_path', ''),
                 'received_chunks' => [],
                 'temp_dir' => $tempDir,
-                'created_at' => now()
-            ], 7200); // 2 hours
+                'status' => 'uploading'
+            ]);
 
             Log::info('Chunked upload initialized', [
-                'upload_id' => $uploadId,
+                'upload_key' => $uploadKey,
                 'filename' => $request->input('filename'),
                 'total_size' => $request->input('total_size'),
                 'total_chunks' => $request->input('total_chunks')
@@ -524,7 +526,7 @@ class CacheFileController extends Controller
 
             return response()->json([
                 'success' => true,
-                'upload_id' => $uploadId,
+                'upload_id' => $uploadKey,
                 'message' => 'Upload session created'
             ]);
         } catch (\Exception $e) {
@@ -551,41 +553,45 @@ class CacheFileController extends Controller
                 'chunk' => 'required|file'
             ]);
 
-            $uploadId = $request->input('upload_id');
+            $uploadKey = $request->input('upload_id');
             $chunkIndex = $request->input('chunk_index');
             $chunk = $request->file('chunk');
 
-            // Get upload metadata
-            $uploadMeta = Cache::get("chunked_upload_{$uploadId}");
-            if (!$uploadMeta) {
+            // Get upload session from database
+            $uploadSession = UploadSession::where('upload_key', $uploadKey)->first();
+            if (!$uploadSession) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Upload session not found or expired'
+                    'message' => 'Upload session not found'
                 ], 404);
             }
 
             // Save chunk to temporary directory
-            $chunkPath = $uploadMeta['temp_dir'] . "/chunk_{$chunkIndex}";
-            $chunk->move($uploadMeta['temp_dir'], "chunk_{$chunkIndex}");
+            $chunk->move($uploadSession->temp_dir, "chunk_{$chunkIndex}");
 
             // Update received chunks list
-            $uploadMeta['received_chunks'][] = $chunkIndex;
-            $uploadMeta['received_chunks'] = array_unique($uploadMeta['received_chunks']);
-            sort($uploadMeta['received_chunks']);
-            Cache::put("chunked_upload_{$uploadId}", $uploadMeta, 7200);
+            $receivedChunks = $uploadSession->received_chunks ?? [];
+            $receivedChunks[] = $chunkIndex;
+            $receivedChunks = array_unique($receivedChunks);
+            sort($receivedChunks);
+            
+            $uploadSession->update([
+                'received_chunks' => $receivedChunks,
+                'uploaded_size' => $uploadSession->uploaded_size + $chunk->getSize()
+            ]);
 
             Log::info('Chunk received', [
-                'upload_id' => $uploadId,
+                'upload_key' => $uploadKey,
                 'chunk_index' => $chunkIndex,
-                'received_count' => count($uploadMeta['received_chunks']),
-                'total_chunks' => $uploadMeta['total_chunks']
+                'received_count' => count($receivedChunks),
+                'total_chunks' => $uploadSession->total_chunks
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Chunk uploaded successfully',
-                'received_chunks' => count($uploadMeta['received_chunks']),
-                'total_chunks' => $uploadMeta['total_chunks']
+                'received_chunks' => count($receivedChunks),
+                'total_chunks' => $uploadSession->total_chunks
             ]);
         } catch (\Exception $e) {
             Log::error('Chunk upload failed', [
@@ -611,37 +617,39 @@ class CacheFileController extends Controller
                 'current_path' => 'nullable|string'
             ]);
 
-            $uploadId = $request->input('upload_id');
+            $uploadKey = $request->input('upload_id');
             $preserveStructure = $request->input('preserve_structure', true);
             $currentPath = $request->input('current_path', '');
 
-            // Get upload metadata
-            $uploadMeta = Cache::get("chunked_upload_{$uploadId}");
-            if (!$uploadMeta) {
+            // Get upload session from database
+            $uploadSession = UploadSession::where('upload_key', $uploadKey)->first();
+            if (!$uploadSession) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Upload session not found or expired'
+                    'message' => 'Upload session not found'
                 ], 404);
             }
 
             // Verify all chunks received
-            if (count($uploadMeta['received_chunks']) !== $uploadMeta['total_chunks']) {
+            $receivedChunks = $uploadSession->received_chunks ?? [];
+            if (count($receivedChunks) !== $uploadSession->total_chunks) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Not all chunks received',
-                    'received' => count($uploadMeta['received_chunks']),
-                    'expected' => $uploadMeta['total_chunks']
+                    'received' => count($receivedChunks),
+                    'expected' => $uploadSession->total_chunks
                 ], 400);
             }
 
             // Reassemble file from chunks
-            $finalPath = $uploadMeta['temp_dir'] . '/' . $uploadMeta['filename'];
+            $finalPath = $uploadSession->temp_dir . '/' . $uploadSession->filename;
             $finalFile = fopen($finalPath, 'wb');
 
-            for ($i = 0; $i < $uploadMeta['total_chunks']; $i++) {
-                $chunkPath = $uploadMeta['temp_dir'] . "/chunk_{$i}";
+            for ($i = 0; $i < $uploadSession->total_chunks; $i++) {
+                $chunkPath = $uploadSession->temp_dir . "/chunk_{$i}";
                 if (!file_exists($chunkPath)) {
                     fclose($finalFile);
+                    $uploadSession->markAsFailed("Missing chunk: {$i}");
                     throw new \Exception("Missing chunk: {$i}");
                 }
                 $chunkData = file_get_contents($chunkPath);
@@ -652,22 +660,22 @@ class CacheFileController extends Controller
             fclose($finalFile);
 
             Log::info('File reassembled from chunks', [
-                'upload_id' => $uploadId,
-                'filename' => $uploadMeta['filename'],
+                'upload_key' => $uploadKey,
+                'filename' => $uploadSession->filename,
                 'file_size' => filesize($finalPath)
             ]);
 
             // Create UploadedFile object
             $uploadedFile = new \Illuminate\Http\UploadedFile(
                 $finalPath,
-                $uploadMeta['filename'],
+                $uploadSession->filename,
                 mime_content_type($finalPath),
                 null,
                 true
             );
 
             // Process file using existing upload logic
-            $relativePath = $uploadMeta['relative_path'] ?: null;
+            $relativePath = $uploadSession->relative_path ?: null;
             $fileData = [[
                 'file' => $uploadedFile,
                 'relativePath' => $relativePath,
@@ -676,15 +684,15 @@ class CacheFileController extends Controller
 
             $result = $this->processBatchUpload($fileData, $preserveStructure, $currentPath);
 
-            // Cleanup
-            Cache::forget("chunked_upload_{$uploadId}");
-            if (file_exists($uploadMeta['temp_dir'])) {
-                rmdir($uploadMeta['temp_dir']);
+            // Mark as completed and cleanup
+            $uploadSession->markAsCompleted();
+            if (file_exists($uploadSession->temp_dir)) {
+                rmdir($uploadSession->temp_dir);
             }
 
             Log::info('Chunked upload completed', [
-                'upload_id' => $uploadId,
-                'filename' => $uploadMeta['filename'],
+                'upload_key' => $uploadKey,
+                'filename' => $uploadSession->filename,
                 'uploaded' => count($result['uploaded']),
                 'skipped' => count($result['skipped']),
                 'errors' => count($result['errors'])
@@ -702,6 +710,12 @@ class CacheFileController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+            
+            // Mark upload as failed if session exists
+            if (isset($uploadSession)) {
+                $uploadSession->markAsFailed($e->getMessage());
+            }
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to complete upload: ' . $e->getMessage()
