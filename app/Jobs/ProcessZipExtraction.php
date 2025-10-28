@@ -177,7 +177,7 @@ class ProcessZipExtraction implements ShouldQueue
             $this->uploadSession->markAsCompleted();
 
             // Mark as completed
-            Cache::put("zip_extraction_progress_{$this->extractionId}", [
+            $completedData = [
                 'status' => 'completed',
                 'phase' => 'completed',
                 'processed' => $totalFiles,
@@ -187,7 +187,15 @@ class ProcessZipExtraction implements ShouldQueue
                 'patch_version' => $patchVersion,
                 'message' => 'Processing completed successfully',
                 'completed_at' => now()
-            ], 3600);
+            ];
+            
+            Cache::put("zip_extraction_progress_{$this->extractionId}", $completedData, 3600);
+            
+            Log::info('ZIP extraction completed and cached', [
+                'extraction_id' => $this->extractionId,
+                'cache_key' => "zip_extraction_progress_{$this->extractionId}",
+                'data' => $completedData
+            ]);
 
         } catch (\Exception $e) {
             // Cleanup on error

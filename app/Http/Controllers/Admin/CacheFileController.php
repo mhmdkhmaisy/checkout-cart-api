@@ -963,15 +963,32 @@ class CacheFileController extends Controller
     {
         $extractionId = $request->get('id');
         
+        Log::info('ZIP extraction progress requested', [
+            'extraction_id' => $extractionId,
+            'cache_key' => "zip_extraction_progress_{$extractionId}"
+        ]);
+        
         if (!$extractionId) {
+            Log::warning('ZIP extraction progress - missing extraction ID');
             return response()->json(['error' => 'Extraction ID required'], 400);
         }
 
-        $progress = Cache::get("zip_extraction_progress_{$extractionId}");
+        $cacheKey = "zip_extraction_progress_{$extractionId}";
+        $progress = Cache::get($cacheKey);
         
         if (!$progress) {
+            Log::warning('ZIP extraction progress not found in cache', [
+                'extraction_id' => $extractionId,
+                'cache_key' => $cacheKey,
+                'cache_driver' => config('cache.default')
+            ]);
             return response()->json(['error' => 'Extraction not found'], 404);
         }
+
+        Log::info('ZIP extraction progress found', [
+            'extraction_id' => $extractionId,
+            'status' => $progress['status'] ?? 'unknown'
+        ]);
 
         return response()->json($progress);
     }
