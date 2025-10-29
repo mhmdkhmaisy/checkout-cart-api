@@ -96,6 +96,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         
         // Patch management routes (integrated with file manager)
         Route::prefix('patches')->name('patches.')->group(function () {
+            Route::get('/manifest', [CacheFileController::class, 'getPatchManifest'])->name('manifest');
             Route::get('/latest', [CacheFileController::class, 'getLatestVersion'])->name('latest');
             Route::post('/check-updates', [CacheFileController::class, 'checkForUpdates'])->name('check-updates');
             Route::get('/{patch}/download', [CacheFileController::class, 'downloadPatch'])->name('download');

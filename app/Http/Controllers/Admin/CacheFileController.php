@@ -2154,6 +2154,23 @@ class CacheFileController extends Controller
     // PATCH SYSTEM METHODS
     // ===========================
 
+    public function getPatchManifest()
+    {
+        $patchService = new CachePatchService();
+        $manifest = $patchService->getPatchManifest();
+
+        if (!$manifest) {
+            return response()->json([
+                'latest_version' => '0.0.0',
+                'generated_at' => now()->toISOString(),
+                'patches' => []
+            ])->header('Cache-Control', 'public, max-age=300');
+        }
+
+        return response()->json($manifest)
+            ->header('Cache-Control', 'public, max-age=300');
+    }
+
     public function getLatestVersion()
     {
         // Cache the version info for 5 minutes to reduce DB queries
@@ -2312,6 +2329,10 @@ class CacheFileController extends Controller
             $patch->deleteFile();
             $patch->delete();
             
+            // Update manifest after deletion
+            $patchService = new CachePatchService();
+            $patchService->updatePatchManifestPublic();
+            
             // Clear patch caches
             $this->clearPatchCaches();
 
@@ -2361,6 +2382,21 @@ class CacheFileController extends Controller
             Storage::makeDirectory('cache/patches');
             Storage::makeDirectory('cache/manifests');
             Storage::makeDirectory('cache/files');
+            
+            // Delete all combined patches from public/patches
+            $patchesDir = public_path('patches');
+            if (is_dir($patchesDir)) {
+                $combinedFiles = glob($patchesDir . '/combined_*.zip');
+                foreach ($combinedFiles as $file) {
+                    unlink($file);
+                }
+            }
+            
+            // Delete manifest.json from public/patches
+            $manifestPath = public_path('patches/manifest.json');
+            if (file_exists($manifestPath)) {
+                unlink($manifestPath);
+            }
             
             // Clear patch caches
             $this->clearPatchCaches();
