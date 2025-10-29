@@ -73,11 +73,11 @@ class CachePatchService
         }
 
         $isFirstPatch = !$currentVersion;
-        $zipPath = "cache/patches/{$newVersion}.zip";
+        $zipPath = "patches/{$newVersion}.zip";
         $filesToZip = $isFirstPatch ? $newFiles : $diff;
-        $this->createZipFromDatabase(array_keys($filesToZip), $zipPath);
+        $this->createZipInPublic(array_keys($filesToZip), $zipPath);
 
-        $zipFullPath = Storage::path($zipPath);
+        $zipFullPath = public_path($zipPath);
         $zipSize = file_exists($zipFullPath) ? filesize($zipFullPath) : 0;
 
         $manifestPath = "cache/manifests/{$newVersion}.json";
@@ -160,11 +160,71 @@ class CachePatchService
         $zip->close();
         return true;
     }
+
+    private function createZipInPublic(array $relativePaths, string $zipPath): bool
+    {
+        $zip = new ZipArchive;
+        $fullPath = public_path($zipPath);
+        
+        $directory = dirname($fullPath);
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        if ($zip->open($fullPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+
+        foreach ($relativePaths as $relativePath) {
+            // Parse relative path to get directory and filename
+            $pathParts = explode('/', $relativePath);
+            $filename = array_pop($pathParts);
+            $directoryPath = !empty($pathParts) ? implode('/', $pathParts) : null;
+            
+            // Find file in database
+            $cacheFile = \App\Models\CacheFile::where('filename', $filename)
+                ->where('relative_path', $directoryPath)
+                ->first();
+            
+            if ($cacheFile && file_exists(storage_path('app/' . $cacheFile->path))) {
+                $sourceFile = storage_path('app/' . $cacheFile->path);
+                $zip->addFile($sourceFile, $relativePath);
+            }
+        }
+
+        $zip->close();
+        return true;
+    }
     
     public function createZip(string $baseDir, array $files, string $zipPath): bool
     {
         $zip = new ZipArchive;
         $fullPath = Storage::path($zipPath);
+        
+        $directory = dirname($fullPath);
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        if ($zip->open($fullPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+
+        foreach ($files as $file) {
+            $sourceFile = Storage::path("{$baseDir}/{$file}");
+            if (file_exists($sourceFile)) {
+                $zip->addFile($sourceFile, $file);
+            }
+        }
+
+        $zip->close();
+        return true;
+    }
+
+    private function createZipInPublicFromTemp(string $baseDir, array $files, string $zipPath): bool
+    {
+        $zip = new ZipArchive;
+        $fullPath = public_path($zipPath);
         
         $directory = dirname($fullPath);
         if (!is_dir($directory)) {
@@ -242,12 +302,12 @@ class CachePatchService
             }
         }
 
-        $newZipPath = "cache/patches/{$newBaseVersion}.zip";
-        $this->createZip($tempDir, array_keys($fullManifest), $newZipPath);
+        $newZipPath = "patches/{$newBaseVersion}.zip";
+        $this->createZipInPublicFromTemp($tempDir, array_keys($fullManifest), $newZipPath);
 
         Storage::deleteDirectory($tempDir);
 
-        $zipFullPath = Storage::path($newZipPath);
+        $zipFullPath = public_path($newZipPath);
         $zipSize = file_exists($zipFullPath) ? filesize($zipFullPath) : 0;
 
         $newManifestPath = "cache/manifests/{$newBaseVersion}.json";
@@ -342,51 +402,55 @@ class CachePatchService
 
         // Multiple patches needed - create or return cached combined version
         $latestVersion = CachePatch::getLatestVersion();
-        $combinedZipPath = "cache/combined/from_{$fromVersion}_to_{$latestVersion}.zip";
+        $combinedZipPath = "patches/combined_from_{$fromVersion}_to_{$latestVersion}.zip";
+        $publicPath = public_path($combinedZipPath);
 
-        // Check if cached version already exists
-        if (Storage::exists($combinedZipPath)) {
+        // Check if cached version already exists in public directory
+        if (file_exists($publicPath)) {
             return $combinedZipPath;
         }
 
         // Add lock to prevent concurrent builds of the same combined patch
-        $lockPath = "cache/combined/.lock_from_{$fromVersion}_to_{$latestVersion}";
+        $lockPath = public_path("patches/.lock_from_{$fromVersion}_to_{$latestVersion}");
         $maxWaitAttempts = 15; // Wait up to 30 seconds (15 attempts × 2 seconds)
         $attempt = 0;
 
-        while (Storage::exists($lockPath) && $attempt < $maxWaitAttempts) {
+        while (file_exists($lockPath) && $attempt < $maxWaitAttempts) {
             sleep(2); // Wait 2 seconds before checking again
             $attempt++;
             
             // Check if the combined zip was created while we were waiting
-            if (Storage::exists($combinedZipPath)) {
+            if (file_exists($publicPath)) {
                 return $combinedZipPath;
             }
         }
 
         // If lock still exists after waiting, it may be stale - remove it
-        if (Storage::exists($lockPath)) {
-            $lockAge = time() - Storage::lastModified($lockPath);
+        if (file_exists($lockPath)) {
+            $lockAge = time() - filemtime($lockPath);
             if ($lockAge > 120) { // Lock older than 2 minutes is considered stale
-                Storage::delete($lockPath);
+                unlink($lockPath);
             }
         }
 
         // Create lock file to signal we're building this combined patch
-        Storage::put($lockPath, time());
+        $lockDir = dirname($lockPath);
+        if (!is_dir($lockDir)) {
+            mkdir($lockDir, 0755, true);
+        }
+        file_put_contents($lockPath, time());
 
         try {
             // Build the combined zip
             $zip = new ZipArchive;
-            $fullPath = Storage::path($combinedZipPath);
             
-            $directory = dirname($fullPath);
+            $directory = dirname($publicPath);
             if (!is_dir($directory)) {
                 mkdir($directory, 0755, true);
             }
 
-            if ($zip->open($fullPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-                Storage::delete($lockPath);
+            if ($zip->open($publicPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                if (file_exists($lockPath)) unlink($lockPath);
                 return null;
             }
 
@@ -394,7 +458,8 @@ class CachePatchService
             
             foreach ($patches->reverse() as $patch) {
                 $patchZip = new ZipArchive;
-                if ($patchZip->open(Storage::path($patch->path)) === true) {
+                $patchPath = public_path($patch->path);
+                if ($patchZip->open($patchPath) === true) {
                     for ($i = 0; $i < $patchZip->numFiles; $i++) {
                         $filename = $patchZip->getNameIndex($i);
                         
@@ -411,12 +476,12 @@ class CachePatchService
             $zip->close();
             
             // Remove lock file after successful build
-            Storage::delete($lockPath);
+            if (file_exists($lockPath)) unlink($lockPath);
             
             return $combinedZipPath;
         } catch (\Exception $e) {
             // Clean up lock file on error
-            Storage::delete($lockPath);
+            if (file_exists($lockPath)) unlink($lockPath);
             throw $e;
         }
     }

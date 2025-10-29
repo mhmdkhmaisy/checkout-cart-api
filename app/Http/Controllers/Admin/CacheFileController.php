@@ -2239,10 +2239,8 @@ class CacheFileController extends Controller
             ], 404);
         }
 
-        return response()->download($patch->full_path, "patch_{$patch->version}.zip", [
-            'Content-Type' => 'application/zip',
-            'Cache-Control' => 'public, max-age=3600',
-        ]);
+        // Redirect to public URL for direct static file serving by Apache/Nginx
+        return redirect($patch->public_url);
     }
 
     public function downloadCombinedPatches(Request $request)
@@ -2262,7 +2260,7 @@ class CacheFileController extends Controller
             ], 404);
         }
 
-        $fullPath = storage_path('app/' . $combinedPath);
+        $fullPath = public_path($combinedPath);
         
         if (!file_exists($fullPath)) {
             return response()->json([
@@ -2270,12 +2268,8 @@ class CacheFileController extends Controller
             ], 500);
         }
 
-        $filename = "patches_{$fromVersion}_to_" . CachePatch::getLatestVersion() . ".zip";
-
-        return response()->download($fullPath, $filename, [
-            'Content-Type' => 'application/zip',
-            'Cache-Control' => 'public, max-age=3600',
-        ]);
+        // Redirect to public URL for direct static file serving by Apache/Nginx
+        return redirect(url($combinedPath));
     }
 
     public function mergePatches()

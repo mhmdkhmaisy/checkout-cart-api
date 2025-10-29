@@ -13,7 +13,7 @@ database/database.sqlite
 /storage/app/manifests
 /storage/app/cache/manifests
 /storage/app/cache/patches
-/public/cache
+/public/patches
 public/manifest.json
 /tests/performance/results
 /storage/app/cache

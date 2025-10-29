@@ -60,12 +60,17 @@ class CachePatch extends Model
 
     public function existsOnDisk(): bool
     {
-        return file_exists(storage_path('app/' . $this->path));
+        return file_exists(public_path($this->path));
     }
 
     public function getFullPathAttribute(): string
     {
-        return storage_path('app/' . $this->path);
+        return public_path($this->path);
+    }
+
+    public function getPublicUrlAttribute(): string
+    {
+        return url($this->path);
     }
 
     public function deleteFile(): bool
