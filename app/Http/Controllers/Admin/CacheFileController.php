@@ -2239,10 +2239,17 @@ class CacheFileController extends Controller
             ], 404);
         }
 
-        return response()->download($patch->full_path, "patch_{$patch->version}.zip", [
-            'Content-Type' => 'application/zip',
-            'Cache-Control' => 'public, max-age=3600',
-        ]);
+        $filename = basename($patch->path);
+        
+        // Generate signed URL for direct download (valid for 1 hour)
+        $url = \URL::temporarySignedRoute(
+            'patches.download.public',
+            now()->addHour(),
+            ['filename' => $filename]
+        );
+
+        // Redirect to signed URL for direct serving by web server
+        return redirect($url);
     }
 
     public function downloadCombinedPatches(Request $request)
@@ -2270,11 +2277,45 @@ class CacheFileController extends Controller
             ], 500);
         }
 
-        $filename = "patches_{$fromVersion}_to_" . CachePatch::getLatestVersion() . ".zip";
+        $filename = basename($combinedPath);
 
-        return response()->download($fullPath, $filename, [
+        // Generate signed URL for direct download (valid for 1 hour)
+        $url = \URL::temporarySignedRoute(
+            'patches.download.public',
+            now()->addHour(),
+            ['filename' => $filename]
+        );
+
+        // Redirect to signed URL for direct serving by web server
+        return redirect($url);
+    }
+
+    /**
+     * Serve patch file directly from public directory with signature validation
+     */
+    public function downloadPublicPatch($filename)
+    {
+        // Validate signed URL
+        if (!request()->hasValidSignature()) {
+            abort(403, 'Invalid or expired download link.');
+        }
+
+        // Security: Only allow zip files and prevent directory traversal
+        if (!str_ends_with($filename, '.zip') || str_contains($filename, '..')) {
+            abort(404);
+        }
+
+        $publicPath = public_path('cache/patches/' . $filename);
+
+        if (!file_exists($publicPath)) {
+            abort(404, 'File not found.');
+        }
+
+        // Serve file directly - Apache/Nginx handles this efficiently
+        return response()->file($publicPath, [
             'Content-Type' => 'application/zip',
             'Cache-Control' => 'public, max-age=3600',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"'
         ]);
     }
 

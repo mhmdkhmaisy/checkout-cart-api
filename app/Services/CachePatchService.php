@@ -335,6 +335,8 @@ class CachePatchService
             $singlePatch = $patches->first();
             // Verify the patch file exists on disk before serving
             if ($singlePatch->existsOnDisk()) {
+                // Copy to public directory for direct serving if not already there
+                $this->copyToPublicDirectory($singlePatch->path);
                 return $singlePatch->path;
             }
             return null;
@@ -410,6 +412,9 @@ class CachePatchService
 
             $zip->close();
             
+            // Copy to public directory for direct serving (bypasses PHP for downloads)
+            $this->copyToPublicDirectory($combinedZipPath);
+            
             // Remove lock file after successful build
             Storage::delete($lockPath);
             
@@ -418,6 +423,32 @@ class CachePatchService
             // Clean up lock file on error
             Storage::delete($lockPath);
             throw $e;
+        }
+    }
+
+    /**
+     * Copy patch file to public directory for direct serving
+     */
+    private function copyToPublicDirectory(string $storagePath): void
+    {
+        $sourceFile = Storage::path($storagePath);
+        
+        if (!file_exists($sourceFile)) {
+            return;
+        }
+
+        // Create public cache directory if it doesn't exist
+        $publicDir = public_path('cache/patches');
+        if (!is_dir($publicDir)) {
+            mkdir($publicDir, 0755, true);
+        }
+
+        $filename = basename($storagePath);
+        $publicFile = $publicDir . '/' . $filename;
+
+        // Copy file to public directory if not already there or if source is newer
+        if (!file_exists($publicFile) || filemtime($sourceFile) > filemtime($publicFile)) {
+            copy($sourceFile, $publicFile);
         }
     }
 }
