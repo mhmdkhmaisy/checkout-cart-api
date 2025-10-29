@@ -385,11 +385,8 @@ class GenerateCacheManifest extends Command
      */
     private function clearPatchCaches(): void
     {
-        // Clear latest version cache (old key)
+        // Clear latest version cache
         Cache::forget('patch_latest_version');
-        
-        // Clear latest version with manifest cache (new key)
-        Cache::forget('patch_latest_version_with_manifest');
         
         // Clear all check-updates caches
         $cachePrefix = 'patch_check_updates_';
