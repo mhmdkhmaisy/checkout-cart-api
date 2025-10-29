@@ -154,9 +154,6 @@ Route::prefix('payment')->name('payment.')->group(function () {
 Route::get('/download/{os}/{version}', [ClientController::class, 'download'])->name('client.download');
 Route::get('/manifest.json', [ClientController::class, 'manifest'])->name('client.manifest');
 
-// Public patch download route (secured with signed URLs)
-Route::get('/cache/patches/{filename}', [CacheFileController::class, 'downloadPublicPatch'])->name('patches.download.public');
-
 // Public play page
 Route::get('/play', function () {
     $clients = \App\Models\Client::getLatestClients();
