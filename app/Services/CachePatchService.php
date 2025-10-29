@@ -305,18 +305,42 @@ class CachePatchService
 
     public function combinePatchesForDownload(string $fromVersion): ?string
     {
+        // Get all patches newer than the client's version, sorted by version
         $patches = CachePatch::all()
             ->filter(function($patch) use ($fromVersion) {
                 return version_compare($patch->version, $fromVersion, '>');
             })
             ->sortBy(function($patch) {
                 return $patch->version;
-            }, SORT_NATURAL);
+            }, SORT_NATURAL)
+            ->values();
 
         if ($patches->isEmpty()) {
             return null;
         }
 
+        // Optimize: If there's a base patch in the filtered set, remove any incremental patches
+        // older than it (they're redundant since the base already includes everything)
+        $baseIndex = $patches->search(function($patch) {
+            return $patch->is_base;
+        });
+
+        if ($baseIndex !== false) {
+            // Keep only the base patch and any patches newer than it
+            $patches = $patches->slice($baseIndex)->values();
+        }
+
+        // If only ONE patch is needed, serve it directly instead of creating a useless "combined" version
+        if ($patches->count() === 1) {
+            $singlePatch = $patches->first();
+            // Verify the patch file exists on disk before serving
+            if ($singlePatch->existsOnDisk()) {
+                return $singlePatch->path;
+            }
+            return null;
+        }
+
+        // Multiple patches needed - create or return cached combined version
         $latestVersion = CachePatch::getLatestVersion();
         $combinedZipPath = "cache/combined/from_{$fromVersion}_to_{$latestVersion}.zip";
 
@@ -325,6 +349,7 @@ class CachePatchService
             return $combinedZipPath;
         }
 
+        // Build the combined zip
         $zip = new ZipArchive;
         $fullPath = Storage::path($combinedZipPath);
         
