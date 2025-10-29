@@ -2239,22 +2239,7 @@ class CacheFileController extends Controller
             ], 404);
         }
 
-        $fullPath = $patch->full_path;
-        $filename = "patch_{$patch->version}.zip";
-
-        // Stream the file to avoid memory issues on shared hosting
-        return response()->streamDownload(function () use ($fullPath) {
-            $handle = fopen($fullPath, 'rb');
-            if ($handle === false) {
-                return;
-            }
-            
-            while (!feof($handle)) {
-                echo fread($handle, 8192); // 8KB chunks
-                flush();
-            }
-            fclose($handle);
-        }, $filename, [
+        return response()->download($patch->full_path, "patch_{$patch->version}.zip", [
             'Content-Type' => 'application/zip',
             'Cache-Control' => 'public, max-age=3600',
         ]);
@@ -2287,19 +2272,7 @@ class CacheFileController extends Controller
 
         $filename = "patches_{$fromVersion}_to_" . CachePatch::getLatestVersion() . ".zip";
 
-        // Stream the file to avoid memory issues and timeouts on shared hosting
-        return response()->streamDownload(function () use ($fullPath) {
-            $handle = fopen($fullPath, 'rb');
-            if ($handle === false) {
-                return;
-            }
-            
-            while (!feof($handle)) {
-                echo fread($handle, 8192); // 8KB chunks
-                flush();
-            }
-            fclose($handle);
-        }, $filename, [
+        return response()->download($fullPath, $filename, [
             'Content-Type' => 'application/zip',
             'Cache-Control' => 'public, max-age=3600',
         ]);
