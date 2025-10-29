@@ -317,7 +317,14 @@ class CachePatchService
             return null;
         }
 
-        $combinedZipPath = "cache/combined/from_{$fromVersion}_to_" . CachePatch::getLatestVersion() . ".zip";
+        $latestVersion = CachePatch::getLatestVersion();
+        $combinedZipPath = "cache/combined/from_{$fromVersion}_to_{$latestVersion}.zip";
+
+        // Check if cached version already exists
+        if (Storage::exists($combinedZipPath)) {
+            return $combinedZipPath;
+        }
+
         $zip = new ZipArchive;
         $fullPath = Storage::path($combinedZipPath);
         
