@@ -349,38 +349,75 @@ class CachePatchService
             return $combinedZipPath;
         }
 
-        // Build the combined zip
-        $zip = new ZipArchive;
-        $fullPath = Storage::path($combinedZipPath);
-        
-        $directory = dirname($fullPath);
-        if (!is_dir($directory)) {
-            mkdir($directory, 0755, true);
-        }
+        // Add lock to prevent concurrent builds of the same combined patch
+        $lockPath = "cache/combined/.lock_from_{$fromVersion}_to_{$latestVersion}";
+        $maxWaitAttempts = 15; // Wait up to 30 seconds (15 attempts × 2 seconds)
+        $attempt = 0;
 
-        if ($zip->open($fullPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            return null;
-        }
-
-        $addedFiles = [];
-        
-        foreach ($patches->reverse() as $patch) {
-            $patchZip = new ZipArchive;
-            if ($patchZip->open(Storage::path($patch->path)) === true) {
-                for ($i = 0; $i < $patchZip->numFiles; $i++) {
-                    $filename = $patchZip->getNameIndex($i);
-                    
-                    if (!in_array($filename, $addedFiles)) {
-                        $content = $patchZip->getFromIndex($i);
-                        $zip->addFromString($filename, $content);
-                        $addedFiles[] = $filename;
-                    }
-                }
-                $patchZip->close();
+        while (Storage::exists($lockPath) && $attempt < $maxWaitAttempts) {
+            sleep(2); // Wait 2 seconds before checking again
+            $attempt++;
+            
+            // Check if the combined zip was created while we were waiting
+            if (Storage::exists($combinedZipPath)) {
+                return $combinedZipPath;
             }
         }
 
-        $zip->close();
-        return $combinedZipPath;
+        // If lock still exists after waiting, it may be stale - remove it
+        if (Storage::exists($lockPath)) {
+            $lockAge = time() - Storage::lastModified($lockPath);
+            if ($lockAge > 120) { // Lock older than 2 minutes is considered stale
+                Storage::delete($lockPath);
+            }
+        }
+
+        // Create lock file to signal we're building this combined patch
+        Storage::put($lockPath, time());
+
+        try {
+            // Build the combined zip
+            $zip = new ZipArchive;
+            $fullPath = Storage::path($combinedZipPath);
+            
+            $directory = dirname($fullPath);
+            if (!is_dir($directory)) {
+                mkdir($directory, 0755, true);
+            }
+
+            if ($zip->open($fullPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                Storage::delete($lockPath);
+                return null;
+            }
+
+            $addedFiles = [];
+            
+            foreach ($patches->reverse() as $patch) {
+                $patchZip = new ZipArchive;
+                if ($patchZip->open(Storage::path($patch->path)) === true) {
+                    for ($i = 0; $i < $patchZip->numFiles; $i++) {
+                        $filename = $patchZip->getNameIndex($i);
+                        
+                        if (!in_array($filename, $addedFiles)) {
+                            $content = $patchZip->getFromIndex($i);
+                            $zip->addFromString($filename, $content);
+                            $addedFiles[] = $filename;
+                        }
+                    }
+                    $patchZip->close();
+                }
+            }
+
+            $zip->close();
+            
+            // Remove lock file after successful build
+            Storage::delete($lockPath);
+            
+            return $combinedZipPath;
+        } catch (\Exception $e) {
+            // Clean up lock file on error
+            Storage::delete($lockPath);
+            throw $e;
+        }
     }
 }

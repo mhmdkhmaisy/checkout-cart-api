@@ -2239,7 +2239,25 @@ class CacheFileController extends Controller
             ], 404);
         }
 
-        return response()->download($patch->full_path, "patch_{$patch->version}.zip");
+        $fullPath = $patch->full_path;
+        $filename = "patch_{$patch->version}.zip";
+
+        // Stream the file to avoid memory issues on shared hosting
+        return response()->streamDownload(function () use ($fullPath) {
+            $handle = fopen($fullPath, 'rb');
+            if ($handle === false) {
+                return;
+            }
+            
+            while (!feof($handle)) {
+                echo fread($handle, 8192); // 8KB chunks
+                flush();
+            }
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'application/zip',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
     }
 
     public function downloadCombinedPatches(Request $request)
@@ -2267,7 +2285,24 @@ class CacheFileController extends Controller
             ], 500);
         }
 
-        return response()->download($fullPath, "patches_{$fromVersion}_to_" . CachePatch::getLatestVersion() . ".zip");
+        $filename = "patches_{$fromVersion}_to_" . CachePatch::getLatestVersion() . ".zip";
+
+        // Stream the file to avoid memory issues and timeouts on shared hosting
+        return response()->streamDownload(function () use ($fullPath) {
+            $handle = fopen($fullPath, 'rb');
+            if ($handle === false) {
+                return;
+            }
+            
+            while (!feof($handle)) {
+                echo fread($handle, 8192); // 8KB chunks
+                flush();
+            }
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'application/zip',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
     }
 
     public function mergePatches()
