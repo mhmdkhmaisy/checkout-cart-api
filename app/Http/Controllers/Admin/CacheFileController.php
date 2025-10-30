@@ -2269,6 +2269,9 @@ class CacheFileController extends Controller
         $fromVersion = $request->input('from_version');
         $patchService = new CachePatchService();
         
+        // Clean up old on-the-fly combined patches before proceeding
+        $this->cleanupOnTheFlyPatches();
+        
         $combinedPath = $patchService->combinePatchesForDownload($fromVersion);
 
         if (!$combinedPath) {
@@ -2287,6 +2290,56 @@ class CacheFileController extends Controller
 
         // Redirect to public URL for direct static file serving by Apache/Nginx
         return redirect(url($combinedPath));
+    }
+    
+    /**
+     * Clean up old on-the-fly combined patches if pre-built ones exist
+     */
+    private function cleanupOnTheFlyPatches()
+    {
+        try {
+            $patchesDir = public_path('patches');
+            if (!is_dir($patchesDir)) {
+                return;
+            }
+            
+            // Find all on-the-fly combined patches (old naming: combined_from_X_to_Y.zip)
+            $onTheFlyPatches = glob($patchesDir . '/combined_from_*.zip');
+            
+            // Get latest version to check if pre-built combined patch exists
+            $latestVersion = CachePatch::getLatestVersion();
+            if (!$latestVersion) {
+                return;
+            }
+            
+            $prebuiltCombined = $patchesDir . "/combined_0.0.0_{$latestVersion}.zip";
+            
+            // If pre-built combined patch exists, remove all on-the-fly ones
+            if (file_exists($prebuiltCombined) && !empty($onTheFlyPatches)) {
+                foreach ($onTheFlyPatches as $onTheFlyPatch) {
+                    Log::info('Cleaning up on-the-fly combined patch', [
+                        'file' => basename($onTheFlyPatch),
+                        'reason' => 'Pre-built combined patch exists'
+                    ]);
+                    unlink($onTheFlyPatch);
+                }
+            }
+            
+            // Also clean up old lock files
+            $lockFiles = glob($patchesDir . '/.lock_from_*');
+            foreach ($lockFiles as $lockFile) {
+                $lockAge = time() - filemtime($lockFile);
+                if ($lockAge > 300) { // 5 minutes old
+                    unlink($lockFile);
+                }
+            }
+            
+        } catch (\Exception $e) {
+            Log::warning('Failed to cleanup on-the-fly patches', [
+                'error' => $e->getMessage()
+            ]);
+            // Don't throw - cleanup is non-critical
+        }
     }
 
     public function mergePatches()

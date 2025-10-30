@@ -2,7 +2,42 @@
 
 ## ✅ Issues Fixed
 
-### Issue 1: Combined Patch Creation Efficiency
+### Issue 1: On-The-Fly Patch Cleanup
+**Problem:** When users request patches for intermediate versions, the system creates on-the-fly combined patches like `combined_from_0.0.0_to_1.0.1.zip`. These were never cleaned up and accumulated over time.
+
+**Solution:** Automatic cleanup on download
+```php
+public function downloadCombinedPatches(Request $request)
+{
+    // Clean up old on-the-fly combined patches before proceeding
+    $this->cleanupOnTheFlyPatches();
+    // ... rest of download logic
+}
+
+private function cleanupOnTheFlyPatches()
+{
+    // Find all on-the-fly patches: combined_from_*.zip
+    $onTheFlyPatches = glob('patches/combined_from_*.zip');
+    
+    // If pre-built combined patch exists, delete all on-the-fly ones
+    if (file_exists("patches/combined_0.0.0_{$latestVersion}.zip")) {
+        foreach ($onTheFlyPatches as $patch) {
+            unlink($patch);
+        }
+    }
+    
+    // Also clean up old lock files (>5 minutes)
+    // ...
+}
+```
+
+**Impact:**
+- Automatic cleanup when download endpoint is accessed
+- Removes obsolete on-the-fly patches when pre-built ones exist
+- Cleans up old lock files to prevent stale locks
+- Saves disk space
+
+### Issue 2: Combined Patch Creation Efficiency
 **Problem:** System was copying the entire combined patch file, then updating it, then deleting the old one.
 
 **Solution:** Update in-place and rename
@@ -24,7 +59,7 @@ Total: 5MB I/O operations
 - On shared hosting (6 MB/s): ~67 seconds → <1 second
 - Zero copy overhead
 
-### Issue 2: Orphaned Cache Files in Database
+### Issue 3: Orphaned Cache Files in Database
 **Problem:** When deleting a patch, the cache_files table was not cleaned up:
 1. Delete patch 1.0.1
 2. Upload new files → creates patch 1.0.1 again
@@ -65,7 +100,32 @@ public function deletePatch(CachePatch $patch)
 
 ## Implementation Details
 
-### Modified Files
+## Upload Methods Verification
+
+### Standard Upload
+✅ **Working Correctly**
+- Uses `processBatchUpload()` for efficient batch processing
+- Handles multiple files with preserved directory structure
+- Supports all file types up to 1GB per file
+- Automatically generates manifest after upload
+
+### Chunked Upload
+✅ **Working Correctly**
+- Reassembles chunks in correct order
+- Handles ZIP files specially for extraction
+- Non-ZIP files processed normally and added to database
+- Integrates with `zipExtractPatch` endpoint for patch generation
+- Supports large files with transaction safety
+
+### ZIP Extract & Patch
+✅ **Working Correctly**
+- Extracts ZIP synchronously (no background jobs)
+- Preserves directory structure
+- Generates patches automatically
+- Uses database transactions for atomicity
+- Cleans up temporary files after processing
+
+## Modified Files
 
 **1. `app/Services/CachePatchService.php`**
 ```php
@@ -100,6 +160,12 @@ private function updateCombinedPatch(string $deltaZipPath, string $newVersion): 
 ```
 
 **2. `app/Http/Controllers/Admin/CacheFileController.php`**
+
+**Added Method: `cleanupOnTheFlyPatches()`**
+- Removes on-the-fly combined patches when pre-built ones exist
+- Cleans up stale lock files (>5 minutes old)
+- Called automatically before download endpoint serves patches
+- Non-critical (logs warnings but doesn't throw errors)
 ```php
 public function deletePatch(CachePatch $patch)
 {
