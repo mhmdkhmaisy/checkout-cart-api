@@ -538,7 +538,7 @@ class CachePatchService
 
     /**
      * Update combined patch incrementally by adding/replacing files from new delta
-     * This avoids recreating the entire combined ZIP from scratch
+     * Updates in-place and renames for maximum efficiency
      */
     private function updateCombinedPatch(string $deltaZipPath, string $newVersion): bool
     {
@@ -562,14 +562,11 @@ class CachePatchService
             return copy(public_path($deltaZipPath), $newCombinedPath);
         }
 
-        // Copy current combined to new location first
-        copy($currentCombinedPath, $newCombinedPath);
-
-        // Open both ZIPs
+        // Open combined ZIP directly for in-place update
         $combined = new ZipArchive();
         $delta = new ZipArchive();
 
-        if ($combined->open($newCombinedPath) !== true) {
+        if ($combined->open($currentCombinedPath) !== true) {
             return false;
         }
 
@@ -593,9 +590,9 @@ class CachePatchService
         $combined->close();
         $delta->close();
 
-        // Delete old combined patch to save space
-        if ($currentCombinedPath !== $newCombinedPath && file_exists($currentCombinedPath)) {
-            unlink($currentCombinedPath);
+        // Rename the updated combined patch to new version
+        if ($currentCombinedPath !== $newCombinedPath) {
+            rename($currentCombinedPath, $newCombinedPath);
         }
 
         return true;

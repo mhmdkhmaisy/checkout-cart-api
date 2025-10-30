@@ -2326,8 +2326,45 @@ class CacheFileController extends Controller
                     ->with('error', 'Cannot delete base patches. Please merge patches first.');
             }
 
+            // Get files that were in this patch
+            $patchFiles = $patch->file_manifest;
+            
+            // Check if this is the latest patch
+            $latestVersion = CachePatch::getLatestVersion();
+            $isLatestPatch = ($patch->version === $latestVersion);
+            
+            if ($isLatestPatch && $patchFiles) {
+                // Remove files that were added/modified in this patch from cache_files
+                foreach ($patchFiles as $relativePath => $hash) {
+                    $pathParts = explode('/', $relativePath);
+                    $filename = array_pop($pathParts);
+                    $directoryPath = !empty($pathParts) ? implode('/', $pathParts) : null;
+                    
+                    // Find and delete the file from cache_files
+                    $cacheFile = CacheFile::where('filename', $filename)
+                        ->where('relative_path', $directoryPath)
+                        ->first();
+                    
+                    if ($cacheFile) {
+                        // Delete the physical file
+                        if ($cacheFile->existsOnDisk()) {
+                            Storage::delete($cacheFile->path);
+                        }
+                        // Delete the database record
+                        $cacheFile->delete();
+                    }
+                }
+            }
+
+            // Delete the patch file and record
             $patch->deleteFile();
             $patch->delete();
+            
+            // Delete corresponding combined patch if it exists
+            $combinedPath = public_path("patches/combined_0.0.0_{$patch->version}.zip");
+            if (file_exists($combinedPath)) {
+                unlink($combinedPath);
+            }
             
             // Update manifest after deletion
             $patchService = new CachePatchService();
@@ -2337,7 +2374,7 @@ class CacheFileController extends Controller
             $this->clearPatchCaches();
 
             return redirect()->route('admin.cache.index')
-                ->with('success', "Patch {$patch->version} deleted successfully.");
+                ->with('success', "Patch {$patch->version} deleted successfully. Associated cache files have been removed.");
 
         } catch (\Exception $e) {
             return redirect()->route('admin.cache.index')
