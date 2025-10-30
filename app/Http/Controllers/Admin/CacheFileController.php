@@ -2293,7 +2293,9 @@ class CacheFileController extends Controller
     }
     
     /**
-     * Clean up old on-the-fly combined patches if pre-built ones exist
+     * Clean up any on-the-fly combined patches
+     * Since on-the-fly building is disabled, these should never exist
+     * but we clean them up just in case there are old files
      */
     private function cleanupOnTheFlyPatches()
     {
@@ -2304,38 +2306,32 @@ class CacheFileController extends Controller
             }
             
             // Find all on-the-fly combined patches (old naming: combined_from_X_to_Y.zip)
+            // These should never be created anymore, but clean up if they exist
             $onTheFlyPatches = glob($patchesDir . '/combined_from_*.zip');
             
-            // Get latest version to check if pre-built combined patch exists
-            $latestVersion = CachePatch::getLatestVersion();
-            if (!$latestVersion) {
-                return;
-            }
-            
-            $prebuiltCombined = $patchesDir . "/combined_0.0.0_{$latestVersion}.zip";
-            
-            // If pre-built combined patch exists, remove all on-the-fly ones
-            if (file_exists($prebuiltCombined) && !empty($onTheFlyPatches)) {
+            if (!empty($onTheFlyPatches)) {
                 foreach ($onTheFlyPatches as $onTheFlyPatch) {
-                    Log::info('Cleaning up on-the-fly combined patch', [
+                    Log::info('Cleaning up legacy on-the-fly combined patch', [
                         'file' => basename($onTheFlyPatch),
-                        'reason' => 'Pre-built combined patch exists'
+                        'reason' => 'On-the-fly building is disabled, this is a leftover file'
                     ]);
                     unlink($onTheFlyPatch);
                 }
             }
             
-            // Also clean up old lock files
+            // Clean up all lock files (shouldn't exist either since on-the-fly building is disabled)
             $lockFiles = glob($patchesDir . '/.lock_from_*');
-            foreach ($lockFiles as $lockFile) {
-                $lockAge = time() - filemtime($lockFile);
-                if ($lockAge > 300) { // 5 minutes old
+            if (!empty($lockFiles)) {
+                foreach ($lockFiles as $lockFile) {
+                    Log::info('Cleaning up legacy lock file', [
+                        'file' => basename($lockFile)
+                    ]);
                     unlink($lockFile);
                 }
             }
             
         } catch (\Exception $e) {
-            Log::warning('Failed to cleanup on-the-fly patches', [
+            Log::warning('Failed to cleanup legacy on-the-fly patches', [
                 'error' => $e->getMessage()
             ]);
             // Don't throw - cleanup is non-critical

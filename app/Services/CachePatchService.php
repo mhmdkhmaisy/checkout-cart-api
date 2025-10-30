@@ -390,14 +390,18 @@ class CachePatchService
             return null;
         }
 
-        // Special case: new user (version 0.0.0) - serve the pre-built combined patch
+        // Special case: new user (version 0.0.0) - serve the pre-built combined patch ONLY
         if ($fromVersion === '0.0.0') {
             $combinedPath = "patches/combined_0.0.0_{$latestVersion}.zip";
             if (file_exists(public_path($combinedPath))) {
                 return $combinedPath;
             }
-            // Fallback to building it if it doesn't exist
-            return $this->buildCombinedPatchLegacy($fromVersion);
+            // No fallback - combined patch should always exist
+            Log::error('Pre-built combined patch not found', [
+                'expected_path' => $combinedPath,
+                'latest_version' => $latestVersion
+            ]);
+            return null;
         }
 
         // Get all patches newer than the client's version, sorted by version
@@ -434,107 +438,21 @@ class CachePatchService
             return null;
         }
 
-        // Multiple patches needed - build combined version on-the-fly
-        return $this->buildCombinedPatchLegacy($fromVersion);
+        // Multiple patches needed - this shouldn't happen with proper patch management
+        // Return null instead of building on-the-fly
+        Log::warning('Multiple patches needed for download, but on-the-fly building is disabled', [
+            'from_version' => $fromVersion,
+            'to_version' => $latestVersion,
+            'patch_count' => $patches->count()
+        ]);
+        return null;
     }
 
     /**
-     * Legacy method to build combined patch on-the-fly for partial updates
-     * Only used when user has an intermediate version
+     * REMOVED: On-the-fly patch building
+     * Combined patches are always pre-built during upload process via updateCombinedPatch()
+     * No need for dynamic patch building - system relies on pre-built patches only
      */
-    private function buildCombinedPatchLegacy(string $fromVersion): ?string
-    {
-        $latestVersion = CachePatch::getLatestVersion();
-        $patches = CachePatch::all()
-            ->filter(function($patch) use ($fromVersion) {
-                return version_compare($patch->version, $fromVersion, '>');
-            })
-            ->sortBy(function($patch) {
-                return $patch->version;
-            }, SORT_NATURAL)
-            ->values();
-
-        if ($patches->isEmpty()) {
-            return null;
-        }
-
-        $combinedZipPath = "patches/combined_from_{$fromVersion}_to_{$latestVersion}.zip";
-        $publicPath = public_path($combinedZipPath);
-
-        // Check if cached version already exists
-        if (file_exists($publicPath)) {
-            return $combinedZipPath;
-        }
-
-        // Add lock to prevent concurrent builds
-        $lockPath = public_path("patches/.lock_from_{$fromVersion}_to_{$latestVersion}");
-        $maxWaitAttempts = 15;
-        $attempt = 0;
-
-        while (file_exists($lockPath) && $attempt < $maxWaitAttempts) {
-            sleep(2);
-            $attempt++;
-            
-            if (file_exists($publicPath)) {
-                return $combinedZipPath;
-            }
-        }
-
-        if (file_exists($lockPath)) {
-            $lockAge = time() - filemtime($lockPath);
-            if ($lockAge > 120) {
-                unlink($lockPath);
-            }
-        }
-
-        $lockDir = dirname($lockPath);
-        if (!is_dir($lockDir)) {
-            mkdir($lockDir, 0755, true);
-        }
-        file_put_contents($lockPath, time());
-
-        try {
-            $zip = new ZipArchive;
-            
-            $directory = dirname($publicPath);
-            if (!is_dir($directory)) {
-                mkdir($directory, 0755, true);
-            }
-
-            if ($zip->open($publicPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-                if (file_exists($lockPath)) unlink($lockPath);
-                return null;
-            }
-
-            $addedFiles = [];
-            
-            foreach ($patches->reverse() as $patch) {
-                $patchZip = new ZipArchive;
-                $patchPath = public_path($patch->path);
-                if ($patchZip->open($patchPath) === true) {
-                    for ($i = 0; $i < $patchZip->numFiles; $i++) {
-                        $filename = $patchZip->getNameIndex($i);
-                        
-                        if (!in_array($filename, $addedFiles)) {
-                            $content = $patchZip->getFromIndex($i);
-                            $zip->addFromString($filename, $content);
-                            $addedFiles[] = $filename;
-                        }
-                    }
-                    $patchZip->close();
-                }
-            }
-
-            $zip->close();
-            
-            if (file_exists($lockPath)) unlink($lockPath);
-            
-            return $combinedZipPath;
-        } catch (\Exception $e) {
-            if (file_exists($lockPath)) unlink($lockPath);
-            throw $e;
-        }
-    }
 
     /**
      * Update combined patch incrementally by adding/replacing files from new delta
