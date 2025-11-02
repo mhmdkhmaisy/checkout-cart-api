@@ -382,12 +382,13 @@ This example shows how to integrate the patch system into your game client for a
 import java.io.*;
 import java.net.*;
 import java.nio.file.*;
+import java.util.*;
 import java.util.zip.*;
 import com.google.gson.*;
 
 public class CacheUpdateManager {
     private static final String API_URL = "https://yourdomain.com";
-    private static final String CACHE_DIR = "./cache/";
+    private static final String CACHE_DIR = System.getProperty("user.home") + "/.aragon-cache/";
     private static final String MANIFEST_FILE = CACHE_DIR + "patches-manifest.json";
     
     private Gson gson = new Gson();
@@ -519,24 +520,107 @@ public class CacheUpdateManager {
     }
     
     /**
-     * Download only incremental patches (for updates)
-     * POST /admin/cache/patches/download-combined
+     * Download patches one at a time in order (for updates)
+     * GET /admin/cache/patches/{version}/download
      */
     private void downloadIncrementalPatches(String fromVersion, String toVersion) 
             throws IOException {
-        System.out.println("Downloading incremental patches...");
+        System.out.println("Downloading incremental patches one at a time...");
         
-        String requestBody = String.format(
-            "{\"from_version\":\"%s\",\"to_version\":\"%s\"}", 
-            fromVersion, 
-            toVersion
-        );
+        // Get server info to retrieve patch list
+        LatestVersionInfo serverInfo = getLatestVersionFromServer();
+        if (serverInfo == null || serverInfo.patches == null) {
+            throw new IOException("Failed to get patch list from server");
+        }
         
-        downloadAndExtractPatch(
-            API_URL + "/admin/cache/patches/download-combined",
-            requestBody,
-            "POST"
-        );
+        // Filter patches that are newer than fromVersion and up to toVersion
+        List<LatestVersionInfo.PatchInfo> patchesToDownload = new ArrayList<>();
+        for (LatestVersionInfo.PatchInfo patch : serverInfo.patches) {
+            if (compareVersions(patch.version, fromVersion) > 0 && 
+                compareVersions(patch.version, toVersion) <= 0) {
+                patchesToDownload.add(patch);
+            }
+        }
+        
+        // Sort patches by version to ensure correct order
+        patchesToDownload.sort((p1, p2) -> compareVersions(p1.version, p2.version));
+        
+        // Download and apply each patch in order
+        for (int i = 0; i < patchesToDownload.size(); i++) {
+            LatestVersionInfo.PatchInfo patch = patchesToDownload.get(i);
+            System.out.println(String.format(
+                "Downloading patch %d/%d: v%s", 
+                i + 1, 
+                patchesToDownload.size(), 
+                patch.version
+            ));
+            
+            downloadAndExtractSinglePatch(patch.version);
+        }
+        
+        System.out.println("All incremental patches downloaded successfully!");
+    }
+    
+    /**
+     * Download a single patch by version
+     * GET /admin/cache/patches/{version}/download
+     */
+    private void downloadAndExtractSinglePatch(String version) throws IOException {
+        String urlString = API_URL + "/admin/cache/patches/" + version + "/download";
+        URL url = new URL(urlString);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(30000);
+        
+        // Download patch file
+        if (conn.getResponseCode() == 200) {
+            File tempZip = new File(CACHE_DIR + "temp_patch_" + version + ".zip");
+            
+            try (InputStream in = conn.getInputStream();
+                 FileOutputStream out = new FileOutputStream(tempZip)) {
+                
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                long totalBytes = 0;
+                
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                    totalBytes += bytesRead;
+                }
+                
+                System.out.println("Downloaded v" + version + ": " + totalBytes + " bytes");
+            }
+            
+            // Extract ZIP to cache directory
+            extractZipFile(tempZip, new File(CACHE_DIR));
+            
+            // Delete temp ZIP
+            tempZip.delete();
+            
+        } else {
+            throw new IOException("Failed to download patch " + version + ": " + conn.getResponseCode());
+        }
+    }
+    
+    /**
+     * Compare two semantic version strings
+     * Returns: negative if v1 < v2, zero if v1 == v2, positive if v1 > v2
+     */
+    private int compareVersions(String v1, String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+        
+        int length = Math.max(parts1.length, parts2.length);
+        for (int i = 0; i < length; i++) {
+            int num1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int num2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+            
+            if (num1 != num2) {
+                return num1 - num2;
+            }
+        }
+        return 0;
     }
     
     /**
@@ -695,9 +779,16 @@ public static void main(String[] args) {
    - Returns latest version info and patch list
    - No authentication required (public endpoint)
 
-2. **POST /admin/cache/patches/download-combined**
+2. **GET /admin/cache/patches/{version}/download**
+   - Downloads a specific patch by version number
+   - Used for incremental updates (downloading patches one at a time)
+   - Returns ZIP file with changed files for that version
+   - Example: `GET /admin/cache/patches/1.0.2/download`
+
+3. **POST /admin/cache/patches/download-combined**
    - Downloads combined patches from version X to Y
-   - Request body: `{"from_version": "1.0.0", "to_version": "1.0.5"}`
+   - Used for first-time installation (all patches in one file)
+   - Request body: `{"from_version": "0.0.0", "to_version": "1.0.5"}`
    - Returns ZIP file with all changed files
 
 ### Local Manifest Format
@@ -747,25 +838,29 @@ public static void main(String[] args) {
                      ┌────────────────────────────┐
                      │ localVersion == null?      │
                      └──────┬───────────────┬─────┘
-                            │ Yes           │ No
-                            ▼               ▼
-              ┌──────────────────┐  ┌──────────────────┐
-              │ Download ALL     │  │ Download patches │
-              │ patches          │  │ from localVersion│
-              │ (0.0.0 → latest) │  │ to latest        │
-              └────────┬─────────┘  └────────┬─────────┘
-                       │                     │
-                       └──────────┬──────────┘
-                                  ▼
-                    ┌──────────────────────────┐
-                    │ POST /admin/cache/       │
-                    │ patches/download-combined│
-                    └──────────┬───────────────┘
-                               ▼
-                    ┌──────────────────────────┐
-                    │ Download & Extract ZIP   │
-                    │ to ./cache/ directory    │
-                    └──────────┬───────────────┘
+                            │ Yes (First-time) │ No (Existing user)
+                            ▼                    ▼
+              ┌──────────────────────┐  ┌─────────────────────┐
+              │ Download combined    │  │ Get list of patches │
+              │ patch (all files)    │  │ between localVersion│
+              │ POST download-combined│ │ and latest          │
+              │ (0.0.0 → latest)     │  └──────────┬──────────┘
+              └──────────┬───────────┘             │
+                         │                         ▼
+                         │              ┌─────────────────────┐
+                         │              │ Download patches    │
+                         │              │ one at a time in    │
+                         │              │ order (1.0.1, 1.0.2)│
+                         │              │ GET /patches/{ver}/ │
+                         │              │ download (loop)     │
+                         │              └──────────┬──────────┘
+                         │                         │
+                         └──────────┬──────────────┘
+                                    ▼
+                    ┌────────────────────────────┐
+                    │ Extract ZIP files to       │
+                    │ {user.home}/.aragon-cache/ │
+                    └──────────┬─────────────────┘
                                ▼
                     ┌──────────────────────────┐
                     │ Update local             │
