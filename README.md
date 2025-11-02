@@ -459,7 +459,14 @@ public class CacheUpdateManager {
     private String getLocalVersion() throws IOException {
         String content = new String(Files.readAllBytes(Paths.get(MANIFEST_FILE)));
         JsonObject manifest = gson.fromJson(content, JsonObject.class);
-        return manifest.get("version").getAsString();
+        
+        // Check if version field exists and is not null
+        if (manifest.has("version") && !manifest.get("version").isJsonNull()) {
+            return manifest.get("version").getAsString();
+        }
+        
+        // If version field is missing or null, return null
+        return null;
     }
     
     /**
@@ -722,6 +729,13 @@ public class CacheUpdateManager {
      * Update local patches-manifest.json with latest version
      */
     private void updateLocalManifest(String version) throws IOException {
+        if (version == null || version.isEmpty()) {
+            throw new IOException("Cannot update manifest: version is null or empty");
+        }
+        
+        // Ensure cache directory exists
+        new File(CACHE_DIR).mkdirs();
+        
         JsonObject manifest = new JsonObject();
         manifest.addProperty("version", version);
         manifest.addProperty("updated_at", System.currentTimeMillis());
