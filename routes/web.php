@@ -99,8 +99,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/manifest', [CacheFileController::class, 'getPatchManifest'])->name('manifest');
             Route::get('/latest', [CacheFileController::class, 'getLatestVersion'])->name('latest');
             Route::post('/check-updates', [CacheFileController::class, 'checkForUpdates'])->name('check-updates');
-            Route::get('/{patch}/download', [CacheFileController::class, 'downloadPatch'])->name('download');
-            Route::post('/download-combined', [CacheFileController::class, 'downloadCombinedPatches'])->name('download-combined');
             Route::post('/merge', [CacheFileController::class, 'mergePatches'])->name('merge');
             Route::delete('/{patch}', [CacheFileController::class, 'deletePatch'])->name('delete');
             Route::post('/clear-all', [CacheFileController::class, 'clearAllPatches'])->name('clear-all');
@@ -142,6 +140,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('promotions', PromotionController::class);
     Route::patch('promotions/{promotion}/toggle-active', [PromotionController::class, 'toggleActive'])->name('promotions.toggle-active');
 
+});
+
+// API routes for cache patches
+Route::prefix('api/cache/patches')->name('api.cache.patches.')->group(function () {
+    Route::get('/{patch}/download', [CacheFileController::class, 'downloadPatch'])->name('download');
+    Route::post('/download-combined', [CacheFileController::class, 'downloadCombinedPatches'])->name('download-combined');
 });
 
 // Payment completion pages (NEW ROUTES)

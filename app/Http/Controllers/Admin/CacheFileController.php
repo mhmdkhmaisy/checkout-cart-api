@@ -2184,6 +2184,7 @@ class CacheFileController extends Controller
                 'latest_version' => $latestVersion ?? '0.0.0',
                 'patches' => $patches->map(function($patch) {
                     return [
+                        'id' => $patch->id,
                         'version' => $patch->version,
                         'is_base' => $patch->is_base,
                         'size' => $patch->size,
@@ -2235,6 +2236,7 @@ class CacheFileController extends Controller
                 'latest_version' => $latestVersion,
                 'patches' => $patches->map(function($patch) {
                     return [
+                        'id' => $patch->id,
                         'version' => $patch->version,
                         'path' => $patch->path,
                         'size' => $patch->size,
