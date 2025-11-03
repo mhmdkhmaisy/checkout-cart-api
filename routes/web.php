@@ -142,12 +142,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 });
 
-// API routes for cache patches
-Route::prefix('api/cache/patches')->name('api.cache.patches.')->group(function () {
-    Route::get('/{patch}/download', [CacheFileController::class, 'downloadPatch'])->name('download');
-    Route::post('/download-combined', [CacheFileController::class, 'downloadCombinedPatches'])->name('download-combined');
-});
-
 // Payment completion pages (NEW ROUTES)
 Route::prefix('payment')->name('payment.')->group(function () {
     Route::get('/success', [PaymentController::class, 'success'])->name('success');

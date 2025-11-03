@@ -63,4 +63,10 @@ Route::prefix('cache')->name('api.cache.')->group(function () {
     
     // Statistics and monitoring
     Route::get('/stats', [CacheController::class, 'stats'])->name('stats');
+    
+    // Patch download endpoints (for launcher/client)
+    Route::prefix('patches')->name('patches.')->group(function () {
+        Route::get('/{patch}/download', [\App\Http\Controllers\Admin\CacheFileController::class, 'downloadPatch'])->name('download');
+        Route::post('/download-combined', [\App\Http\Controllers\Admin\CacheFileController::class, 'downloadCombinedPatches'])->name('download-combined');
+    });
 });
