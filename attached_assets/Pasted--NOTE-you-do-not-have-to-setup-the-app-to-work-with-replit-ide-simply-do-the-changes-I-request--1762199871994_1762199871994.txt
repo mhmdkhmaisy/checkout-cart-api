@@ -1,0 +1,94 @@
+
+NOTE** you do not have to setup the app to work with replit ide, simply do the changes I request, I will pull and test locally.
+
+I am now testing the download integration for patches download, the combined version works just fine but the link construction is wrong?
+
+the api takes .../patches/id/download while I am passing version since the id is internal (?) 
+
+also can u move the patches/download and download-combined from /admin group to /api
+
+
+JAVA:
+	/**
+	 * Download only the patches newer than the local version.
+	 */
+	private void downloadIncrementalPatches(String fromVersion, String toVersion) throws IOException {
+		System.out.println("Downloading incremental patches...");
+		LatestVersionInfo serverInfo = getLatestVersionFromServer();
+		if (serverInfo == null || serverInfo.patches == null) {
+			throw new IOException("Failed to get patch list from server");
+		}
+
+		List<LatestVersionInfo.PatchInfo> patchesToDownload = new ArrayList<>();
+		for (LatestVersionInfo.PatchInfo patch : serverInfo.patches) {
+			if (compareVersions(patch.version, fromVersion) > 0 &&
+					compareVersions(patch.version, toVersion) <= 0) {
+				patchesToDownload.add(patch);
+			}
+		}
+
+		patchesToDownload.sort((p1, p2) -> compareVersions(p1.version, p2.version));
+
+		for (int i = 0; i < patchesToDownload.size(); i++) {
+			LatestVersionInfo.PatchInfo patch = patchesToDownload.get(i);
+			System.out.printf("Downloading patch %d/%d: v%s%n",
+					i + 1, patchesToDownload.size(), patch.version);
+			downloadAndExtractSinglePatch(patch.version);
+		}
+
+		System.out.println("All incremental patches downloaded successfully!");
+	}
+
+	/**
+	 * Download a single patch by version.
+	 */
+	private void downloadAndExtractSinglePatch(String version) throws IOException {
+		String urlString = API_URL + "/admin/cache/patches/" + version + "/download";
+		URL url = new URL(urlString);
+		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+		conn.setRequestMethod("GET");
+		conn.setConnectTimeout(10000);
+		conn.setReadTimeout(30000);
+
+		if (conn.getResponseCode() == 200) {
+			File tempZip = new File(CACHE_DIR + "temp_patch_" + version + ".zip");
+
+			try (InputStream in = conn.getInputStream();
+					FileOutputStream out = new FileOutputStream(tempZip)) {
+				byte[] buffer = new byte[8192];
+				int bytesRead;
+				long totalBytes = 0;
+
+				while ((bytesRead = in.read(buffer)) != -1) {
+					out.write(buffer, 0, bytesRead);
+					totalBytes += bytesRead;
+				}
+				System.out.println("Downloaded v" + version + ": " + totalBytes + " bytes");
+			}
+
+			extractZipFile(tempZip, new File(CACHE_DIR));
+			tempZip.delete();
+		} else {
+			throw new IOException("Failed to download patch " + version + ": " + conn.getResponseCode());
+		}
+	}
+
+Log:
+
+
+Checking for cache updates...
+Current local cache version: 1.0.1
+Server JSON response: {"latest_version":"1.0.2","patches":[{"version":"1.0.2","is_base":false,"size":5279259,"file_count":2,"created_at":"2025-11-03T19:42:49.000000Z"},{"version":"1.0.1","is_base":false,"size":16326,"file_count":45,"created_at":"2025-10-31T12:28:15.000000Z"},{"version":"1.0.0","is_base":true,"size":211307124,"file_count":2727,"created_at":"2025-10-30T15:23:37.000000Z"}]}
+Server cache version: 1.0.2
+Downloading updates from 1.0.1 to 1.0.2
+Downloading incremental patches...
+Server JSON response: {"latest_version":"1.0.2","patches":[{"version":"1.0.2","is_base":false,"size":5279259,"file_count":2,"created_at":"2025-11-03T19:42:49.000000Z"},{"version":"1.0.1","is_base":false,"size":16326,"file_count":45,"created_at":"2025-10-31T12:28:15.000000Z"},{"version":"1.0.0","is_base":true,"size":211307124,"file_count":2727,"created_at":"2025-10-30T15:23:37.000000Z"}]}
+Downloading patch 1/1: v1.0.2
+Cache update failed: Failed to download patch 1.0.2: 404
+java.io.IOException: Failed to download patch 1.0.2: 404
+	at com.arlania.synch.CacheUpdateManager.downloadAndExtractSinglePatch(CacheUpdateManager.java:216)
+	at com.arlania.synch.CacheUpdateManager.downloadIncrementalPatches(CacheUpdateManager.java:180)
+	at com.arlania.synch.CacheUpdateManager.checkAndUpdateCache(CacheUpdateManager.java:75)
+	at com.arlania.synch.CacheUpdateManager.main(CacheUpdateManager.java:29)
+
+
