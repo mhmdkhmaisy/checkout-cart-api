@@ -14,5 +14,7 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'api/*',
         'admin/cache/chunked-upload*',
+        'admin/cache/patches/download-combined',
+        'admin/cache/patches/check-updates',
     ];
 }

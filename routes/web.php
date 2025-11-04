@@ -99,6 +99,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/manifest', [CacheFileController::class, 'getPatchManifest'])->name('manifest');
             Route::get('/latest', [CacheFileController::class, 'getLatestVersion'])->name('latest');
             Route::post('/check-updates', [CacheFileController::class, 'checkForUpdates'])->name('check-updates');
+            Route::get('/{patch}/download', [CacheFileController::class, 'downloadPatch'])->name('download');
+            Route::post('/download-combined', [CacheFileController::class, 'downloadCombinedPatches'])->name('download-combined');
             Route::post('/merge', [CacheFileController::class, 'mergePatches'])->name('merge');
             Route::delete('/{patch}', [CacheFileController::class, 'deletePatch'])->name('delete');
             Route::post('/clear-all', [CacheFileController::class, 'clearAllPatches'])->name('clear-all');
