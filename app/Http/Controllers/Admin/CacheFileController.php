@@ -2620,7 +2620,7 @@ class CacheFileController extends Controller
                 ], 400);
             }
             
-            $patches = CachePatch::latest()->get();
+            $patches = CachePatch::orderBy('created_at', 'asc')->get();
             $history = [];
             $previousHash = null;
             
@@ -2658,7 +2658,7 @@ class CacheFileController extends Controller
             return response()->json([
                 'success' => true,
                 'file' => $filePath,
-                'history' => array_reverse($history)
+                'history' => $history
             ]);
             
         } catch (\Exception $e) {
