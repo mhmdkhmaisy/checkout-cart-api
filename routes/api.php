@@ -71,9 +71,9 @@ Route::prefix('cache')->name('api.cache.')->group(function () {
     });
 });
 
-// Updates API routes (public access)
-Route::prefix('updates')->name('api.updates.')->group(function () {
+// Updates API routes (public access with rate limiting)
+Route::prefix('updates')->name('api.updates.')->middleware('throttle:60,1')->group(function () {
     Route::get('/latest', [\App\Http\Controllers\Api\UpdateApiController::class, 'latest'])->name('latest');
     Route::get('/', [\App\Http\Controllers\Api\UpdateApiController::class, 'index'])->name('index');
-    Route::get('/{slug}', [\App\Http\Controllers\Api\UpdateApiController::class, 'show'])->name('show');
+    Route::get('/{slug}', [\App\Http\Controllers\Api\UpdateApiController::class, 'show'])->name('show')->middleware('throttle:30,1');
 });

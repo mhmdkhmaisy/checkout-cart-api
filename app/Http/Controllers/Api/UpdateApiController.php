@@ -18,13 +18,13 @@ class UpdateApiController extends Controller
             ->orderBy('is_pinned', 'desc')
             ->orderBy('published_at', 'desc')
             ->limit(3)
-            ->get(['id', 'title', 'slug', 'published_at as date', 'excerpt', 'featured_image', 'category', 'is_featured', 'is_pinned'])
+            ->get(['id', 'title', 'slug', 'published_at', 'excerpt', 'featured_image', 'category', 'is_featured', 'is_pinned'])
             ->map(function ($update) {
                 return [
                     'id' => $update->id,
                     'title' => $update->title,
                     'slug' => $update->slug,
-                    'date' => $update->date?->toISOString(),
+                    'date' => $update->published_at?->toIso8601String(),
                     'excerpt' => $update->excerpt,
                     'featured_image' => $update->featured_image,
                     'category' => $update->category,
