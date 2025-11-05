@@ -70,3 +70,10 @@ Route::prefix('cache')->name('api.cache.')->group(function () {
         Route::post('/download-combined', [\App\Http\Controllers\Admin\CacheFileController::class, 'downloadCombinedPatches'])->name('download-combined');
     });
 });
+
+// Updates API routes (public access)
+Route::prefix('updates')->name('api.updates.')->group(function () {
+    Route::get('/latest', [\App\Http\Controllers\Api\UpdateApiController::class, 'latest'])->name('latest');
+    Route::get('/', [\App\Http\Controllers\Api\UpdateApiController::class, 'index'])->name('index');
+    Route::get('/{slug}', [\App\Http\Controllers\Api\UpdateApiController::class, 'show'])->name('show');
+});

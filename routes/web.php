@@ -123,6 +123,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // Update management
     Route::resource('updates', UpdateController::class);
+    Route::patch('updates/{update}/toggle-publish', [UpdateController::class, 'togglePublish'])->name('updates.toggle-publish');
+    Route::patch('updates/{update}/toggle-featured', [UpdateController::class, 'toggleFeatured'])->name('updates.toggle-featured');
+    Route::patch('updates/{update}/toggle-pinned', [UpdateController::class, 'togglePinned'])->name('updates.toggle-pinned');
 
     // Performance monitoring
     Route::prefix('performance')->name('performance.')->group(function () {
