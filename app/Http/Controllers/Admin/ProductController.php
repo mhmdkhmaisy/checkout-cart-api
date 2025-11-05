@@ -41,7 +41,14 @@ class ProductController extends Controller
             $data['is_active'] = $request->input('is_active', 0) ? 1 : 0;
 
             $product = \DB::transaction(function () use ($data, $request) {
-                $product = Product::create($data);
+                $product = new Product();
+                $product->fill($data);
+                $product->save();
+
+                \Log::info("Product created (cached ID)", [
+                    'product_id' => $product->id,
+                    'product_name' => $product->product_name
+                ]);
 
                 if ($request->has('bundle_items')) {
                     foreach ($request->bundle_items as $bundleItem) {
@@ -56,6 +63,37 @@ class ProductController extends Controller
 
                 return $product;
             });
+
+            // Get the actual database ID by querying for the product we just created
+            // We can't use refresh() because $product->id might be wrong (cached auto-increment)
+            $cachedId = $product->id;
+            
+            // Find the product by name and most recent creation (the one we just made)
+            $actualProduct = Product::where('product_name', $data['product_name'])
+                ->where('item_id', $data['item_id'])
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+            
+            if (!$actualProduct) {
+                throw new \Exception('Product created but could not be found in database');
+            }
+            
+            // If the ID changed, update product_items to use the correct ID
+            if ($cachedId != $actualProduct->id) {
+                \Log::warning("Product ID mismatch detected and fixed", [
+                    'cached_id' => $cachedId,
+                    'actual_id' => $actualProduct->id
+                ]);
+                
+                // Update all product items with the correct product_id
+                \DB::table('product_items')
+                    ->where('product_id', $cachedId)
+                    ->update(['product_id' => $actualProduct->id]);
+            }
+            
+            // Use the actual product from the database
+            $product = $actualProduct;
 
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
