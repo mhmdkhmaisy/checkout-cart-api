@@ -270,15 +270,22 @@
 
             <!-- User Info -->
             <div class="border-t border-dragon-border p-4 mt-8">
-                <div class="flex items-center">
+                <div class="flex items-center mb-3">
                     <div class="w-8 h-8 bg-dragon-red rounded-full flex items-center justify-center mr-3">
                         <i class="fas fa-user text-dragon-silver text-sm"></i>
                     </div>
                     <div class="flex-1">
-                        <div class="text-sm font-medium text-dragon-silver">Admin User</div>
-                        <div class="text-xs text-dragon-silver-dark">Administrator</div>
+                        <div class="text-sm font-medium text-dragon-silver">{{ auth()->user()->username }}</div>
+                        <div class="text-xs text-dragon-silver-dark">Owner</div>
                     </div>
                 </div>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="w-full px-4 py-2 bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver rounded-lg transition-colors text-sm">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Logout
+                    </button>
+                </form>
             </div>
         </aside>
 

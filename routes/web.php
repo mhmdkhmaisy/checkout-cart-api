@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\UpdateController;
 use App\Http\Controllers\Admin\PerformanceController;
 use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\PromotionUserController;
+use App\Http\Controllers\Auth\LoginController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -25,8 +26,11 @@ use App\Http\Controllers\PromotionUserController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Admin routes (in production, add authentication middleware)
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login')->middleware('guest');
+Route::post('/login', [LoginController::class, 'login'])->middleware('guest');
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
+
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'owner'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     
     Route::resource('products', ProductController::class);
