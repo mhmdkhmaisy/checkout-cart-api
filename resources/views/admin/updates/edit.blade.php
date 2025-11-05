@@ -72,17 +72,140 @@
                 @enderror
             </div>
 
-            <div class="mb-6">
-                <label class="flex items-center">
-                    <input type="checkbox" 
-                           class="w-5 h-5 text-dragon-red bg-dragon-black border-dragon-border rounded focus:ring-dragon-red" 
-                           id="client_update" 
-                           name="client_update" 
-                           value="1" 
-                           {{ old('client_update', $update->client_update) ? 'checked' : '' }}>
-                    <span class="ml-2 text-dragon-silver">This update requires a client update</span>
-                </label>
-                <p class="text-sm text-dragon-silver-dark mt-1 ml-7">Check this if users need to download a new client version</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="excerpt" class="block text-dragon-silver font-semibold mb-2">
+                        Excerpt (Optional)
+                    </label>
+                    <textarea class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('excerpt') border-red-500 @enderror" 
+                              id="excerpt" 
+                              name="excerpt" 
+                              rows="3"
+                              maxlength="500">{{ old('excerpt', $update->excerpt) }}</textarea>
+                    <p class="text-sm text-dragon-silver-dark mt-1">Short summary (max 500 chars). Auto-generated if empty.</p>
+                    @error('excerpt')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="meta_description" class="block text-dragon-silver font-semibold mb-2">
+                        SEO Meta Description (Optional)
+                    </label>
+                    <textarea class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('meta_description') border-red-500 @enderror" 
+                              id="meta_description" 
+                              name="meta_description" 
+                              rows="3"
+                              maxlength="160">{{ old('meta_description', $update->meta_description) }}</textarea>
+                    <p class="text-sm text-dragon-silver-dark mt-1">For search engines (max 160 chars)</p>
+                    @error('meta_description')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label for="featured_image" class="block text-dragon-silver font-semibold mb-2">
+                        Featured Image URL (Optional)
+                    </label>
+                    <input type="text" 
+                           class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('featured_image') border-red-500 @enderror" 
+                           id="featured_image" 
+                           name="featured_image" 
+                           value="{{ old('featured_image', $update->featured_image) }}">
+                    <p class="text-sm text-dragon-silver-dark mt-1">Image for preview cards</p>
+                    @error('featured_image')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="category" class="block text-dragon-silver font-semibold mb-2">
+                        Category (Optional)
+                    </label>
+                    <input type="text" 
+                           class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('category') border-red-500 @enderror" 
+                           id="category" 
+                           name="category" 
+                           value="{{ old('category', $update->category) }}"
+                           placeholder="e.g., Game Update, Bugfix, Event">
+                    @error('category')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="author" class="block text-dragon-silver font-semibold mb-2">
+                        Author (Optional)
+                    </label>
+                    <input type="text" 
+                           class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('author') border-red-500 @enderror" 
+                           id="author" 
+                           name="author" 
+                           value="{{ old('author', $update->author) }}"
+                           placeholder="e.g., Admin Team">
+                    @error('author')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="border-t border-dragon-border pt-6 mb-6">
+                <h3 class="text-lg font-semibold text-dragon-silver mb-4">Publishing Options</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" 
+                                   class="w-5 h-5 text-dragon-red bg-dragon-black border-dragon-border rounded focus:ring-dragon-red" 
+                                   id="is_published" 
+                                   name="is_published" 
+                                   value="1" 
+                                   {{ old('is_published', $update->is_published) ? 'checked' : '' }}>
+                            <span class="ml-2 text-dragon-silver font-semibold">Publish immediately</span>
+                        </label>
+                        <p class="text-sm text-dragon-silver-dark mt-1 ml-7">Uncheck to save as draft</p>
+                    </div>
+
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" 
+                                   class="w-5 h-5 text-dragon-red bg-dragon-black border-dragon-border rounded focus:ring-dragon-red" 
+                                   id="client_update" 
+                                   name="client_update" 
+                                   value="1" 
+                                   {{ old('client_update', $update->client_update) ? 'checked' : '' }}>
+                            <span class="ml-2 text-dragon-silver">Requires client update</span>
+                        </label>
+                        <p class="text-sm text-dragon-silver-dark mt-1 ml-7">Check if users need to download new client</p>
+                    </div>
+
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" 
+                                   class="w-5 h-5 text-dragon-red bg-dragon-black border-dragon-border rounded focus:ring-dragon-red" 
+                                   id="is_featured" 
+                                   name="is_featured" 
+                                   value="1" 
+                                   {{ old('is_featured', $update->is_featured) ? 'checked' : '' }}>
+                            <span class="ml-2 text-dragon-silver">Featured update</span>
+                        </label>
+                        <p class="text-sm text-dragon-silver-dark mt-1 ml-7">Highlight in listings</p>
+                    </div>
+
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" 
+                                   class="w-5 h-5 text-dragon-red bg-dragon-black border-dragon-border rounded focus:ring-dragon-red" 
+                                   id="is_pinned" 
+                                   name="is_pinned" 
+                                   value="1" 
+                                   {{ old('is_pinned', $update->is_pinned) ? 'checked' : '' }}>
+                            <span class="ml-2 text-dragon-silver">Pin to top</span>
+                        </label>
+                        <p class="text-sm text-dragon-silver-dark mt-1 ml-7">Always show first in list</p>
+                    </div>
+                </div>
             </div>
 
             <div class="flex gap-3">
@@ -225,8 +348,20 @@ function addBlock(type, data = null) {
             break;
         case 'image':
             content += `
-                <input type="text" id="${id}-url" placeholder="Image URL" value="${escapeHtml(data?.url || '')}" 
-                       class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                <div class="mb-2">
+                    <label class="text-dragon-silver-dark text-sm mb-1 block">Image URL or Upload</label>
+                    <input type="text" id="${id}-url" placeholder="Image URL" value="${escapeHtml(data?.url || '')}" 
+                           class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
+                </div>
+                <div class="mb-2 flex items-center gap-2">
+                    <span class="text-dragon-silver-dark text-sm">OR</span>
+                    <input type="file" id="${id}-file" accept="image/*" 
+                           class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm"
+                           onchange="handleImageUpload('${id}', this)">
+                </div>
+                <div id="${id}-preview" class="mb-2 ${data?.url ? '' : 'hidden'}">
+                    <img src="${escapeHtml(data?.url || '')}" class="max-w-full h-auto max-h-48 rounded border border-dragon-border">
+                </div>
                 <input type="text" id="${id}-caption" placeholder="Caption (optional)" value="${escapeHtml(data?.caption || '')}" 
                        class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
             `;
@@ -312,6 +447,49 @@ function getDragAfterElement(y) {
             return closest;
         }
     }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Handle image upload
+async function handleImageUpload(blockId, input) {
+    if (!input.files || !input.files[0]) return;
+    
+    const file = input.files[0];
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const urlInput = document.getElementById(`${blockId}-url`);
+    const preview = document.getElementById(`${blockId}-preview`);
+    const previewImg = preview.querySelector('img');
+    
+    try {
+        urlInput.value = 'Uploading...';
+        urlInput.disabled = true;
+        
+        const response = await fetch('{{ route('admin.updates.upload-image') }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            urlInput.value = data.url;
+            previewImg.src = data.url;
+            preview.classList.remove('hidden');
+        } else {
+            alert('Upload failed. Please try again.');
+            urlInput.value = '';
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('Upload failed. Please try again.');
+        urlInput.value = '';
+    } finally {
+        urlInput.disabled = false;
+    }
 }
 
 // Generate JSON before submit

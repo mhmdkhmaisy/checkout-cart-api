@@ -333,8 +333,20 @@ function addBlock(type, data = null) {
             break;
         case 'image':
             content += `
-                <input type="text" id="${id}-url" placeholder="Image URL" value="${data?.url || ''}" 
-                       class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                <div class="mb-2">
+                    <label class="text-dragon-silver-dark text-sm mb-1 block">Image URL or Upload</label>
+                    <input type="text" id="${id}-url" placeholder="Image URL" value="${data?.url || ''}" 
+                           class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
+                </div>
+                <div class="mb-2 flex items-center gap-2">
+                    <span class="text-dragon-silver-dark text-sm">OR</span>
+                    <input type="file" id="${id}-file" accept="image/*" 
+                           class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm"
+                           onchange="handleImageUpload('${id}', this)">
+                </div>
+                <div id="${id}-preview" class="mb-2 hidden">
+                    <img src="" class="max-w-full h-auto max-h-48 rounded border border-dragon-border">
+                </div>
                 <input type="text" id="${id}-caption" placeholder="Caption (optional)" value="${data?.caption || ''}" 
                        class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
             `;
@@ -420,6 +432,49 @@ function getDragAfterElement(y) {
             return closest;
         }
     }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Handle image upload
+async function handleImageUpload(blockId, input) {
+    if (!input.files || !input.files[0]) return;
+    
+    const file = input.files[0];
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const urlInput = document.getElementById(`${blockId}-url`);
+    const preview = document.getElementById(`${blockId}-preview`);
+    const previewImg = preview.querySelector('img');
+    
+    try {
+        urlInput.value = 'Uploading...';
+        urlInput.disabled = true;
+        
+        const response = await fetch('{{ route('admin.updates.upload-image') }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            urlInput.value = data.url;
+            previewImg.src = data.url;
+            preview.classList.remove('hidden');
+        } else {
+            alert('Upload failed. Please try again.');
+            urlInput.value = '';
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('Upload failed. Please try again.');
+        urlInput.value = '';
+    } finally {
+        urlInput.disabled = false;
+    }
 }
 
 // Generate JSON before submit

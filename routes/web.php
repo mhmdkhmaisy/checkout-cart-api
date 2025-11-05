@@ -126,6 +126,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::patch('updates/{update}/toggle-publish', [UpdateController::class, 'togglePublish'])->name('updates.toggle-publish');
     Route::patch('updates/{update}/toggle-featured', [UpdateController::class, 'toggleFeatured'])->name('updates.toggle-featured');
     Route::patch('updates/{update}/toggle-pinned', [UpdateController::class, 'togglePinned'])->name('updates.toggle-pinned');
+    Route::post('updates/upload-image', [UpdateController::class, 'uploadImage'])->name('updates.upload-image');
 
     // Performance monitoring
     Route::prefix('performance')->name('performance.')->group(function () {

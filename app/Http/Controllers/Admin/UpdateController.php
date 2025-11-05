@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Update;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class UpdateController extends Controller
 {
@@ -166,5 +167,24 @@ class UpdateController extends Controller
         
         $status = $update->is_pinned ? 'pinned' : 'unpinned';
         return redirect()->back()->with('success', "Update {$status} successfully.");
+    }
+    
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
+        ]);
+        
+        $file = $request->file('image');
+        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        
+        $path = $file->storeAs('public/updates', $filename);
+        
+        $url = Storage::url($path);
+        
+        return response()->json([
+            'success' => true,
+            'url' => $url
+        ]);
     }
 }
