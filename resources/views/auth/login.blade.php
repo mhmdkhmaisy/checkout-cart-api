@@ -1,16 +1,19 @@
 @extends('layouts.public')
 
-@section('title', 'Admin Login - Aragon RSPS')
+@section('title', 'Login - Aragon RSPS')
 
 @section('content')
-<div class="min-h-screen flex items-center justify-center py-12">
+<div class="flex items-center justify-center py-12" style="min-height: calc(100vh - 200px);">
     <div class="glass-card w-full max-w-md">
         <div class="text-center mb-8">
-            <img src="{{ asset('assets/aragon_logo.png') }}" alt="Aragon RSPS" class="h-20 mx-auto mb-4">
-            <h2 class="text-3xl font-bold mb-2" style="background: linear-gradient(135deg, var(--primary-bright) 0%, var(--accent-gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                Admin Login
+            <img src="{{ asset('assets/aragon_rsps_icon.png') }}" alt="Aragon RSPS" class="h-24 w-24 mx-auto mb-6 rounded-lg" style="filter: drop-shadow(0 0 15px var(--glow-primary));">
+            <h2 class="text-3xl font-bold mb-3" style="background: linear-gradient(135deg, var(--primary-bright) 0%, var(--accent-gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                Welcome Back
             </h2>
-            <p class="text-muted">Sign in to access the admin panel</p>
+            <div class="alert alert-info mb-6" style="text-align: left;">
+                <i class="fas fa-info-circle"></i>
+                <strong>Note:</strong> Use your in-game credentials to sign in to the website.
+            </div>
         </div>
 
         @if ($errors->any())
@@ -32,7 +35,7 @@
                        value="{{ old('username') }}" 
                        required 
                        autofocus
-                       placeholder="Enter your username">
+                       placeholder="Enter your in-game username">
             </div>
 
             <div class="form-group">
@@ -42,12 +45,12 @@
                        name="password" 
                        class="form-input @error('password') border-red-500 @enderror" 
                        required
-                       placeholder="Enter your password">
+                       placeholder="Enter your in-game password">
             </div>
 
             <div class="form-group">
                 <label class="flex items-center cursor-pointer">
-                    <input type="checkbox" name="remember" class="mr-2 h-4 w-4 rounded border-2 border-gray-600 bg-gray-900 text-red-600 focus:ring-red-500 focus:ring-offset-gray-900">
+                    <input type="checkbox" name="remember" class="mr-2 h-4 w-4 rounded border-2 border-gray-600 bg-gray-900 text-red-600 focus:ring-red-500 focus:ring-offset-gray-900" style="accent-color: var(--primary-color);">
                     <span class="text-sm text-muted">Remember me</span>
                 </label>
             </div>
