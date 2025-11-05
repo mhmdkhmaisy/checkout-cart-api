@@ -40,18 +40,23 @@ class ProductController extends Controller
             $data = $validated;
             $data['is_active'] = $request->input('is_active', 0) ? 1 : 0;
 
-            $product = Product::create($data);
+            $product = \DB::transaction(function () use ($data, $request) {
+                $product = Product::create($data);
+                $product->refresh();
 
-        if ($request->has('bundle_items')) {
-            foreach ($request->bundle_items as $bundleItem) {
-                if (!empty($bundleItem['item_id']) && !empty($bundleItem['qty_unit'])) {
-                    $product->bundleItems()->create([
-                        'item_id' => $bundleItem['item_id'],
-                        'qty_unit' => $bundleItem['qty_unit']
-                    ]);
+                if ($request->has('bundle_items')) {
+                    foreach ($request->bundle_items as $bundleItem) {
+                        if (!empty($bundleItem['item_id']) && !empty($bundleItem['qty_unit'])) {
+                            $product->bundleItems()->create([
+                                'item_id' => (int) $bundleItem['item_id'],
+                                'qty_unit' => (int) $bundleItem['qty_unit']
+                            ]);
+                        }
+                    }
                 }
-            }
-        }
+
+                return $product;
+            });
 
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
@@ -111,20 +116,21 @@ class ProductController extends Controller
             $data = $validated;
             $data['is_active'] = $request->input('is_active', 0) ? 1 : 0;
 
-            $product->update($data);
+            \DB::transaction(function () use ($product, $data, $request) {
+                $product->update($data);
+                $product->bundleItems()->delete();
 
-        $product->bundleItems()->delete();
-
-        if ($request->has('bundle_items')) {
-            foreach ($request->bundle_items as $bundleItem) {
-                if (!empty($bundleItem['item_id']) && !empty($bundleItem['qty_unit'])) {
-                    $product->bundleItems()->create([
-                        'item_id' => $bundleItem['item_id'],
-                        'qty_unit' => $bundleItem['qty_unit']
-                    ]);
+                if ($request->has('bundle_items')) {
+                    foreach ($request->bundle_items as $bundleItem) {
+                        if (!empty($bundleItem['item_id']) && !empty($bundleItem['qty_unit'])) {
+                            $product->bundleItems()->create([
+                                'item_id' => (int) $bundleItem['item_id'],
+                                'qty_unit' => (int) $bundleItem['qty_unit']
+                            ]);
+                        }
+                    }
                 }
-            }
-        }
+            });
 
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([

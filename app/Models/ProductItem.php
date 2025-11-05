@@ -10,7 +10,6 @@ class ProductItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'product_id',
         'item_id',
         'qty_unit'
     ];
