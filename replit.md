@@ -20,6 +20,16 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
 - API documentation has a modern, GitLab-inspired layout with sticky navigation, HTTP method badges, and comprehensive examples.
 
 **Technical Implementations & Feature Specifications:**
+- **Authentication & Access Control:**
+    - Username/password-based authentication with session management
+    - "Remember me" functionality for persistent login sessions
+    - Role-based access control using rights levels (0-4)
+    - Owner-level access (rights=4) required for admin panel
+    - Secure password hashing using Laravel's built-in bcrypt
+    - Login throttling protection via Laravel's throttle middleware
+    - Public login page at /login (no registration)
+    - CSRF protection on all forms
+    - Session regeneration on login/logout for security
 - **Donation Management:** Integrates with PayPal and Coinbase Commerce. Products can be organized into categories and configured as bundles/packs containing multiple items.
 - **Cache File Distribution:**
     - Supports multi-file, folder, and archive uploads (ZIP/TAR) with automatic directory structure preservation.
@@ -65,6 +75,8 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
 
 **System Design Choices:**
 - **Database:** SQLite for development; MySQL/PostgreSQL recommended for production.
+- **Authentication:** Session-based authentication with web guard, supporting remember me tokens.
+- **Access Control:** Middleware-based authorization (auth, owner) protecting all admin routes.
 - **Performance Optimization:** PHP upload limits are configured for large files.
 - **Queue System:** Laravel queues are used for asynchronous processing of uploads and file manipulations.
 - **API Endpoints:** A structured API provides endpoints for donations, cache management, voting, and includes comprehensive documentation.
