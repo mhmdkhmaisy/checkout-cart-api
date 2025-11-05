@@ -6,7 +6,6 @@
 <div class="flex items-center justify-center py-12" style="min-height: calc(100vh - 200px);">
     <div class="glass-card w-full max-w-md">
         <div class="text-center mb-8">
-            <img src="{{ asset('assets/aragon_rsps_icon.png') }}" alt="Aragon RSPS" class="h-24 w-24 mx-auto mb-6 rounded-lg" style="filter: drop-shadow(0 0 15px var(--glow-primary));">
             <h2 class="text-3xl font-bold mb-3" style="background: linear-gradient(135deg, var(--primary-bright) 0%, var(--accent-gold) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
                 Welcome Back
             </h2>
@@ -23,7 +22,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('login') }}">
+        <form method="POST" action="{{ route('login') }}" style="max-width: 380px; margin: 0 auto;">
             @csrf
 
             <div class="form-group">
