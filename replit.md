@@ -12,10 +12,11 @@ This project is a comprehensive Laravel-based system for RuneScape Private Serve
 The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
 
 **UI/UX Decisions:**
-- The administration panel features a dark-themed dashboard.
+- The administration panel features a dark-themed dashboard with collapsible sidebar sections for better navigation organization.
 - The file manager provides cPanel-like directory browsing with breadcrumb navigation.
 - Supports drag-and-drop file uploads, folder uploads, and archive extraction with preserved directory structure.
 - Public-facing pages and admin interfaces maintain a consistent "dragon theme" color scheme (red, gold, dark backgrounds).
+- Update cards display visual badges for pinned posts to highlight important content.
 - API documentation has a modern, GitLab-inspired layout with sticky navigation, HTTP method badges, and comprehensive examples.
 
 **Technical Implementations & Feature Specifications:**
@@ -43,7 +44,9 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
     - Includes a comprehensive Updates/News System with:
         - Block-based content editor (header, paragraph, list, code, image, alert) with drag-and-drop functionality
         - Advanced publishing workflow with draft/published states and scheduling capabilities
-        - Featured updates and pinned posts for highlighting important announcements
+        - Featured updates and pinned posts for highlighting important announcements (pinned updates appear first on all listings)
+        - Hotfix system: allows updates to be attached to parent updates without appearing in main listings, displayed at the end of parent update pages
+        - Image uploads stored in public/assets/updates/ for direct access from content blocks
         - SEO optimization with custom excerpts, meta descriptions, and featured images
         - Category and author attribution for organized content management
         - View counter and analytics tracking
@@ -52,6 +55,8 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
         - Quick-toggle actions for publish/featured/pinned status
         - Auto-slug generation from titles
         - Comprehensive statistics dashboard showing total, published, draft, featured, and pinned counts
+        - Status badges in admin panel for pinned, featured, draft, and hotfix updates
+        - Update type indicators (Regular/Client Update/Hotfix) in admin interface
     - Displays a tabbed Top Voters Widget (weekly/monthly).
 - **Performance Monitor & Analysis System:**
     - Provides a real-time dashboard for CPU, memory, response times, and disk space.
