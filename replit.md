@@ -40,7 +40,18 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
     - Full CRUD operations for promotion management with validation and security checks.
 - **Public Homepage & Content System:**
     - Features an Events System with full management, status tracking, and display.
-    - Includes an Updates/News System with a block-based content editor (header, paragraph, list, code, image, alert) and drag-and-drop functionality.
+    - Includes a comprehensive Updates/News System with:
+        - Block-based content editor (header, paragraph, list, code, image, alert) with drag-and-drop functionality
+        - Advanced publishing workflow with draft/published states and scheduling capabilities
+        - Featured updates and pinned posts for highlighting important announcements
+        - SEO optimization with custom excerpts, meta descriptions, and featured images
+        - Category and author attribution for organized content management
+        - View counter and analytics tracking
+        - Public API endpoints (`/api/updates/latest`, `/api/updates`, `/api/updates/{slug}`) with rate limiting
+        - Advanced filtering and search capabilities in admin panel
+        - Quick-toggle actions for publish/featured/pinned status
+        - Auto-slug generation from titles
+        - Comprehensive statistics dashboard showing total, published, draft, featured, and pinned counts
     - Displays a tabbed Top Voters Widget (weekly/monthly).
 - **Performance Monitor & Analysis System:**
     - Provides a real-time dashboard for CPU, memory, response times, and disk space.
