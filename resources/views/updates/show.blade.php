@@ -52,6 +52,33 @@
         @endif
     </div>
 
+    @if($update->hotfixes && $update->hotfixes->count() > 0)
+        @foreach($update->hotfixes as $hotfix)
+            <div class="glass-card mt-4">
+                <div class="mb-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600;">
+                            <i class="fas fa-wrench"></i> Hotfix
+                        </span>
+                        <h2 class="text-primary" style="font-size: 1.75rem; font-weight: 700;">
+                            {{ $hotfix->title }}
+                        </h2>
+                    </div>
+                    
+                    <p class="text-muted" style="font-size: 0.9rem;">
+                        <i class="far fa-clock"></i> Added {{ $hotfix->created_at->format('F j, Y \a\t g:i A') }}
+                        <span class="mx-2">•</span>
+                        {{ $hotfix->created_at->diffForHumans() }}
+                    </p>
+                </div>
+
+                <div class="content" style="line-height: 1.8;">
+                    {!! \App\Helpers\UpdateRenderer::render($hotfix->content) !!}
+                </div>
+            </div>
+        @endforeach
+    @endif
+
     <div class="mt-4 text-center">
         <a href="{{ route('updates') }}" class="btn btn-outline">
             <i class="fas fa-arrow-left"></i> Back to All Updates

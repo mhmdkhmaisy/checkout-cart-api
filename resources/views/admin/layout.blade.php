@@ -63,6 +63,27 @@
         .dragon-text-glow {
             text-shadow: 0 0 10px #d40000;
         }
+        .sidebar-section {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .sidebar-section.collapsed {
+            max-height: 0;
+        }
+        .sidebar-section-header {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+        .sidebar-section-header:hover {
+            color: #ff0000;
+        }
+        .sidebar-section-arrow {
+            transition: transform 0.3s ease;
+        }
+        .sidebar-section-arrow.rotated {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body class="bg-dragon-black text-dragon-silver min-h-screen">
@@ -96,8 +117,11 @@
 
                     <!-- Store Management Section -->
                     <div class="pt-4">
-                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Store Management</h3>
-                        <div class="mt-2 space-y-1">
+                        <div class="sidebar-section-header px-4 flex items-center justify-between text-xs font-semibold text-dragon-red uppercase tracking-wider" onclick="toggleSection('store')">
+                            <span>Store Management</span>
+                            <i class="fas fa-chevron-down sidebar-section-arrow" id="arrow-store"></i>
+                        </div>
+                        <div id="section-store" class="sidebar-section mt-2 space-y-1" style="max-height: 500px;">
                             <a href="{{ route('admin.products.index') }}" 
                                class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.products.index') || request()->routeIs('admin.products.show') ? 'active' : '' }}">
                                 <i class="fas fa-box mr-3"></i>
@@ -120,8 +144,11 @@
 
                     <!-- Orders Section -->
                     <div class="pt-4">
-                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Payment System</h3>
-                        <div class="mt-2 space-y-1">
+                        <div class="sidebar-section-header px-4 flex items-center justify-between text-xs font-semibold text-dragon-red uppercase tracking-wider" onclick="toggleSection('payment')">
+                            <span>Payment System</span>
+                            <i class="fas fa-chevron-down sidebar-section-arrow" id="arrow-payment"></i>
+                        </div>
+                        <div id="section-payment" class="sidebar-section mt-2 space-y-1" style="max-height: 500px;">
                             <a href="{{ route('admin.orders.index') }}" 
                                class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.orders.index') || request()->routeIs('admin.orders.show') ? 'active' : '' }}">
                                 <i class="fas fa-shopping-cart mr-3"></i>
@@ -138,8 +165,11 @@
 
                     <!-- Vote Management Section -->
                     <div class="pt-4">
-                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Vote System</h3>
-                        <div class="mt-2 space-y-1">
+                        <div class="sidebar-section-header px-4 flex items-center justify-between text-xs font-semibold text-dragon-red uppercase tracking-wider" onclick="toggleSection('vote')">
+                            <span>Vote System</span>
+                            <i class="fas fa-chevron-down sidebar-section-arrow" id="arrow-vote"></i>
+                        </div>
+                        <div id="section-vote" class="sidebar-section mt-2 space-y-1" style="max-height: 500px;">
                             <a href="{{ route('admin.vote.index') }}" 
                                class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.vote.index') ? 'active' : '' }}">
                                 <i class="fas fa-vote-yea mr-3"></i>
@@ -164,8 +194,11 @@
                     </div>
                     <!-- Client Managment Documentation -->
                     <div class="pt-4">
-                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Client Managment</h3>
-                        <div class="mt-2 space-y-1">
+                        <div class="sidebar-section-header px-4 flex items-center justify-between text-xs font-semibold text-dragon-red uppercase tracking-wider" onclick="toggleSection('client')">
+                            <span>Client Managment</span>
+                            <i class="fas fa-chevron-down sidebar-section-arrow" id="arrow-client"></i>
+                        </div>
+                        <div id="section-client" class="sidebar-section mt-2 space-y-1" style="max-height: 500px;">
                             <a href="{{ route('admin.clients.index') }}" 
                                class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.clients.index') ? 'active' : '' }}">
                                 <i class="fas fa-download mr-3"></i>
@@ -181,8 +214,11 @@
                     
                     <!-- Content Management Section -->
                     <div class="pt-4">
-                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">Content Management</h3>
-                        <div class="mt-2 space-y-1">
+                        <div class="sidebar-section-header px-4 flex items-center justify-between text-xs font-semibold text-dragon-red uppercase tracking-wider" onclick="toggleSection('content')">
+                            <span>Content Management</span>
+                            <i class="fas fa-chevron-down sidebar-section-arrow" id="arrow-content"></i>
+                        </div>
+                        <div id="section-content" class="sidebar-section mt-2 space-y-1" style="max-height: 500px;">
                             <a href="{{ route('admin.events.index') }}" 
                                class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.events.*') ? 'active' : '' }}">
                                 <i class="fas fa-calendar-star mr-3"></i>
@@ -198,8 +234,11 @@
                     
                     <!-- API Documentation -->
                     <div class="pt-4">
-                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">API Documentation</h3>
-                        <div class="mt-2 space-y-1">
+                        <div class="sidebar-section-header px-4 flex items-center justify-between text-xs font-semibold text-dragon-red uppercase tracking-wider" onclick="toggleSection('api')">
+                            <span>API Documentation</span>
+                            <i class="fas fa-chevron-down sidebar-section-arrow" id="arrow-api"></i>
+                        </div>
+                        <div id="section-api" class="sidebar-section mt-2 space-y-1" style="max-height: 500px;">
                             <a href="{{ route('admin.api-docs') }}" 
                                class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.api-docs') ? 'active' : '' }}">
                                 <div class="p-2 bg-dragon-red rounded-lg mr-4 group-hover:bg-dragon-red-bright transition-colors">
@@ -214,8 +253,11 @@
                     
                     <!-- System Monitoring -->
                     <div class="pt-4">
-                        <h3 class="px-4 text-xs font-semibold text-dragon-red uppercase tracking-wider">System</h3>
-                        <div class="mt-2 space-y-1">
+                        <div class="sidebar-section-header px-4 flex items-center justify-between text-xs font-semibold text-dragon-red uppercase tracking-wider" onclick="toggleSection('system')">
+                            <span>System</span>
+                            <i class="fas fa-chevron-down sidebar-section-arrow" id="arrow-system"></i>
+                        </div>
+                        <div id="section-system" class="sidebar-section mt-2 space-y-1" style="max-height: 500px;">
                             <a href="{{ route('admin.performance.index') }}" 
                                class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.performance.*') ? 'active' : '' }}">
                                 <i class="fas fa-tachometer-alt mr-3"></i>
@@ -281,6 +323,22 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function toggleSection(sectionId) {
+            const section = document.getElementById('section-' + sectionId);
+            const arrow = document.getElementById('arrow-' + sectionId);
+            
+            if (section.classList.contains('collapsed')) {
+                section.classList.remove('collapsed');
+                section.style.maxHeight = '500px';
+                arrow.classList.remove('rotated');
+            } else {
+                section.classList.add('collapsed');
+                section.style.maxHeight = '0';
+                arrow.classList.add('rotated');
+            }
+        }
+    </script>
     @stack('scripts')
 </body>
 </html>

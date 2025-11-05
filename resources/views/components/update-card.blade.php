@@ -1,4 +1,11 @@
 <div class="glass-card fade-in-up">
+    @if($update->is_pinned)
+        <div class="mb-2">
+            <span class="badge badge-pinned">
+                <i class="fas fa-thumbtack"></i> Pinned
+            </span>
+        </div>
+    @endif
     <div class="flex justify-between items-start mb-3">
         <h3 class="text-lg font-bold text-primary">{{ $update->title }}</h3>
         @if($update->client_update)
@@ -29,5 +36,11 @@
     background: rgba(59, 130, 246, 0.2);
     color: #60a5fa;
     border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.badge-pinned {
+    background: rgba(212, 0, 0, 0.2);
+    color: #ff4444;
+    border: 1px solid rgba(212, 0, 0, 0.4);
+    font-weight: 600;
 }
 </style>

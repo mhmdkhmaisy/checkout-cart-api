@@ -29,8 +29,8 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-dragon-red uppercase tracking-wider">ID</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-dragon-red uppercase tracking-wider">Title</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-dragon-red uppercase tracking-wider">Slug</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-dragon-red uppercase tracking-wider">Client Update</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-dragon-red uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-dragon-red uppercase tracking-wider">Type</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-dragon-red uppercase tracking-wider">Published</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-dragon-red uppercase tracking-wider">Actions</th>
                     </tr>
@@ -39,15 +39,40 @@
                     @foreach($updates as $update)
                         <tr class="hover:bg-dragon-black transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-dragon-silver">{{ $update->id }}</td>
-                            <td class="px-6 py-4 text-sm text-dragon-silver">{{ $update->title }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <code class="text-dragon-red bg-dragon-black px-2 py-1 rounded">{{ $update->slug }}</code>
+                            <td class="px-6 py-4 text-sm text-dragon-silver">
+                                {{ $update->title }}
+                                @if($update->attached_to_update_id)
+                                    <br><span class="text-xs text-dragon-silver-dark">
+                                        <i class="fas fa-link"></i> Attached to: {{ $update->attachedToUpdate->title ?? 'Unknown' }}
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                @if($update->client_update)
-                                    <span class="px-2 py-1 bg-blue-600 text-white rounded text-xs font-semibold">Yes</span>
+                                <div class="flex flex-wrap gap-1">
+                                    @if($update->is_pinned)
+                                        <span class="px-2 py-1 bg-red-600 text-white rounded text-xs font-semibold">
+                                            <i class="fas fa-thumbtack"></i> Pinned
+                                        </span>
+                                    @endif
+                                    @if($update->is_featured)
+                                        <span class="px-2 py-1 bg-yellow-600 text-white rounded text-xs font-semibold">
+                                            <i class="fas fa-star"></i> Featured
+                                        </span>
+                                    @endif
+                                    @if(!$update->is_published)
+                                        <span class="px-2 py-1 bg-gray-600 text-white rounded text-xs font-semibold">
+                                            <i class="fas fa-file"></i> Draft
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                @if($update->attached_to_update_id)
+                                    <span class="px-2 py-1 bg-purple-600 text-white rounded text-xs font-semibold">Hotfix</span>
+                                @elseif($update->client_update)
+                                    <span class="px-2 py-1 bg-blue-600 text-white rounded text-xs font-semibold">Client Update</span>
                                 @else
-                                    <span class="px-2 py-1 bg-gray-600 text-gray-200 rounded text-xs font-semibold">No</span>
+                                    <span class="px-2 py-1 bg-green-600 text-white rounded text-xs font-semibold">Regular</span>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-dragon-silver-dark">

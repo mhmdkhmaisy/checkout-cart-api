@@ -152,6 +152,29 @@
             </div>
 
             <div class="border-t border-dragon-border pt-6 mb-6">
+                <h3 class="text-lg font-semibold text-dragon-silver mb-4">Update Type</h3>
+                <div class="mb-6">
+                    <label for="attached_to_update_id" class="block text-dragon-silver font-semibold mb-2">
+                        Hotfix - Attach to Existing Update (Optional)
+                    </label>
+                    <select class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-2 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red @error('attached_to_update_id') border-red-500 @enderror" 
+                            id="attached_to_update_id" 
+                            name="attached_to_update_id">
+                        <option value="">None - Regular Update</option>
+                        @foreach(\App\Models\Update::where('id', '!=', $update->id)->whereNull('attached_to_update_id')->orderBy('created_at', 'desc')->take(50)->get() as $availableUpdate)
+                            <option value="{{ $availableUpdate->id }}" {{ old('attached_to_update_id', $update->attached_to_update_id) == $availableUpdate->id ? 'selected' : '' }}>
+                                {{ $availableUpdate->title }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="text-sm text-dragon-silver-dark mt-1">If this is a hotfix, select the update to attach it to. The hotfix will appear at the end of that update's page.</p>
+                    @error('attached_to_update_id')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="border-t border-dragon-border pt-6 mb-6">
                 <h3 class="text-lg font-semibold text-dragon-silver mb-4">Publishing Options</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>

@@ -17,7 +17,10 @@ class HomeController extends Controller
             ->orderBy('start_at', 'asc')
             ->get();
 
-        $updates = Update::orderBy('created_at', 'desc')
+        $updates = Update::where('is_published', true)
+            ->whereNull('attached_to_update_id')
+            ->orderBy('is_pinned', 'desc')
+            ->orderBy('created_at', 'desc')
             ->take(2)
             ->get();
 
@@ -37,7 +40,10 @@ class HomeController extends Controller
 
     public function updates()
     {
-        $updates = Update::orderBy('created_at', 'desc')
+        $updates = Update::where('is_published', true)
+            ->whereNull('attached_to_update_id')
+            ->orderBy('is_pinned', 'desc')
+            ->orderBy('created_at', 'desc')
             ->paginate(10);
 
         return view('updates.index', compact('updates'));
@@ -45,7 +51,7 @@ class HomeController extends Controller
 
     public function showUpdate($slug)
     {
-        $update = Update::where('slug', $slug)->firstOrFail();
+        $update = Update::where('slug', $slug)->with('hotfixes')->firstOrFail();
         return view('updates.show', compact('update'));
     }
 

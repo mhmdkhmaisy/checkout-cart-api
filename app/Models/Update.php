@@ -24,7 +24,8 @@ class Update extends Model
         'is_featured',
         'is_pinned',
         'views',
-        'published_at'
+        'published_at',
+        'attached_to_update_id'
     ];
 
     protected $casts = [
@@ -108,5 +109,15 @@ class Update extends Model
     public function getContentArrayAttribute()
     {
         return json_decode($this->content, true);
+    }
+    
+    public function hotfixes()
+    {
+        return $this->hasMany(Update::class, 'attached_to_update_id');
+    }
+    
+    public function attachedToUpdate()
+    {
+        return $this->belongsTo(Update::class, 'attached_to_update_id');
     }
 }

@@ -43,7 +43,8 @@ class UpdateController extends Controller
         }
         
         // Sort by pinned first, then created_at
-        $updates = $query->orderBy('is_pinned', 'desc')
+        $updates = $query->with(['attachedToUpdate'])
+                         ->orderBy('is_pinned', 'desc')
                          ->orderBy('created_at', 'desc')
                          ->paginate(20);
         
@@ -85,6 +86,7 @@ class UpdateController extends Controller
             'is_featured' => 'boolean',
             'is_pinned' => 'boolean',
             'published_at' => 'nullable|date',
+            'attached_to_update_id' => 'nullable|exists:updates,id',
         ]);
 
         $validated['client_update'] = $request->has('client_update');
@@ -118,6 +120,7 @@ class UpdateController extends Controller
             'is_featured' => 'boolean',
             'is_pinned' => 'boolean',
             'published_at' => 'nullable|date',
+            'attached_to_update_id' => 'nullable|exists:updates,id',
         ]);
 
         $validated['client_update'] = $request->has('client_update');
@@ -178,9 +181,14 @@ class UpdateController extends Controller
         $file = $request->file('image');
         $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
         
-        $path = $file->storeAs('public/updates', $filename);
+        $uploadsPath = public_path('assets/updates');
+        if (!file_exists($uploadsPath)) {
+            mkdir($uploadsPath, 0755, true);
+        }
         
-        $url = Storage::url($path);
+        $file->move($uploadsPath, $filename);
+        
+        $url = '/assets/updates/' . $filename;
         
         return response()->json([
             'success' => true,
