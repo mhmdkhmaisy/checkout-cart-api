@@ -42,7 +42,6 @@ class ProductController extends Controller
 
             $product = \DB::transaction(function () use ($data, $request) {
                 $product = Product::create($data);
-                $product->refresh();
 
                 if ($request->has('bundle_items')) {
                     foreach ($request->bundle_items as $bundleItem) {
