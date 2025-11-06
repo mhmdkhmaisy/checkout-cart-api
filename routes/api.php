@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ClaimController;
 use App\Http\Controllers\Api\CacheController;
+use App\Http\Controllers\Admin\CacheFileController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
