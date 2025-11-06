@@ -68,6 +68,9 @@ Route::prefix('cache')->name('api.cache.')->group(function () {
     Route::prefix('patches')->name('patches.')->group(function () {
         Route::get('/{patch}/download', [\App\Http\Controllers\Admin\CacheFileController::class, 'downloadPatch'])->name('download');
         Route::post('/download-combined', [\App\Http\Controllers\Admin\CacheFileController::class, 'downloadCombinedPatches'])->name('download-combined');
+        Route::get('/latest', [CacheFileController::class, 'getLatestVersion'])->name('latest');
+        Route::post('/check-updates', [CacheFileController::class, 'checkForUpdates'])->name('check-updates');
+ 
     });
 });
 
