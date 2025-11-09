@@ -159,10 +159,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'owner'])->group(fun
     Route::resource('promotions', PromotionController::class);
     Route::patch('promotions/{promotion}/toggle-active', [PromotionController::class, 'toggleActive'])->name('promotions.toggle-active');
 
-    // Wiki management
-    Route::resource('wiki', \App\Http\Controllers\Admin\WikiController::class)->except(['show']);
-    Route::patch('wiki/{wikiPage}/toggle-publish', [\App\Http\Controllers\Admin\WikiController::class, 'togglePublish'])->name('wiki.toggle-publish');
-
 });
 
 // Payment completion pages (NEW ROUTES)
@@ -220,9 +216,3 @@ Route::get('/banner/generate', [App\Http\Controllers\BannerController::class, 'g
 Route::get('/banner/demo', function () {
     return view('banner-demo');
 })->name('banner.demo');
-
-// Public wiki routes
-Route::prefix('wiki')->name('wiki.')->group(function () {
-    Route::get('/', [\App\Http\Controllers\WikiController::class, 'index'])->name('index');
-    Route::get('/{wikiPage}', [\App\Http\Controllers\WikiController::class, 'show'])->name('show');
-});

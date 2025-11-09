@@ -575,9 +575,6 @@
                     <li><a href="{{ route('vote.index') }}" class="{{ request()->routeIs('vote.*') ? 'active' : '' }}">
                         <i class="fas fa-vote-yea"></i> Vote
                     </a></li>
-                    <li><a href="{{ route('wiki.index') }}" class="{{ request()->routeIs('wiki.*') ? 'active' : '' }}">
-                        <i class="fas fa-book"></i> Wiki
-                    </a></li>
                     <li><a href="#" class="">
                         <i class="fas fa-user"></i> My Profile
                     </a></li>
