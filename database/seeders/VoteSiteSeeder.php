@@ -10,40 +10,43 @@ class VoteSiteSeeder extends Seeder
     public function run()
     {
         $sites = [
-            [
-                'title' => 'RuneLocus',
-                'url' => 'http://www.runelocus.com/top-rsps-list/vote-{sid}/?id2={incentive}',
-                'site_id' => '43451',
-                'active' => true,
-            ],
-            [
-                'title' => 'Top100Arena',
-                'url' => 'http://www.top100arena.com/in.asp?id={sid}&incentive={incentive}',
-                'site_id' => '88957',
-                'active' => true,
-            ],
-            [
-                'title' => 'RSPS-List',
-                'url' => 'http://www.rsps-list.com/index.php?a=in&u={sid}&id={incentive}',
-                'site_id' => 'Azanku',
-                'active' => true,
-            ],
-            [
-                'title' => 'Rune-Server',
-                'url' => 'http://www.rune-server.org/toplist.php?do=vote&sid={sid}&incentive={incentive}',
-                'site_id' => '10226',
-                'active' => true,
-            ],
+            // TopG
+            // Callback: p_resp={incentive}&ip={voter_ip}
+            // Example: https://topg.org/Runescape/server-419541-username
             [
                 'title' => 'TopG',
-                'url' => 'http://topg.org/Runescape/in-{sid}-{incentive}',
+                'url' => 'https://topg.org/Runescape/server-{sid}-{incentive}',
                 'site_id' => '419541',
                 'active' => true,
             ],
+            
+            // Top100Arena
+            // Callback: postback={incentive}
+            // Example: https://www.top100arena.com/listing/88957/vote?incentive=username
             [
-                'title' => 'RuneScript',
-                'url' => 'http://www.rune-script.com/toplist.php?action=vote&id={sid}&incentive={incentive}',
-                'site_id' => '8843',
+                'title' => 'Top100Arena',
+                'url' => 'https://www.top100arena.com/listing/{sid}/vote?incentive={incentive}',
+                'site_id' => '88957',
+                'active' => true,
+            ],
+            
+            // Rulocus (Runelocus)
+            // Callback: callback={incentive}&ip={voter_ip}&secret={your_secret}
+            // Example: https://www.rulocus.com/top-rsps-list/yourserver/vote?callback=username
+            [
+                'title' => 'Rulocus',
+                'url' => 'https://www.rulocus.com/top-rsps-list/{sid}/vote?callback={incentive}',
+                'site_id' => 'yourserver',
+                'active' => true,
+            ],
+            
+            // RSPS-List
+            // Callback: secret={api_secret}&voted={0|1}&userip={voter_ip}&userid={incentive}
+            // Example: https://www.rsps-list.com/index.php?a=in&u=Azanku&id=username
+            [
+                'title' => 'RSPS-List',
+                'url' => 'https://www.rsps-list.com/index.php?a=in&u={sid}&id={incentive}',
+                'site_id' => 'Azanku',
                 'active' => true,
             ],
         ];

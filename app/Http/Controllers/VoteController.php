@@ -98,11 +98,37 @@ class VoteController extends Controller
 
     public function callback(Request $request)
     {
-        // Handle vote callbacks from voting sites
-        $uid = $request->get('incentive') ?? $request->get('uid');
+        // Handle vote callbacks from different voting sites
+        // Each toplist sends the incentive (uid) with different parameter names:
+        
+        $uid = null;
+        
+        // TopG sends: p_resp and ip
+        if ($request->has('p_resp')) {
+            $uid = $request->get('p_resp');
+        }
+        // Top100Arena sends: postback
+        elseif ($request->has('postback')) {
+            $uid = $request->get('postback');
+        }
+        // Rulocus (Runelocus) sends: callback, ip, and secret
+        elseif ($request->has('callback')) {
+            $uid = $request->get('callback');
+        }
+        // RSPS-List sends: userid, voted, userip, and secret
+        elseif ($request->has('userid')) {
+            $uid = $request->get('userid');
+        }
+        // Fallback to legacy parameter names
+        elseif ($request->has('incentive')) {
+            $uid = $request->get('incentive');
+        }
+        elseif ($request->has('uid')) {
+            $uid = $request->get('uid');
+        }
         
         if (!$uid) {
-            return response('Missing uid', 400);
+            return response('Missing uid parameter', 400);
         }
 
         $vote = Vote::where('uid', $uid)->first();
@@ -113,6 +139,11 @@ class VoteController extends Controller
 
         if ($vote->callback_date) {
             return response('Vote already processed', 200);
+        }
+
+        // For RSPS-List, check if the vote was successful (voted=1)
+        if ($request->has('voted') && $request->get('voted') != '1') {
+            return response('Vote not successful', 400);
         }
 
         // Mark vote as completed
