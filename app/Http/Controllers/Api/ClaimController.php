@@ -7,7 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use App\Utils\Logger;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
 class ClaimController extends Controller
@@ -78,7 +78,7 @@ class ClaimController extends Controller
                 ]);
             });
         } catch (\Exception $e) {
-            Logger::error('Error claiming items for user ' . $username . ': ' . $e->getMessage());
+            Log::error('Error claiming items for user ' . $username . ': ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to claim items'
