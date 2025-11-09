@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Utils\Logger;
 use Illuminate\Support\Facades\DB;
 
 class ClaimController extends Controller
