@@ -97,7 +97,7 @@
     </form>
 </div>
 
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.tiny.cloud/1/ea6lmdx6nvv98d56f09lpj5uw8uamujpo66dpsll9w9c8hge/tinymce/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
 tinymce.init({
     selector: '#wiki-editor',
