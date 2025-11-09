@@ -229,6 +229,11 @@
                                 <i class="fas fa-newspaper mr-3"></i>
                                 Updates
                             </a>
+                            <a href="{{ route('admin.wiki.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.wiki.*') ? 'active' : '' }}">
+                                <i class="fas fa-book mr-3"></i>
+                                Wiki
+                            </a>
                         </div>
                     </div>
                     
