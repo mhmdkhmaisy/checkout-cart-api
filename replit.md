@@ -68,6 +68,17 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
         - Status badges in admin panel for pinned, featured, draft, and hotfix updates
         - Update type indicators (Regular/Client Update/Hotfix) in admin interface
     - Displays a tabbed Top Voters Widget (weekly/monthly).
+- **Wiki Documentation System:**
+    - Comprehensive documentation platform with Dev-Docs style layout
+    - Table of Contents with automatic smooth scrolling navigation
+    - Rich text editor (TinyMCE) with custom UI components (info boxes, code blocks, alerts, tabs)
+    - Category-based organization with uncategorized page support
+    - Customizable page icons and ordering
+    - Publish/draft status control
+    - Public wiki accessible at /wiki/{slug} with sidebar navigation
+    - Admin management interface with full CRUD operations
+    - Auto-slug generation from titles
+    - Responsive design matching dragon theme aesthetics
 - **Performance Monitor & Analysis System:**
     - Provides a real-time dashboard for CPU, memory, response times, and disk space.
     - Tracks HTTP requests, logs slow database queries, and monitors queue job analytics.
