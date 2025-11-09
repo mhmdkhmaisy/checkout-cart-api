@@ -24,7 +24,7 @@ class ClaimController extends Controller
                 $orders = Order::paid()
                     ->unclaimed()
                     ->forUser($request->username, $request->server_id)
-                    ->with(['orderItems.product'])
+                    ->with(['orderItems.product.bundleItems'])
                     ->get();
 
                 if ($orders->isEmpty()) {
@@ -41,10 +41,8 @@ class ClaimController extends Controller
                 foreach ($orders as $order) {
                     foreach ($order->orderItems as $orderItem) {
                         if (!$orderItem->claimed && $orderItem->product) {
-                            $claimableItems[] = [
-                                'item_id' => $orderItem->product->item_id,
-                                'qty' => $orderItem->total_qty
-                            ];
+                            $expandedItems = $this->expandOrderItem($orderItem);
+                            $claimableItems = array_merge($claimableItems, $expandedItems);
                             $orderItemsToUpdate[] = $orderItem->id;
                         }
                     }
@@ -85,5 +83,35 @@ class ClaimController extends Controller
                 'error' => 'Failed to claim items'
             ], 500);
         }
+    }
+
+    /**
+     * Expand an order item into claimable items.
+     * If the product is a bundle, expand it into individual items.
+     * Otherwise, return the single product as an item.
+     */
+    private function expandOrderItem(OrderItem $orderItem): array
+    {
+        $product = $orderItem->product;
+        $items = [];
+
+        // Check if product is a bundle
+        if ($product->bundleItems->isNotEmpty()) {
+            // Expand bundle items
+            foreach ($product->bundleItems as $bundleItem) {
+                $items[] = [
+                    'item_id' => $bundleItem->item_id,
+                    'qty' => $bundleItem->qty_unit * $orderItem->qty_units
+                ];
+            }
+        } else {
+            // Single product item
+            $items[] = [
+                'item_id' => $product->item_id,
+                'qty' => $orderItem->total_qty
+            ];
+        }
+
+        return $items;
     }
 }

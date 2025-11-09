@@ -40,8 +40,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'owner'])->group(fun
 
     // Fixed order logs and events routes
     Route::get('order-logs', function () {
-        $logs = \App\Models\OrderLog::with('order')->orderBy('created_at', 'desc')->paginate(20);
-        return view('admin.orders.logs', compact('logs'));
+        $logs = \App\Models\OrderLog::with(['order.items'])->orderBy('created_at', 'desc')->paginate(20);
+        
+        // Calculate stats from orders
+        $stats = [
+            'total_orders' => \App\Models\Order::count(),
+            'total_revenue' => \App\Models\Order::where('status', 'paid')->sum('amount'),
+            'pending_orders' => \App\Models\Order::where('status', 'pending')->count(),
+            'failed_orders' => \App\Models\Order::where('status', 'failed')->count(),
+        ];
+        
+        return view('admin.orders.logs', compact('logs', 'stats'));
     })->name('orders.logs');
     
     Route::get('orders/{order}/events', function ($order) {
