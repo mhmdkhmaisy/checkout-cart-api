@@ -73,6 +73,24 @@ class Order extends Model
         return $query->where('status', 'failed');
     }
 
+    public function scopeUnclaimed($query)
+    {
+        return $query->whereHas('orderItems', function ($q) {
+            $q->where('claimed', false);
+        });
+    }
+
+    public function scopeForUser($query, string $username, ?string $serverId = null)
+    {
+        $query->where('username', $username);
+        
+        if ($serverId !== null) {
+            $query->where('server_id', $serverId);
+        }
+        
+        return $query;
+    }
+
     /**
      * Find order by PayPal order ID or capture ID.
      * Prefers capture_id if both exist.

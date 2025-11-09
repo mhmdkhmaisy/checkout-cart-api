@@ -60,17 +60,6 @@ class ClaimController extends Controller
                 OrderItem::whereIn('id', $orderItemsToUpdate)
                     ->update(['claimed' => true]);
 
-                // Update orders claim state if all items are claimed
-                foreach ($orders as $order) {
-                    $unclaimedCount = $order->orderItems()
-                        ->where('claimed', false)
-                        ->count();
-                    
-                    if ($unclaimedCount === 0) {
-                        $order->update(['claim_state' => 'claimed']);
-                    }
-                }
-
                 return response()->json([
                     'success' => true,
                     'items' => $claimableItems,
