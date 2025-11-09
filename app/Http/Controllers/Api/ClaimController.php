@@ -77,6 +77,7 @@ class ClaimController extends Controller
                 ]);
             });
         } catch (\Exception $e) {
+            Logger::error('Error claiming items for user ' . $username . ': ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to claim items'
