@@ -11,19 +11,18 @@ use Illuminate\Support\Facades\DB;
 
 class ClaimController extends Controller
 {
-    public function claim(Request $request): JsonResponse
+    public function claim(string $username, Request $request): JsonResponse
     {
         $request->validate([
-            'username' => 'required|string|max:100',
             'server_id' => 'nullable|string|max:100'
         ]);
 
         try {
-            return DB::transaction(function () use ($request) {
+            return DB::transaction(function () use ($username, $request) {
                 // Find all paid, unclaimed orders for this user
                 $orders = Order::paid()
                     ->unclaimed()
-                    ->forUser($request->username, $request->server_id)
+                    ->forUser($username, $request->server_id)
                     ->with(['orderItems.product.bundleItems'])
                     ->get();
 
