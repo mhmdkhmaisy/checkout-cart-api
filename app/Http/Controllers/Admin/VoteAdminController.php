@@ -56,7 +56,7 @@ class VoteAdminController extends Controller
         $request->validate([
             'title' => 'required|string|min:3|max:255',
             'site_id' => 'required|string|min:1|max:255',
-            'url' => 'required|url|max:1000',
+            'url' => 'required|string|max:1000',
             'active' => 'boolean'
         ]);
 
@@ -81,7 +81,7 @@ class VoteAdminController extends Controller
         $request->validate([
             'title' => 'required|string|min:3|max:255',
             'site_id' => 'required|string|min:1|max:255',
-            'url' => 'required|url|max:1000',
+            'url' => 'required|string|max:1000',
             'active' => 'boolean'
         ]);
 
@@ -207,7 +207,7 @@ class VoteAdminController extends Controller
         $request->validate([
             'title' => 'required|string|min:3|max:255',
             'site_id' => 'required|string|min:1|max:255',
-            'url' => 'required|url|max:1000',
+            'url' => 'required|string|max:1000',
             'active' => 'boolean'
         ]);
 
@@ -248,7 +248,7 @@ class VoteAdminController extends Controller
         $request->validate([
             'title' => 'required|string|min:3|max:255',
             'site_id' => 'required|string|min:1|max:255',
-            'url' => 'required|url|max:1000',
+            'url' => 'required|string|max:1000',
             'active' => 'boolean'
         ]);
 
