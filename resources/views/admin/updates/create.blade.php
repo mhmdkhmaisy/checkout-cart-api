@@ -74,6 +74,12 @@
                     <button type="button" onclick="addBlock('osrs_header')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-font mr-1"></i> Add OSRS Header
                     </button>
+                    <button type="button" onclick="addBlock('patch_notes_section')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                        <i class="fas fa-wrench mr-1"></i> Add Patch Notes Section
+                    </button>
+                    <button type="button" onclick="addBlock('custom_section')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                        <i class="fas fa-folder-open mr-1"></i> Add Custom Section
+                    </button>
                 </div>
 
                 <!-- Hidden textarea for JSON content -->
@@ -462,6 +468,42 @@ function addBlock(type, data = null) {
                 </div>
             `;
             break;
+        case 'patch_notes_section':
+            content += `
+                <div class="mb-2">
+                    <label class="text-dragon-silver-dark text-sm mb-1 block">Patch Notes Content (JSON format)</label>
+                    <textarea id="${id}-children" placeholder='[{"type":"paragraph","data":{"text":"Fixed a bug"}},{"type":"list","data":{"style":"unordered","items":["Item 1","Item 2"]}}]' rows="6" 
+                              class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 font-mono text-sm">${data?.children ? JSON.stringify(data.children, null, 2) : ''}</textarea>
+                    <p class="text-xs text-dragon-silver-dark mt-1">Add child blocks as JSON array. Supports: paragraph, list, table, image, separator, etc.</p>
+                </div>
+            `;
+            break;
+        case 'custom_section':
+            content += `
+                <div class="mb-2">
+                    <label class="text-dragon-silver-dark text-sm mb-1 block">Section Title</label>
+                    <input type="text" id="${id}-title" placeholder="Section title" value="${data?.title || ''}" 
+                           class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                </div>
+                <div class="mb-2">
+                    <label class="text-dragon-silver-dark text-sm mb-1 block">Color Scheme</label>
+                    <select id="${id}-color" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                        <option value="primary" ${data?.color === 'primary' ? 'selected' : ''}>Primary (Red)</option>
+                        <option value="gold" ${data?.color === 'gold' ? 'selected' : ''}>Gold</option>
+                        <option value="blue" ${data?.color === 'blue' ? 'selected' : ''}>Blue</option>
+                        <option value="green" ${data?.color === 'green' ? 'selected' : ''}>Green</option>
+                        <option value="purple" ${data?.color === 'purple' ? 'selected' : ''}>Purple</option>
+                        <option value="orange" ${data?.color === 'orange' ? 'selected' : ''}>Orange</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="text-dragon-silver-dark text-sm mb-1 block">Section Content (JSON format)</label>
+                    <textarea id="${id}-children" placeholder='[{"type":"paragraph","data":{"text":"Content here"}},{"type":"image","data":{"url":"...","caption":"..."}}]' rows="6" 
+                              class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 font-mono text-sm">${data?.children ? JSON.stringify(data.children, null, 2) : ''}</textarea>
+                    <p class="text-xs text-dragon-silver-dark mt-1">Add child blocks as JSON array. Supports: paragraph, list, table, image, separator, etc.</p>
+                </div>
+            `;
+            break;
     }
     
     content += `
@@ -697,6 +739,26 @@ document.getElementById('updateForm').addEventListener('submit', function(e) {
                 blockData.data.header = document.getElementById(`${id}-header`).value;
                 blockData.data.subheader = document.getElementById(`${id}-subheader`).value;
                 blockData.data.color = document.getElementById(`${id}-color`).value;
+                break;
+            case 'patch_notes_section':
+                try {
+                    const childrenText = document.getElementById(`${id}-children`).value.trim();
+                    blockData.data.children = childrenText ? JSON.parse(childrenText) : [];
+                } catch (e) {
+                    alert(`Invalid JSON in patch notes section ${id}`);
+                    blockData.data.children = [];
+                }
+                break;
+            case 'custom_section':
+                blockData.data.title = document.getElementById(`${id}-title`).value;
+                blockData.data.color = document.getElementById(`${id}-color`).value;
+                try {
+                    const childrenText = document.getElementById(`${id}-children`).value.trim();
+                    blockData.data.children = childrenText ? JSON.parse(childrenText) : [];
+                } catch (e) {
+                    alert(`Invalid JSON in custom section ${id}`);
+                    blockData.data.children = [];
+                }
                 break;
         }
         
