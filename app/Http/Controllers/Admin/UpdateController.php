@@ -206,88 +206,49 @@ class UpdateController extends Controller
             return redirect()->back()->with('error', 'Discord webhook URL is not configured. Please add DISCORD_WEBHOOK_URL to your .env file.');
         }
 
+        // Store the update ID in session for screenshot capture
+        session(['discord_pending_update_id' => $update->id]);
+        
+        // Return JavaScript to open screenshot capture page
+        return view('admin.updates.discord-capture', compact('update'));
+    }
+
+    public function showScreenshotView(Update $update)
+    {
+        return view('updates.screenshot', compact('update'));
+    }
+
+    public function processScreenshot(Request $request)
+    {
+        $request->validate([
+            'screenshot' => 'required|file|mimes:png,jpg,jpeg|max:10240',
+            'update_id' => 'required|exists:updates,id'
+        ]);
+
+        $webhookUrl = config('services.discord.webhook_url');
+        $update = Update::findOrFail($request->update_id);
+        
         try {
+            $screenshotFile = $request->file('screenshot');
             $updateUrl = route('updates.show', $update->slug);
-            $content = json_decode($update->content, true);
             
-            // Convert content to Discord-friendly format
-            $description = $this->convertContentToDiscord($content);
-            
-            // Truncate description if too long (Discord limit is 4096 characters)
-            if (strlen($description) > 4000) {
-                $description = substr($description, 0, 3997) . '...';
-            }
-
-            // Build Discord embed
-            $embed = [
-                'title' => $update->title,
-                'description' => $description,
-                'url' => $updateUrl,
-                'color' => hexdec('c41e3a'), // Dragon red color
-                'timestamp' => $update->published_at ? $update->published_at->toIso8601String() : $update->created_at->toIso8601String(),
-                'footer' => [
-                    'text' => 'Aragon RSPS Updates'
-                ]
-            ];
-
-            // Add featured image if available
-            if ($update->featured_image) {
-                $embed['thumbnail'] = [
-                    'url' => $update->featured_image
-                ];
-            }
-
-            // Add author if available
-            if ($update->author) {
-                $embed['author'] = [
-                    'name' => $update->author
-                ];
-            }
-
-            // Add category and type as fields
-            $fields = [];
-            
-            if ($update->category) {
-                $fields[] = [
-                    'name' => 'Category',
-                    'value' => $update->category,
-                    'inline' => true
-                ];
-            }
-
-            if ($update->client_update) {
-                $fields[] = [
-                    'name' => 'Type',
-                    'value' => '⚠️ Client Update Required',
-                    'inline' => true
-                ];
-            }
-
-            if ($update->is_featured) {
-                $fields[] = [
-                    'name' => 'Status',
-                    'value' => '⭐ Featured Update',
-                    'inline' => true
-                ];
-            }
-
-            if (!empty($fields)) {
-                $embed['fields'] = $fields;
-            }
-
-            // Send to Discord
-            $response = Http::post($webhookUrl, [
-                'embeds' => [$embed]
+            // Send to Discord with image attachment
+            $response = Http::attach(
+                'file',
+                file_get_contents($screenshotFile->getRealPath()),
+                'update-screenshot.png'
+            )->post($webhookUrl, [
+                'content' => "📢 **New Update: {$update->title}**\n\n🔗 Read more: {$updateUrl}"
             ]);
 
             if ($response->successful()) {
-                return redirect()->back()->with('success', 'Update sent to Discord successfully!');
+                return response()->json(['success' => true]);
             } else {
-                return redirect()->back()->with('error', 'Failed to send update to Discord. Status: ' . $response->status());
+                return response()->json(['success' => false, 'error' => 'Discord API error'], 500);
             }
 
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error sending to Discord: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 

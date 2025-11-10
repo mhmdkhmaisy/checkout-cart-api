@@ -140,6 +140,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'owner'])->group(fun
     Route::patch('updates/{update}/toggle-featured', [UpdateController::class, 'toggleFeatured'])->name('updates.toggle-featured');
     Route::patch('updates/{update}/toggle-pinned', [UpdateController::class, 'togglePinned'])->name('updates.toggle-pinned');
     Route::post('updates/{update}/send-to-discord', [UpdateController::class, 'sendToDiscord'])->name('updates.send-to-discord');
+    Route::get('updates/{update}/screenshot-view', [UpdateController::class, 'showScreenshotView'])->name('updates.screenshot-view');
+    Route::post('updates/process-screenshot', [UpdateController::class, 'processScreenshot'])->name('updates.process-screenshot');
     Route::post('updates/upload-image', [UpdateController::class, 'uploadImage'])->name('updates.upload-image');
 
     // Performance monitoring

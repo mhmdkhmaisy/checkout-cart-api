@@ -1,6 +1,15 @@
-# Discord Webhook Setup Guide
+# Discord Webhook Setup Guide (Screenshot Version)
 
-This guide will help you configure Discord webhooks to send update notifications from your admin panel.
+This guide will help you configure Discord webhooks to send update notifications as **screenshot images** from your admin panel, making your Discord posts look exactly like your website!
+
+## How It Works
+
+When you click the Discord button:
+1. A popup window opens showing your update in screenshot-ready format
+2. JavaScript captures a high-quality screenshot of the rendered page
+3. The screenshot is automatically uploaded and sent to Discord
+4. Discord displays your update as an image that looks exactly like your website
+5. A link is included for users to read the full update
 
 ## Step 1: Create a Discord Webhook
 
@@ -23,71 +32,111 @@ This guide will help you configure Discord webhooks to send update notifications
 3. Replace the URL with the one you copied from Discord
 4. Save the file
 
+### For Shared Hosting Users:
+After updating `.env`, run these commands in your app root directory:
+```bash
+php artisan config:clear
+php artisan config:cache
+```
+
+No server restart needed on shared hosting!
+
 ## Step 3: Using the Feature
 
 1. Go to your admin panel at `/admin/updates`
 2. Find the update you want to send to Discord
 3. Click the Discord button (purple button with Discord icon)
 4. Confirm the action
-5. The update will be posted to your Discord channel
+5. A popup window will appear capturing the screenshot
+6. The window will close automatically when complete
+7. Check your Discord channel - your update appears as a beautiful image!
 
-## Features
+## What Gets Sent to Discord
 
-The Discord message will include:
-- **Title**: The update title (clickable link to full update)
-- **Description**: Formatted content from your update
-- **Color**: Dragon red theme (#c41e3a)
-- **Timestamp**: When the update was published
-- **Thumbnail**: Featured image (if set)
-- **Author**: Author name (if set)
-- **Fields**: Category, update type, and featured status
+### Message Format:
+- **Image**: High-quality screenshot of your rendered update (title, content blocks, featured image, etc.)
+- **Text**: "📢 New Update: [Title]"
+- **Link**: Direct link to read the full update on your website
 
-## Content Formatting
+### Screenshot Includes:
+- Update title styled with your theme
+- Author and date information
+- Featured image (if set)
+- All content blocks rendered exactly as they appear on your site:
+  - Headers, paragraphs, lists
+  - Code blocks
+  - Alerts and callouts
+  - OSRS headers
+  - Patch notes sections
+  - Custom sections (with your dynamic tags!)
+  - Separators
+- "Read full update" link at the bottom
 
-The system automatically converts your update blocks to Discord-friendly markdown:
+## Technical Details
 
-- **Headers**: Converted to bold text with # prefixes
-- **Paragraphs**: Plain text
-- **Lists**: Bullet points (•) or numbered lists
-- **Code blocks**: Formatted with triple backticks
-- **Alerts**: Displayed with emoji icons (ℹ️, ⚠️, ✅, ❌)
-- **Callouts**: Formatted with title and emoji (💡, ⚠️, ❗, ✨)
-- **OSRS Headers**: Bold quote-style formatting
-- **Patch Notes**: Section with 🔧 icon
-- **Custom Sections**: Your custom tag + title with nested content
-- **Separators**: Decorative line separators
+### Browser Requirements:
+- Works in all modern browsers (Chrome, Firefox, Safari, Edge)
+- Requires JavaScript enabled
+- Uses HTML2Canvas library for screenshot capture
+- No server dependencies - works perfectly on shared hosting!
 
-## Limitations
+### Image Quality:
+- 2x resolution for crisp, high-quality images
+- PNG format for best quality
+- Maximum file size: 10MB (more than enough)
+- Background color matches your dark theme
 
-- Discord has a 4096 character limit for embed descriptions
-- Very long updates will be truncated with "..." at the end
-- The full update is always available via the clickable title link
-- Images in content blocks are not included (only the featured image)
-- Tables are not supported in Discord embeds
+### Performance:
+- Screenshot capture takes 1-3 seconds
+- Automatic upload and posting to Discord
+- No manual steps required
+
+## Advantages Over Text-Based Format
+
+✅ **Visual Impact**: Your updates look exactly like your website  
+✅ **Brand Consistency**: Maintains your custom styling and colors  
+✅ **Better Engagement**: Images get more attention than text  
+✅ **Custom Sections**: All your dynamic custom tags display perfectly  
+✅ **Professional**: Polished appearance in Discord  
+✅ **No Formatting Loss**: Every design element preserved  
 
 ## Troubleshooting
 
 **Error: "Discord webhook URL is not configured"**
 - Make sure you've added `DISCORD_WEBHOOK_URL` to your `.env` file
-- Restart your server after updating `.env`
+- On shared hosting, run `php artisan config:clear && php artisan config:cache`
+- Verify the URL format is correct
 
-**Error: "Failed to send update to Discord"**
-- Verify your webhook URL is correct
+**Popup Blocked**
+- Your browser may block the screenshot capture popup
+- Allow popups for your admin domain
+- Try clicking the Discord button again
+
+**Screenshot Looks Wrong**
+- Ensure your update page loads correctly first
+- Check that featured images are accessible (not blocked by CORS)
+- Verify your CSS is loading properly
+
+**Discord Shows "Failed to send"**
+- Verify your webhook URL is correct and active
 - Check that the webhook hasn't been deleted in Discord
 - Ensure your server has internet access
+- Check file size is under 10MB
 
-**Update sent but not appearing in Discord**
-- Check that the webhook is pointing to the correct channel
-- Verify the channel exists and the webhook has permissions
-- Check Discord's server status
+**Popup Doesn't Close Automatically**
+- Check browser console for JavaScript errors
+- Verify the upload route is accessible
+- Wait up to 30 seconds (automatic timeout)
 
 ## Testing
 
 To test your webhook configuration:
 1. Create a simple test update in the admin panel
 2. Click the Discord button
-3. Check your Discord channel for the message
-4. If successful, you can delete the test update
+3. The popup should open, capture, and close automatically
+4. Check your Discord channel for the screenshot
+5. Click the link to verify it goes to your update page
+6. Delete the test update if desired
 
 ## Security Notes
 
@@ -95,3 +144,56 @@ To test your webhook configuration:
 - Keep your webhook URL private - anyone with it can post to your channel
 - Consider creating a dedicated channel for update notifications
 - You can regenerate the webhook URL in Discord if it's compromised
+- Screenshots are temporary and not stored on your server
+
+## Browser Compatibility
+
+✅ Chrome/Edge (Chromium): Excellent  
+✅ Firefox: Excellent  
+✅ Safari: Good (may have minor rendering differences)  
+⚠️ Internet Explorer: Not supported (use a modern browser)
+
+## Customization
+
+### Adjusting Screenshot Width
+
+Edit `resources/views/updates/screenshot.blade.php`:
+```html
+<style>
+    body {
+        width: 1200px; /* Change this value */
+    }
+</style>
+```
+
+### Changing Screenshot Quality
+
+Edit the same file:
+```javascript
+html2canvas(captureArea, {
+    scale: 2, // Change to 1 for lower quality, 3 for higher
+    // ...
+})
+```
+
+### Custom Message Format
+
+Edit `app/Http/Controllers/Admin/UpdateController.php` in the `processScreenshot` method:
+```php
+'content' => "📢 **New Update: {$update->title}**\n\n🔗 Read more: {$updateUrl}"
+```
+
+## Reverting to Text-Based Format
+
+If you prefer the old text-based format instead of screenshots, check the git history for the previous version of the `sendToDiscord` method that uses embeds with formatted text.
+
+## Support
+
+For issues with:
+- **Discord webhooks**: Check Discord's webhook documentation
+- **Screenshot capture**: Ensure JavaScript is enabled and popups are allowed
+- **Styling issues**: Verify your CSS files are loading correctly
+
+---
+
+**Enjoy sending beautiful, website-like updates to your Discord community! 🎨**
