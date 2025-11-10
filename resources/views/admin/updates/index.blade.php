@@ -21,6 +21,15 @@
     </div>
 @endif
 
+@if(session('error'))
+    <div class="mb-6 p-4 bg-red-600 text-red-100 rounded-lg flex items-center justify-between">
+        <div>
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            {{ session('error') }}
+        </div>
+    </div>
+@endif
+
 <div class="bg-dragon-surface border border-dragon-border rounded-lg shadow-lg overflow-hidden">
     @if($updates->count() > 0)
         <div class="overflow-x-auto">
@@ -91,6 +100,17 @@
                                        title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    <form action="{{ route('admin.updates.send-to-discord', $update) }}" 
+                                          method="POST" 
+                                          class="inline" 
+                                          onsubmit="return confirm('Send this update to Discord?');">
+                                        @csrf
+                                        <button type="submit" 
+                                                class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+                                                title="Send to Discord">
+                                            <i class="fab fa-discord"></i>
+                                        </button>
+                                    </form>
                                     <form action="{{ route('admin.updates.destroy', $update) }}" 
                                           method="POST" 
                                           class="inline" 

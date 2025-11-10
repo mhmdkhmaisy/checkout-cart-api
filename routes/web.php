@@ -139,6 +139,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'owner'])->group(fun
     Route::patch('updates/{update}/toggle-publish', [UpdateController::class, 'togglePublish'])->name('updates.toggle-publish');
     Route::patch('updates/{update}/toggle-featured', [UpdateController::class, 'toggleFeatured'])->name('updates.toggle-featured');
     Route::patch('updates/{update}/toggle-pinned', [UpdateController::class, 'togglePinned'])->name('updates.toggle-pinned');
+    Route::post('updates/{update}/send-to-discord', [UpdateController::class, 'sendToDiscord'])->name('updates.send-to-discord');
     Route::post('updates/upload-image', [UpdateController::class, 'uploadImage'])->name('updates.upload-image');
 
     // Performance monitoring

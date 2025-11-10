@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Update;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
+use App\Helpers\UpdateRenderer;
 
 class UpdateController extends Controller
 {
@@ -194,5 +196,215 @@ class UpdateController extends Controller
             'success' => true,
             'url' => $url
         ]);
+    }
+
+    public function sendToDiscord(Update $update)
+    {
+        $webhookUrl = env('DISCORD_WEBHOOK_URL');
+        
+        if (!$webhookUrl) {
+            return redirect()->back()->with('error', 'Discord webhook URL is not configured. Please add DISCORD_WEBHOOK_URL to your .env file.');
+        }
+
+        try {
+            $updateUrl = route('updates.show', $update->slug);
+            $content = json_decode($update->content, true);
+            
+            // Convert content to Discord-friendly format
+            $description = $this->convertContentToDiscord($content);
+            
+            // Truncate description if too long (Discord limit is 4096 characters)
+            if (strlen($description) > 4000) {
+                $description = substr($description, 0, 3997) . '...';
+            }
+
+            // Build Discord embed
+            $embed = [
+                'title' => $update->title,
+                'description' => $description,
+                'url' => $updateUrl,
+                'color' => hexdec('c41e3a'), // Dragon red color
+                'timestamp' => $update->published_at ? $update->published_at->toIso8601String() : $update->created_at->toIso8601String(),
+                'footer' => [
+                    'text' => 'Aragon RSPS Updates'
+                ]
+            ];
+
+            // Add featured image if available
+            if ($update->featured_image) {
+                $embed['thumbnail'] = [
+                    'url' => $update->featured_image
+                ];
+            }
+
+            // Add author if available
+            if ($update->author) {
+                $embed['author'] = [
+                    'name' => $update->author
+                ];
+            }
+
+            // Add category and type as fields
+            $fields = [];
+            
+            if ($update->category) {
+                $fields[] = [
+                    'name' => 'Category',
+                    'value' => $update->category,
+                    'inline' => true
+                ];
+            }
+
+            if ($update->client_update) {
+                $fields[] = [
+                    'name' => 'Type',
+                    'value' => '⚠️ Client Update Required',
+                    'inline' => true
+                ];
+            }
+
+            if ($update->is_featured) {
+                $fields[] = [
+                    'name' => 'Status',
+                    'value' => '⭐ Featured Update',
+                    'inline' => true
+                ];
+            }
+
+            if (!empty($fields)) {
+                $embed['fields'] = $fields;
+            }
+
+            // Send to Discord
+            $response = Http::post($webhookUrl, [
+                'embeds' => [$embed]
+            ]);
+
+            if ($response->successful()) {
+                return redirect()->back()->with('success', 'Update sent to Discord successfully!');
+            } else {
+                return redirect()->back()->with('error', 'Failed to send update to Discord. Status: ' . $response->status());
+            }
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error sending to Discord: ' . $e->getMessage());
+        }
+    }
+
+    private function convertContentToDiscord($content)
+    {
+        if (!$content || !isset($content['blocks'])) {
+            return '';
+        }
+
+        $output = [];
+        
+        foreach ($content['blocks'] as $block) {
+            $blockText = $this->convertBlockToDiscord($block);
+            if ($blockText) {
+                $output[] = $blockText;
+            }
+        }
+
+        return implode("\n\n", $output);
+    }
+
+    private function convertBlockToDiscord($block)
+    {
+        $type = $block['type'] ?? 'paragraph';
+        $data = $block['data'] ?? [];
+
+        switch($type) {
+            case 'header':
+                $level = $data['level'] ?? 2;
+                $text = $data['text'] ?? '';
+                $prefix = str_repeat('#', min($level, 3));
+                return "$prefix **$text**";
+
+            case 'paragraph':
+                return $data['text'] ?? '';
+
+            case 'list':
+                $items = $data['items'] ?? [];
+                $style = $data['style'] ?? 'unordered';
+                $listText = [];
+                foreach ($items as $index => $item) {
+                    if ($style === 'ordered') {
+                        $listText[] = ($index + 1) . ". $item";
+                    } else {
+                        $listText[] = "• $item";
+                    }
+                }
+                return implode("\n", $listText);
+
+            case 'code':
+                $code = $data['code'] ?? '';
+                return "```\n$code\n```";
+
+            case 'alert':
+                $type = $data['type'] ?? 'info';
+                $message = $data['message'] ?? '';
+                $icons = [
+                    'info' => 'ℹ️',
+                    'warning' => '⚠️',
+                    'success' => '✅',
+                    'danger' => '❌'
+                ];
+                $icon = $icons[$type] ?? 'ℹ️';
+                return "$icon **Alert:** $message";
+
+            case 'callout':
+                $title = $data['title'] ?? '';
+                $message = $data['message'] ?? '';
+                $type = $data['type'] ?? 'info';
+                $icons = [
+                    'info' => 'ℹ️',
+                    'tip' => '💡',
+                    'warning' => '⚠️',
+                    'important' => '❗',
+                    'new' => '✨'
+                ];
+                $icon = $icons[$type] ?? 'ℹ️';
+                return "$icon **$title**\n$message";
+
+            case 'osrs_header':
+                $header = $data['header'] ?? '';
+                $subheader = $data['subheader'] ?? '';
+                $text = "**>>> $header**";
+                if ($subheader) {
+                    $text .= "\n*$subheader*";
+                }
+                return $text;
+
+            case 'patch_notes_section':
+                $children = $data['children'] ?? [];
+                $text = "🔧 **PATCH NOTES**\n";
+                foreach ($children as $child) {
+                    $childText = $this->convertBlockToDiscord($child);
+                    if ($childText) {
+                        $text .= $childText . "\n";
+                    }
+                }
+                return $text;
+
+            case 'custom_section':
+                $title = $data['title'] ?? 'Section';
+                $tag = $data['tag'] ?? 'SECTION';
+                $children = $data['children'] ?? [];
+                $text = "`$tag` **$title**\n";
+                foreach ($children as $child) {
+                    $childText = $this->convertBlockToDiscord($child);
+                    if ($childText) {
+                        $text .= $childText . "\n";
+                    }
+                }
+                return $text;
+
+            case 'separator':
+                return "━━━━━━━━━━━━━━━━━━";
+
+            default:
+                return '';
+        }
     }
 }
