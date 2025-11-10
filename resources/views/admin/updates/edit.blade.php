@@ -72,6 +72,9 @@
                     <button type="button" onclick="addBlock('separator')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-minus mr-1"></i> Add Separator
                     </button>
+                    <button type="button" onclick="addBlock('osrs_header')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                        <i class="fas fa-font mr-1"></i> Add OSRS Header
+                    </button>
                 </div>
 
                 <!-- Hidden textarea for JSON content -->
@@ -450,6 +453,30 @@ function addBlock(type, data = null) {
                 </div>
             `;
             break;
+        case 'osrs_header':
+            content += `
+                <div class="mb-2">
+                    <label class="text-dragon-silver-dark text-sm mb-1 block">Main Header</label>
+                    <input type="text" id="${id}-header" placeholder="Main header text" value="${escapeHtml(data?.header || '')}" 
+                           class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                </div>
+                <div class="mb-2">
+                    <label class="text-dragon-silver-dark text-sm mb-1 block">Subheader (optional)</label>
+                    <input type="text" id="${id}-subheader" placeholder="Subheader text" value="${escapeHtml(data?.subheader || '')}" 
+                           class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
+                </div>
+                <div class="mb-2">
+                    <label class="text-dragon-silver-dark text-sm mb-1 block">Color Scheme</label>
+                    <select id="${id}-color" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
+                        <option value="gold" ${data?.color === 'gold' ? 'selected' : ''}>Gold (Classic OSRS)</option>
+                        <option value="red" ${data?.color === 'red' ? 'selected' : ''}>Red (Dragon Theme)</option>
+                        <option value="cyan" ${data?.color === 'cyan' ? 'selected' : ''}>Cyan (Quest)</option>
+                        <option value="green" ${data?.color === 'green' ? 'selected' : ''}>Green (Success)</option>
+                        <option value="white" ${data?.color === 'white' ? 'selected' : ''}>White (Standard)</option>
+                    </select>
+                </div>
+            `;
+            break;
     }
     
     content += `
@@ -680,6 +707,11 @@ document.getElementById('updateForm').addEventListener('submit', function(e) {
                 blockData.data.data = tableArray;
                 break;
             case 'separator':
+                break;
+            case 'osrs_header':
+                blockData.data.header = document.getElementById(`${id}-header`).value;
+                blockData.data.subheader = document.getElementById(`${id}-subheader`).value;
+                blockData.data.color = document.getElementById(`${id}-color`).value;
                 break;
         }
         

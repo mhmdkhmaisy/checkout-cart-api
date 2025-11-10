@@ -42,6 +42,7 @@ class UpdateRenderer
             'callout' => self::renderCallout($data),
             'table' => self::renderTable($data),
             'separator' => self::renderSeparator($data),
+            'osrs_header' => self::renderOsrsHeader($data),
             default => self::renderParagraph($data),
         };
     }
@@ -206,6 +207,66 @@ class UpdateRenderer
     private static function renderSeparator($data)
     {
         return '<hr style="border: none; border-top: 2px solid rgba(212, 0, 0, 0.3); margin: 2rem 0;">';
+    }
+
+    private static function renderOsrsHeader($data)
+    {
+        $header = $data['header'] ?? '';
+        $subheader = $data['subheader'] ?? '';
+        $colorScheme = $data['color'] ?? 'gold';
+        
+        $colors = [
+            'gold' => '#FFB000',
+            'red' => '#FF0000',
+            'cyan' => '#00FFFF',
+            'green' => '#00FF00',
+            'white' => '#FFFFFF',
+        ];
+        
+        $color = $colors[$colorScheme] ?? $colors['gold'];
+        
+        $fontImport = '@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");';
+        
+        $headerStyle = '
+            font-family: "Press Start 2P", monospace, system-ui;
+            font-size: 1.5rem;
+            line-height: 1.8;
+            color: ' . $color . ';
+            text-shadow: 2px 2px 0px #000000, -1px -1px 0px rgba(0,0,0,0.5);
+            letter-spacing: 2px;
+            margin-bottom: ' . ($subheader ? '0.5rem' : '1.5rem') . ';
+            text-transform: uppercase;
+            image-rendering: pixelated;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: grayscale;
+        ';
+        
+        $subheaderStyle = '
+            font-family: "Press Start 2P", monospace, system-ui;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: ' . $color . ';
+            text-shadow: 1px 1px 0px #000000;
+            letter-spacing: 1px;
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+            padding-left: 1.5rem;
+            image-rendering: pixelated;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: grayscale;
+        ';
+        
+        $html = '<style>' . $fontImport . '</style>';
+        $html .= '<div style="margin: 2rem 0;">';
+        $html .= '<div style="' . $headerStyle . '">' . e($header) . '</div>';
+        
+        if ($subheader) {
+            $html .= '<div style="' . $subheaderStyle . '">' . e($subheader) . '</div>';
+        }
+        
+        $html .= '</div>';
+        
+        return $html;
     }
 
     public static function extractPlainText($contentJson, $maxLength = 200)
