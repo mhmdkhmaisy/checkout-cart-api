@@ -225,8 +225,6 @@ class UpdateRenderer
         
         $color = $colors[$colorScheme] ?? $colors['gold'];
         
-        $fontImport = '@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");';
-        
         $headerStyle = '
             font-family: "Press Start 2P", monospace, system-ui;
             font-size: 1.5rem;
@@ -256,8 +254,7 @@ class UpdateRenderer
             -moz-osx-font-smoothing: grayscale;
         ';
         
-        $html = '<style>' . $fontImport . '</style>';
-        $html .= '<div style="margin: 2rem 0;">';
+        $html = '<div style="margin: 2rem 0;">';
         $html .= '<div style="' . $headerStyle . '">' . e($header) . '</div>';
         
         if ($subheader) {

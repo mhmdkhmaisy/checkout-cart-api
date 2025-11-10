@@ -3,6 +3,12 @@
 @section('title', $update->title . ' - Aragon RSPS')
 @section('description', Str::limit(strip_tags(\App\Helpers\UpdateRenderer::render($update->content)), 160))
 
+@push('head')
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+@endpush
+
 @section('content')
 <div class="fade-in-up" style="max-width: 900px; margin: 0 auto;">
     <div class="mb-4">
