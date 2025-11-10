@@ -200,7 +200,7 @@ class UpdateController extends Controller
 
     public function sendToDiscord(Update $update)
     {
-        $webhookUrl = env('DISCORD_WEBHOOK_URL');
+        $webhookUrl = config('services.discord.webhook_url');
         
         if (!$webhookUrl) {
             return redirect()->back()->with('error', 'Discord webhook URL is not configured. Please add DISCORD_WEBHOOK_URL to your .env file.');

@@ -44,4 +44,8 @@ return [
         'webhook_secret' => env('COINBASE_WEBHOOK_SECRET'),
     ],
 
+    'discord' => [
+        'webhook_url' => env('DISCORD_WEBHOOK_URL'),
+    ],
+
 ];
