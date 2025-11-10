@@ -308,7 +308,7 @@ class UpdateRenderer
         
         $html = '<div style="background: ' . $colorSet['bg'] . '; border-left: 4px solid ' . $colorSet['border'] . '; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">';
         $html .= '<div style="display: flex; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid ' . $colorSet['border'] . '30;">';
-        $html .= '<i class="fas fa-folder-open" style="color: ' . $colorSet['text'] . '; font-size: 1.25rem; margin-right: 0.75rem;"></i>';
+        $html .= '<span style="font-family: \'Courier New\', monospace; font-weight: bold; letter-spacing: 1px; image-rendering: pixelated; font-size: 11px; background: #1a1a1a; border: 2px solid #8b7355; padding: 2px 6px; color: #ff9040; text-shadow: 1px 1px 0px #000; margin-right: 0.75rem;">SECTION</span>';
         $html .= '<h3 style="font-size: 1.5rem; font-weight: 700; color: ' . $colorSet['text'] . '; margin: 0;">' . e($title) . '</h3>';
         $html .= '</div>';
         

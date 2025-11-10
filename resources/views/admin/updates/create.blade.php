@@ -511,6 +511,7 @@ class BlockEditor {
                     </div>
                 `;
             case 'patch_notes_section':
+                const patchChildrenId = id + '-children';
                 return `
                     <div class="bg-dragon-surface rounded-lg p-4 border-2 border-red-900">
                         <div class="flex items-center justify-between mb-3">
@@ -518,7 +519,7 @@ class BlockEditor {
                                 <i class="fas fa-wrench"></i> Patch Notes Content
                             </h4>
                         </div>
-                        <div id="${id}-children" class="space-y-3 mb-3 min-h-[100px] bg-dragon-black/30 rounded p-3">
+                        <div id="${patchChildrenId}" class="space-y-3 mb-3 min-h-[100px] bg-dragon-black/30 rounded p-3">
                             <p class="text-dragon-silver-dark text-sm text-center py-4">No blocks yet. Add blocks below.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
@@ -553,15 +554,18 @@ class BlockEditor {
                     </div>
                 `;
             case 'custom_section':
+                const customTitleId = id + '-title';
+                const customColorId = id + '-color';
+                const customChildrenId = id + '-children';
                 return `
                     <div class="mb-2">
                         <label class="text-dragon-silver-dark text-sm mb-1 block">Section Title</label>
-                        <input type="text" id="${id}-title" placeholder="Section title" value="${data?.title || ''}" 
+                        <input type="text" id="${customTitleId}" placeholder="Section title" value="${data?.title || ''}" 
                                class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
                     </div>
                     <div class="mb-2">
                         <label class="text-dragon-silver-dark text-sm mb-1 block">Color Scheme</label>
-                        <select id="${id}-color" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                        <select id="${customColorId}" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
                             <option value="primary" ${data?.color === 'primary' ? 'selected' : ''}>Primary (Red)</option>
                             <option value="gold" ${data?.color === 'gold' ? 'selected' : ''}>Gold</option>
                             <option value="blue" ${data?.color === 'blue' ? 'selected' : ''}>Blue</option>
@@ -576,7 +580,7 @@ class BlockEditor {
                                 <span class="osrs-tag">SECTION</span> Section Content
                             </h4>
                         </div>
-                        <div id="${id}-children" class="space-y-3 mb-3 min-h-[100px] bg-dragon-black/30 rounded p-3">
+                        <div id="${customChildrenId}" class="space-y-3 mb-3 min-h-[100px] bg-dragon-black/30 rounded p-3">
                             <p class="text-dragon-silver-dark text-sm text-center py-4">No blocks yet. Add blocks below.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
