@@ -630,7 +630,7 @@ class BlockEditor {
     
     initializeNestedEditor(sectionId, children = []) {
         // Create nested editor for this section
-        const nestedEditor = new BlockEditor(`${sectionId}-children`, sectionId, false);
+        const nestedEditor = new BlockEditor(sectionId + '-children', sectionId, false);
         
         // Load children blocks if provided
         if (children && children.length > 0) {

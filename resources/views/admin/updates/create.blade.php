@@ -43,41 +43,41 @@
                 </div>
 
                 <!-- Add Block Buttons -->
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <button type="button" onclick="addBlock('header')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                <div id="addBlockButtons" class="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onclick="rootEditor?.addBlock('header')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-heading mr-1"></i> Add Header
                     </button>
-                    <button type="button" onclick="addBlock('paragraph')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                    <button type="button" onclick="rootEditor?.addBlock('paragraph')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-paragraph mr-1"></i> Add Paragraph
                     </button>
-                    <button type="button" onclick="addBlock('list')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                    <button type="button" onclick="rootEditor?.addBlock('list')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-list mr-1"></i> Add List
                     </button>
-                    <button type="button" onclick="addBlock('code')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                    <button type="button" onclick="rootEditor?.addBlock('code')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-code mr-1"></i> Add Code
                     </button>
-                    <button type="button" onclick="addBlock('alert')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                    <button type="button" onclick="rootEditor?.addBlock('alert')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-exclamation-triangle mr-1"></i> Add Alert
                     </button>
-                    <button type="button" onclick="addBlock('image')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                    <button type="button" onclick="rootEditor?.addBlock('image')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-image mr-1"></i> Add Image
                     </button>
-                    <button type="button" onclick="addBlock('callout')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                    <button type="button" onclick="rootEditor?.addBlock('callout')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-lightbulb mr-1"></i> Add Callout
                     </button>
-                    <button type="button" onclick="addBlock('table')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                    <button type="button" onclick="rootEditor?.addBlock('table')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-table mr-1"></i> Add Table
                     </button>
-                    <button type="button" onclick="addBlock('separator')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                    <button type="button" onclick="rootEditor?.addBlock('separator')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-minus mr-1"></i> Add Separator
                     </button>
-                    <button type="button" onclick="addBlock('osrs_header')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                    <button type="button" onclick="rootEditor?.addBlock('osrs_header')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-font mr-1"></i> Add OSRS Header
                     </button>
-                    <button type="button" onclick="addBlock('patch_notes_section')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                    <button type="button" onclick="rootEditor?.addBlock('patch_notes_section')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-wrench mr-1"></i> Add Patch Notes Section
                     </button>
-                    <button type="button" onclick="addBlock('custom_section')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                    <button type="button" onclick="rootEditor?.addBlock('custom_section')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-folder-open mr-1"></i> Add Custom Section
                     </button>
                 </div>
@@ -278,6 +278,18 @@
 .drag-handle:hover {
     color: #d40000;
 }
+.osrs-tag {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    letter-spacing: 1px;
+    image-rendering: pixelated;
+    font-size: 11px;
+    background: #1a1a1a;
+    border: 2px solid #8b7355;
+    padding: 2px 6px;
+    color: #ff9040;
+    text-shadow: 1px 1px 0px #000;
+}
 </style>
 
 <script>
@@ -332,6 +344,7 @@ class BlockEditor {
     }
     
     generateBlockHtml(id, type, data) {
+        const contextId = this.contextId;
         let content = `
             <div class="flex items-start gap-3">
                 <div class="drag-handle text-dragon-silver-dark pt-2">
@@ -340,7 +353,7 @@ class BlockEditor {
                 <div class="flex-1">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-dragon-red font-semibold uppercase text-sm">${type.replace(/_/g, ' ')}</span>
-                        <button type="button" onclick="rootEditor.removeBlock('${id}')" class="text-dragon-silver-dark hover:text-red-500 transition-colors">
+                        <button type="button" onclick="(nestedEditors.get('${contextId}') || rootEditor)?.removeBlock('${id}')" class="text-dragon-silver-dark hover:text-red-500 transition-colors">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -509,6 +522,9 @@ class BlockEditor {
                             <p class="text-dragon-silver-dark text-sm text-center py-4">No blocks yet. Add blocks below.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('header')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
+                                <i class="fas fa-heading"></i> Header
+                            </button>
                             <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('paragraph')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
                                 <i class="fas fa-paragraph"></i> Paragraph
                             </button>
@@ -518,11 +534,20 @@ class BlockEditor {
                             <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('code')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
                                 <i class="fas fa-code"></i> Code
                             </button>
-                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('separator')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
-                                <i class="fas fa-minus"></i> Separator
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('image')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
+                                <i class="fas fa-image"></i> Image
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('callout')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
+                                <i class="fas fa-lightbulb"></i> Callout
                             </button>
                             <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('alert')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
                                 <i class="fas fa-exclamation-triangle"></i> Alert
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('separator')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
+                                <i class="fas fa-minus"></i> Separator
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('osrs_header')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
+                                <i class="fas fa-font"></i> OSRS Header
                             </button>
                         </div>
                     </div>
@@ -548,13 +573,16 @@ class BlockEditor {
                     <div class="bg-dragon-surface rounded-lg p-4 border-2 border-dragon-border">
                         <div class="flex items-center justify-between mb-3">
                             <h4 class="text-dragon-silver font-semibold flex items-center gap-2">
-                                <i class="fas fa-folder-open"></i> Section Content
+                                <span class="osrs-tag">SECTION</span> Section Content
                             </h4>
                         </div>
                         <div id="${id}-children" class="space-y-3 mb-3 min-h-[100px] bg-dragon-black/30 rounded p-3">
                             <p class="text-dragon-silver-dark text-sm text-center py-4">No blocks yet. Add blocks below.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('header')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
+                                <i class="fas fa-heading"></i> Header
+                            </button>
                             <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('paragraph')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
                                 <i class="fas fa-paragraph"></i> Paragraph
                             </button>
@@ -570,8 +598,17 @@ class BlockEditor {
                             <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('code')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
                                 <i class="fas fa-code"></i> Code
                             </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('callout')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
+                                <i class="fas fa-lightbulb"></i> Callout
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('alert')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
+                                <i class="fas fa-exclamation-triangle"></i> Alert
+                            </button>
                             <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('separator')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
                                 <i class="fas fa-minus"></i> Separator
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('osrs_header')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
+                                <i class="fas fa-font"></i> OSRS Header
                             </button>
                         </div>
                     </div>
@@ -583,12 +620,14 @@ class BlockEditor {
     
     initializeNestedEditor(sectionId, children = []) {
         // Create nested editor for this section
-        const nestedEditor = new BlockEditor(`${sectionId}-children`, sectionId, false);
+        const nestedEditor = new BlockEditor(sectionId + '-children', sectionId, false);
         
         // Load children blocks if provided
-        children.forEach(childBlock => {
-            nestedEditor.addBlock(childBlock.type, childBlock.data);
-        });
+        if (children && children.length > 0) {
+            children.forEach(childBlock => {
+                nestedEditor.addBlock(childBlock.type, childBlock.data);
+            });
+        }
     }
     
     removeBlock(blockId) {
