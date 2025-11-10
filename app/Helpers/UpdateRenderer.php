@@ -39,6 +39,9 @@ class UpdateRenderer
             'code' => self::renderCode($data),
             'image' => self::renderImage($data),
             'alert' => self::renderAlert($data),
+            'callout' => self::renderCallout($data),
+            'table' => self::renderTable($data),
+            'separator' => self::renderSeparator($data),
             default => self::renderParagraph($data),
         };
     }
@@ -120,6 +123,89 @@ class UpdateRenderer
         $style = $styles[$type] ?? $styles['info'];
         
         return '<div style="' . $style . '">' . nl2br(e($message)) . '</div>';
+    }
+
+    private static function renderCallout($data)
+    {
+        $type = $data['type'] ?? 'info';
+        $title = $data['title'] ?? '';
+        $message = $data['message'] ?? '';
+        
+        $styles = [
+            'info' => [
+                'bg' => 'background: rgba(59, 130, 246, 0.1); border: 2px solid #3b82f6;',
+                'title' => 'color: #60a5fa; font-weight: 700; font-size: 1.125rem; margin-bottom: 0.5rem;',
+                'icon' => '<i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>'
+            ],
+            'tip' => [
+                'bg' => 'background: rgba(34, 197, 94, 0.1); border: 2px solid #22c55e;',
+                'title' => 'color: #4ade80; font-weight: 700; font-size: 1.125rem; margin-bottom: 0.5rem;',
+                'icon' => '<i class="fas fa-lightbulb" style="margin-right: 0.5rem;"></i>'
+            ],
+            'warning' => [
+                'bg' => 'background: rgba(234, 179, 8, 0.1); border: 2px solid #eab308;',
+                'title' => 'color: #facc15; font-weight: 700; font-size: 1.125rem; margin-bottom: 0.5rem;',
+                'icon' => '<i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>'
+            ],
+            'important' => [
+                'bg' => 'background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444;',
+                'title' => 'color: #f87171; font-weight: 700; font-size: 1.125rem; margin-bottom: 0.5rem;',
+                'icon' => '<i class="fas fa-exclamation-circle" style="margin-right: 0.5rem;"></i>'
+            ],
+            'new' => [
+                'bg' => 'background: rgba(168, 85, 247, 0.1); border: 2px solid #a855f7;',
+                'title' => 'color: #c084fc; font-weight: 700; font-size: 1.125rem; margin-bottom: 0.5rem;',
+                'icon' => '<i class="fas fa-star" style="margin-right: 0.5rem;"></i>'
+            ]
+        ];
+        
+        $styleSet = $styles[$type] ?? $styles['info'];
+        
+        $html = '<div style="' . $styleSet['bg'] . ' padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 8px;">';
+        if ($title) {
+            $html .= '<div style="' . $styleSet['title'] . '">' . $styleSet['icon'] . e($title) . '</div>';
+        }
+        $html .= '<div style="color: var(--text-color, #ccc); line-height: 1.6;">' . nl2br(e($message)) . '</div>';
+        $html .= '</div>';
+        
+        return $html;
+    }
+
+    private static function renderTable($data)
+    {
+        $tableData = $data['data'] ?? [];
+        
+        if (empty($tableData)) {
+            return '';
+        }
+        
+        $html = '<div style="overflow-x: auto; margin-bottom: 1.5rem;">';
+        $html .= '<table style="width: 100%; border-collapse: collapse; background: rgba(0, 0, 0, 0.3); border-radius: 8px; overflow: hidden;">';
+        
+        foreach ($tableData as $rowIdx => $row) {
+            if ($rowIdx === 0) {
+                $html .= '<thead><tr>';
+                foreach ($row as $cell) {
+                    $html .= '<th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; color: var(--primary-color, #d40000); border-bottom: 2px solid var(--primary-color, #d40000); background: rgba(212, 0, 0, 0.1);">' . e($cell) . '</th>';
+                }
+                $html .= '</tr></thead><tbody>';
+            } else {
+                $html .= '<tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">';
+                foreach ($row as $cell) {
+                    $html .= '<td style="padding: 0.75rem 1rem; color: var(--text-color, #ccc);">' . e($cell) . '</td>';
+                }
+                $html .= '</tr>';
+            }
+        }
+        
+        $html .= '</tbody></table></div>';
+        
+        return $html;
+    }
+
+    private static function renderSeparator($data)
+    {
+        return '<hr style="border: none; border-top: 2px solid rgba(212, 0, 0, 0.3); margin: 2rem 0;">';
     }
 
     public static function extractPlainText($contentJson, $maxLength = 200)

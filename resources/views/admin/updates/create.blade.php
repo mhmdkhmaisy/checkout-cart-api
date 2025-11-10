@@ -62,6 +62,15 @@
                     <button type="button" onclick="addBlock('image')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-image mr-1"></i> Add Image
                     </button>
+                    <button type="button" onclick="addBlock('callout')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                        <i class="fas fa-lightbulb mr-1"></i> Add Callout
+                    </button>
+                    <button type="button" onclick="addBlock('table')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                        <i class="fas fa-table mr-1"></i> Add Table
+                    </button>
+                    <button type="button" onclick="addBlock('separator')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
+                        <i class="fas fa-minus mr-1"></i> Add Separator
+                    </button>
                 </div>
 
                 <!-- Hidden textarea for JSON content -->
@@ -374,6 +383,58 @@ function addBlock(type, data = null) {
                        class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
             `;
             break;
+        case 'callout':
+            content += `
+                <select id="${id}-calloutType" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                    <option value="info" ${data?.type === 'info' ? 'selected' : ''}>Info (Blue)</option>
+                    <option value="tip" ${data?.type === 'tip' ? 'selected' : ''}>Tip (Green)</option>
+                    <option value="warning" ${data?.type === 'warning' ? 'selected' : ''}>Warning (Yellow)</option>
+                    <option value="important" ${data?.type === 'important' ? 'selected' : ''}>Important (Red)</option>
+                    <option value="new" ${data?.type === 'new' ? 'selected' : ''}>New Feature (Purple)</option>
+                </select>
+                <input type="text" id="${id}-title" placeholder="Callout title (e.g., 'New Feature')" value="${data?.title || ''}" 
+                       class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                <textarea id="${id}-message" placeholder="Callout message" rows="3" 
+                          class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">${data?.message || ''}</textarea>
+            `;
+            break;
+        case 'table':
+            const tableData = data?.data || [['Header 1', 'Header 2'], ['Row 1 Col 1', 'Row 1 Col 2']];
+            content += `
+                <div class="mb-2">
+                    <label class="text-dragon-silver-dark text-sm mb-1 block">Table Content</label>
+                    <div id="${id}-table-container" class="space-y-2">
+                        ${tableData.map((row, rowIdx) => `
+                            <div class="flex gap-2">
+                                ${row.map((cell, cellIdx) => `
+                                    <input type="text" value="${cell}" placeholder="${rowIdx === 0 ? 'Header' : 'Cell'}" 
+                                           class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm ${rowIdx === 0 ? 'font-semibold' : ''}"
+                                           data-row="${rowIdx}" data-col="${cellIdx}">
+                                `).join('')}
+                                <button type="button" onclick="removeTableRow('${id}', ${rowIdx})" class="text-red-500 hover:text-red-400 ${rowIdx === 0 ? 'invisible' : ''}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="mt-2 flex gap-2">
+                        <button type="button" onclick="addTableRow('${id}')" class="text-dragon-red hover:text-dragon-red-bright text-sm">
+                            <i class="fas fa-plus mr-1"></i> Add Row
+                        </button>
+                        <button type="button" onclick="addTableColumn('${id}')" class="text-dragon-red hover:text-dragon-red-bright text-sm">
+                            <i class="fas fa-plus mr-1"></i> Add Column
+                        </button>
+                    </div>
+                </div>
+            `;
+            break;
+        case 'separator':
+            content += `
+                <div class="text-center text-dragon-silver-dark py-4">
+                    <i class="fas fa-minus"></i> Horizontal separator line
+                </div>
+            `;
+            break;
     }
     
     content += `
@@ -414,6 +475,59 @@ function addListItem(blockId) {
 
 function removeListItem(btn) {
     btn.parentElement.remove();
+}
+
+function addTableRow(blockId) {
+    const container = document.getElementById(`${blockId}-table-container`);
+    const firstRow = container.querySelector('div');
+    const colCount = firstRow.querySelectorAll('input').length;
+    const rowCount = container.querySelectorAll('div').length;
+    
+    const newRow = document.createElement('div');
+    newRow.className = 'flex gap-2';
+    let rowHTML = '';
+    for (let i = 0; i < colCount; i++) {
+        rowHTML += `
+            <input type="text" placeholder="Cell" 
+                   class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm"
+                   data-row="${rowCount}" data-col="${i}">
+        `;
+    }
+    rowHTML += `
+        <button type="button" onclick="removeTableRow('${blockId}', ${rowCount})" class="text-red-500 hover:text-red-400">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    newRow.innerHTML = rowHTML;
+    container.appendChild(newRow);
+}
+
+function addTableColumn(blockId) {
+    const container = document.getElementById(`${blockId}-table-container`);
+    const rows = container.querySelectorAll('div');
+    
+    rows.forEach((row, rowIdx) => {
+        const inputs = row.querySelectorAll('input');
+        const colCount = inputs.length;
+        const removeBtn = row.querySelector('button');
+        
+        const newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.placeholder = rowIdx === 0 ? 'Header' : 'Cell';
+        newInput.className = `flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm ${rowIdx === 0 ? 'font-semibold' : ''}`;
+        newInput.dataset.row = rowIdx;
+        newInput.dataset.col = colCount;
+        
+        row.insertBefore(newInput, removeBtn);
+    });
+}
+
+function removeTableRow(blockId, rowIdx) {
+    const container = document.getElementById(`${blockId}-table-container`);
+    const rows = container.querySelectorAll('div');
+    if (rows.length > 2) {
+        rows[rowIdx].remove();
+    }
 }
 
 let draggedElement = null;
@@ -533,6 +647,24 @@ document.getElementById('updateForm').addEventListener('submit', function(e) {
             case 'image':
                 blockData.data.url = document.getElementById(`${id}-url`).value;
                 blockData.data.caption = document.getElementById(`${id}-caption`).value;
+                break;
+            case 'callout':
+                blockData.data.type = document.getElementById(`${id}-calloutType`).value;
+                blockData.data.title = document.getElementById(`${id}-title`).value;
+                blockData.data.message = document.getElementById(`${id}-message`).value;
+                break;
+            case 'table':
+                const tableContainer = document.getElementById(`${id}-table-container`);
+                const tableRows = tableContainer.querySelectorAll('div');
+                const tableArray = [];
+                tableRows.forEach(row => {
+                    const cells = row.querySelectorAll('input');
+                    const rowData = Array.from(cells).map(cell => cell.value);
+                    tableArray.push(rowData);
+                });
+                blockData.data.data = tableArray;
+                break;
+            case 'separator':
                 break;
         }
         
