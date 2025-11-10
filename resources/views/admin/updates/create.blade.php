@@ -281,253 +281,477 @@
 </style>
 
 <script>
-let blockCounter = 0;
-let blocks = [];
+// Store nested editors globally
+const nestedEditors = new Map();
 
-// Initialize with one header block
-document.addEventListener('DOMContentLoaded', function() {
-    addBlock('header', {text: 'Update Title', level: 2});
-});
-
-function addBlock(type, data = null) {
-    const id = `block-${blockCounter++}`;
-    const blockEditor = document.getElementById('blockEditor');
+// BlockEditor class for reusable block editing (root and nested)
+class BlockEditor {
+    constructor(containerId, contextId = 'root', allowSections = true) {
+        this.containerId = containerId;
+        this.contextId = contextId;
+        this.allowSections = allowSections; // Don't allow sections inside sections
+        this.blockCounter = 0;
+        this.container = document.getElementById(containerId);
+        
+        if (contextId !== 'root') {
+            nestedEditors.set(contextId, this);
+        }
+    }
     
-    const blockDiv = document.createElement('div');
-    blockDiv.className = 'block-item bg-dragon-black border border-dragon-border rounded-lg p-4';
-    blockDiv.draggable = true;
-    blockDiv.dataset.id = id;
-    blockDiv.dataset.type = type;
+    getBlockId() {
+        return `${this.contextId}__block-${this.blockCounter++}`;
+    }
     
-    let content = `
-        <div class="flex items-start gap-3">
-            <div class="drag-handle text-dragon-silver-dark pt-2">
-                <i class="fas fa-grip-vertical"></i>
-            </div>
-            <div class="flex-1">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-dragon-red font-semibold uppercase text-sm">${type}</span>
-                    <button type="button" onclick="removeBlock('${id}')" class="text-dragon-silver-dark hover:text-red-500 transition-colors">
-                        <i class="fas fa-times"></i>
-                    </button>
+    addBlock(type, data = null) {
+        // Don't allow nested sections to prevent infinite nesting
+        if (!this.allowSections && (type === 'patch_notes_section' || type === 'custom_section')) {
+            alert('Sections cannot be nested inside other sections');
+            return;
+        }
+        
+        const id = this.getBlockId();
+        const blockDiv = document.createElement('div');
+        blockDiv.className = 'block-item bg-dragon-black border border-dragon-border rounded-lg p-4';
+        blockDiv.draggable = true;
+        blockDiv.dataset.id = id;
+        blockDiv.dataset.type = type;
+        blockDiv.dataset.context = this.contextId;
+        
+        blockDiv.innerHTML = this.generateBlockHtml(id, type, data);
+        this.container.appendChild(blockDiv);
+        
+        // Setup drag and drop
+        this.setupDragDrop(blockDiv);
+        
+        // For sections, create nested editor
+        if (type === 'patch_notes_section' || type === 'custom_section') {
+            this.initializeNestedEditor(id, data?.children || []);
+        }
+        
+        return id;
+    }
+    
+    generateBlockHtml(id, type, data) {
+        let content = `
+            <div class="flex items-start gap-3">
+                <div class="drag-handle text-dragon-silver-dark pt-2">
+                    <i class="fas fa-grip-vertical"></i>
                 </div>
-    `;
+                <div class="flex-1">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-dragon-red font-semibold uppercase text-sm">${type.replace(/_/g, ' ')}</span>
+                        <button type="button" onclick="rootEditor.removeBlock('${id}')" class="text-dragon-silver-dark hover:text-red-500 transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+        `;
+        
+        content += this.getBlockFields(id, type, data);
+        content += `</div></div>`;
+        return content;
+    }
     
-    switch(type) {
-        case 'header':
-            content += `
-                <select id="${id}-level" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
-                    <option value="2" ${data?.level === 2 ? 'selected' : ''}>H2</option>
-                    <option value="3" ${data?.level === 3 ? 'selected' : ''}>H3</option>
-                    <option value="4" ${data?.level === 4 ? 'selected' : ''}>H4</option>
-                </select>
-                <input type="text" id="${id}-text" placeholder="Header text" value="${data?.text || ''}" 
-                       class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
-            `;
-            break;
-        case 'paragraph':
-            content += `
-                <textarea id="${id}-text" placeholder="Paragraph text" rows="3" 
-                          class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">${data?.text || ''}</textarea>
-            `;
-            break;
-        case 'list':
-            const items = data?.items || [''];
-            content += `
-                <select id="${id}-style" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
-                    <option value="unordered" ${data?.style === 'unordered' ? 'selected' : ''}>Bullet List</option>
-                    <option value="ordered" ${data?.style === 'ordered' ? 'selected' : ''}>Numbered List</option>
-                </select>
-                <div id="${id}-items" class="space-y-2">
-                    ${items.map((item, idx) => `
-                        <div class="flex gap-2">
-                            <input type="text" value="${item}" placeholder="List item" 
-                                   class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
-                            <button type="button" onclick="removeListItem(this)" class="text-red-500 hover:text-red-400">
-                                <i class="fas fa-minus-circle"></i>
-                            </button>
-                        </div>
-                    `).join('')}
-                </div>
-                <button type="button" onclick="addListItem('${id}')" class="mt-2 text-dragon-red hover:text-dragon-red-bright text-sm">
-                    <i class="fas fa-plus-circle mr-1"></i> Add Item
-                </button>
-            `;
-            break;
-        case 'code':
-            content += `
-                <textarea id="${id}-code" placeholder="Code snippet" rows="4" 
-                          class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 font-mono text-sm">${data?.code || ''}</textarea>
-            `;
-            break;
-        case 'alert':
-            content += `
-                <select id="${id}-alertType" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
-                    <option value="info" ${data?.type === 'info' ? 'selected' : ''}>Info</option>
-                    <option value="warning" ${data?.type === 'warning' ? 'selected' : ''}>Warning</option>
-                    <option value="success" ${data?.type === 'success' ? 'selected' : ''}>Success</option>
-                    <option value="danger" ${data?.type === 'danger' ? 'selected' : ''}>Danger</option>
-                </select>
-                <textarea id="${id}-message" placeholder="Alert message" rows="2" 
-                          class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">${data?.message || ''}</textarea>
-            `;
-            break;
-        case 'image':
-            content += `
-                <div class="mb-2">
-                    <label class="text-dragon-silver-dark text-sm mb-1 block">Image URL or Upload</label>
-                    <input type="text" id="${id}-url" placeholder="Image URL" value="${data?.url || ''}" 
+    getBlockFields(id, type, data) {
+        switch(type) {
+            case 'header':
+                return `
+                    <select id="${id}-level" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                        <option value="2" ${data?.level === 2 ? 'selected' : ''}>H2</option>
+                        <option value="3" ${data?.level === 3 ? 'selected' : ''}>H3</option>
+                        <option value="4" ${data?.level === 4 ? 'selected' : ''}>H4</option>
+                    </select>
+                    <input type="text" id="${id}-text" placeholder="Header text" value="${data?.text || ''}" 
                            class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
-                </div>
-                <div class="mb-2 flex items-center gap-2">
-                    <span class="text-dragon-silver-dark text-sm">OR</span>
-                    <input type="file" id="${id}-file" accept="image/*" 
-                           class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm"
-                           onchange="handleImageUpload('${id}', this)">
-                </div>
-                <div id="${id}-preview" class="mb-2 hidden">
-                    <img src="" class="max-w-full h-auto max-h-48 rounded border border-dragon-border">
-                </div>
-                <input type="text" id="${id}-caption" placeholder="Caption (optional)" value="${data?.caption || ''}" 
-                       class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
-            `;
-            break;
-        case 'callout':
-            content += `
-                <select id="${id}-calloutType" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
-                    <option value="info" ${data?.type === 'info' ? 'selected' : ''}>Info (Blue)</option>
-                    <option value="tip" ${data?.type === 'tip' ? 'selected' : ''}>Tip (Green)</option>
-                    <option value="warning" ${data?.type === 'warning' ? 'selected' : ''}>Warning (Yellow)</option>
-                    <option value="important" ${data?.type === 'important' ? 'selected' : ''}>Important (Red)</option>
-                    <option value="new" ${data?.type === 'new' ? 'selected' : ''}>New Feature (Purple)</option>
-                </select>
-                <input type="text" id="${id}-title" placeholder="Callout title (e.g., 'New Feature')" value="${data?.title || ''}" 
-                       class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
-                <textarea id="${id}-message" placeholder="Callout message" rows="3" 
-                          class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">${data?.message || ''}</textarea>
-            `;
-            break;
-        case 'table':
-            const tableData = data?.data || [['Header 1', 'Header 2'], ['Row 1 Col 1', 'Row 1 Col 2']];
-            content += `
-                <div class="mb-2">
-                    <label class="text-dragon-silver-dark text-sm mb-1 block">Table Content</label>
-                    <div id="${id}-table-container" class="space-y-2">
-                        ${tableData.map((row, rowIdx) => `
+                `;
+            case 'paragraph':
+                return `
+                    <textarea id="${id}-text" placeholder="Paragraph text" rows="3" 
+                              class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">${data?.text || ''}</textarea>
+                `;
+            case 'list':
+                const items = data?.items || [''];
+                return `
+                    <select id="${id}-style" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                        <option value="unordered" ${data?.style === 'unordered' ? 'selected' : ''}>Bullet List</option>
+                        <option value="ordered" ${data?.style === 'ordered' ? 'selected' : ''}>Numbered List</option>
+                    </select>
+                    <div id="${id}-items" class="space-y-2">
+                        ${items.map((item, idx) => `
                             <div class="flex gap-2">
-                                ${row.map((cell, cellIdx) => `
-                                    <input type="text" value="${cell}" placeholder="${rowIdx === 0 ? 'Header' : 'Cell'}" 
-                                           class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm ${rowIdx === 0 ? 'font-semibold' : ''}"
-                                           data-row="${rowIdx}" data-col="${cellIdx}">
-                                `).join('')}
-                                <button type="button" onclick="removeTableRow('${id}', ${rowIdx})" class="text-red-500 hover:text-red-400 ${rowIdx === 0 ? 'invisible' : ''}">
-                                    <i class="fas fa-times"></i>
+                                <input type="text" value="${item}" placeholder="List item" 
+                                       class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
+                                <button type="button" onclick="removeListItem(this)" class="text-red-500 hover:text-red-400">
+                                    <i class="fas fa-minus-circle"></i>
                                 </button>
                             </div>
                         `).join('')}
                     </div>
-                    <div class="mt-2 flex gap-2">
-                        <button type="button" onclick="addTableRow('${id}')" class="text-dragon-red hover:text-dragon-red-bright text-sm">
-                            <i class="fas fa-plus mr-1"></i> Add Row
-                        </button>
-                        <button type="button" onclick="addTableColumn('${id}')" class="text-dragon-red hover:text-dragon-red-bright text-sm">
-                            <i class="fas fa-plus mr-1"></i> Add Column
-                        </button>
+                    <button type="button" onclick="addListItem('${id}')" class="mt-2 text-dragon-red hover:text-dragon-red-bright text-sm">
+                        <i class="fas fa-plus-circle mr-1"></i> Add Item
+                    </button>
+                `;
+            case 'code':
+                return `
+                    <textarea id="${id}-code" placeholder="Code snippet" rows="4" 
+                              class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 font-mono text-sm">${data?.code || ''}</textarea>
+                `;
+            case 'alert':
+                return `
+                    <select id="${id}-alertType" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                        <option value="info" ${data?.type === 'info' ? 'selected' : ''}>Info</option>
+                        <option value="warning" ${data?.type === 'warning' ? 'selected' : ''}>Warning</option>
+                        <option value="success" ${data?.type === 'success' ? 'selected' : ''}>Success</option>
+                        <option value="danger" ${data?.type === 'danger' ? 'selected' : ''}>Danger</option>
+                    </select>
+                    <textarea id="${id}-message" placeholder="Alert message" rows="2" 
+                              class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">${data?.message || ''}</textarea>
+                `;
+            case 'image':
+                return `
+                    <div class="mb-2">
+                        <label class="text-dragon-silver-dark text-sm mb-1 block">Image URL or Upload</label>
+                        <input type="text" id="${id}-url" placeholder="Image URL" value="${data?.url || ''}" 
+                               class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
                     </div>
-                </div>
-            `;
-            break;
-        case 'separator':
-            content += `
-                <div class="text-center text-dragon-silver-dark py-4">
-                    <i class="fas fa-minus"></i> Horizontal separator line
-                </div>
-            `;
-            break;
-        case 'osrs_header':
-            content += `
-                <div class="mb-2">
-                    <label class="text-dragon-silver-dark text-sm mb-1 block">Main Header</label>
-                    <input type="text" id="${id}-header" placeholder="Main header text" value="${data?.header || ''}" 
-                           class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
-                </div>
-                <div class="mb-2">
-                    <label class="text-dragon-silver-dark text-sm mb-1 block">Subheader (optional)</label>
-                    <input type="text" id="${id}-subheader" placeholder="Subheader text" value="${data?.subheader || ''}" 
+                    <div class="mb-2 flex items-center gap-2">
+                        <span class="text-dragon-silver-dark text-sm">OR</span>
+                        <input type="file" id="${id}-file" accept="image/*" 
+                               class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm"
+                               onchange="handleImageUpload('${id}', this)">
+                    </div>
+                    <div id="${id}-preview" class="mb-2 hidden">
+                        <img src="" class="max-w-full h-auto max-h-48 rounded border border-dragon-border">
+                    </div>
+                    <input type="text" id="${id}-caption" placeholder="Caption (optional)" value="${data?.caption || ''}" 
                            class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
-                </div>
-                <div class="mb-2">
-                    <label class="text-dragon-silver-dark text-sm mb-1 block">Color Scheme</label>
-                    <select id="${id}-color" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
-                        <option value="gold" ${data?.color === 'gold' ? 'selected' : ''}>Gold (Classic OSRS)</option>
-                        <option value="red" ${data?.color === 'red' ? 'selected' : ''}>Red (Dragon Theme)</option>
-                        <option value="cyan" ${data?.color === 'cyan' ? 'selected' : ''}>Cyan (Quest)</option>
-                        <option value="green" ${data?.color === 'green' ? 'selected' : ''}>Green (Success)</option>
-                        <option value="white" ${data?.color === 'white' ? 'selected' : ''}>White (Standard)</option>
+                `;
+            case 'callout':
+                return `
+                    <select id="${id}-calloutType" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                        <option value="info" ${data?.type === 'info' ? 'selected' : ''}>Info (Blue)</option>
+                        <option value="tip" ${data?.type === 'tip' ? 'selected' : ''}>Tip (Green)</option>
+                        <option value="warning" ${data?.type === 'warning' ? 'selected' : ''}>Warning (Yellow)</option>
+                        <option value="important" ${data?.type === 'important' ? 'selected' : ''}>Important (Red)</option>
+                        <option value="new" ${data?.type === 'new' ? 'selected' : ''}>New Feature (Purple)</option>
                     </select>
-                </div>
-            `;
-            break;
-        case 'patch_notes_section':
-            content += `
-                <div class="mb-2">
-                    <label class="text-dragon-silver-dark text-sm mb-1 block">Patch Notes Content (JSON format)</label>
-                    <textarea id="${id}-children" placeholder='[{"type":"paragraph","data":{"text":"Fixed a bug"}},{"type":"list","data":{"style":"unordered","items":["Item 1","Item 2"]}}]' rows="6" 
-                              class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 font-mono text-sm">${data?.children ? JSON.stringify(data.children, null, 2) : ''}</textarea>
-                    <p class="text-xs text-dragon-silver-dark mt-1">Add child blocks as JSON array. Supports: paragraph, list, table, image, separator, etc.</p>
-                </div>
-            `;
-            break;
-        case 'custom_section':
-            content += `
-                <div class="mb-2">
-                    <label class="text-dragon-silver-dark text-sm mb-1 block">Section Title</label>
-                    <input type="text" id="${id}-title" placeholder="Section title" value="${data?.title || ''}" 
+                    <input type="text" id="${id}-title" placeholder="Callout title (e.g., 'New Feature')" value="${data?.title || ''}" 
                            class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
-                </div>
-                <div class="mb-2">
-                    <label class="text-dragon-silver-dark text-sm mb-1 block">Color Scheme</label>
-                    <select id="${id}-color" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
-                        <option value="primary" ${data?.color === 'primary' ? 'selected' : ''}>Primary (Red)</option>
-                        <option value="gold" ${data?.color === 'gold' ? 'selected' : ''}>Gold</option>
-                        <option value="blue" ${data?.color === 'blue' ? 'selected' : ''}>Blue</option>
-                        <option value="green" ${data?.color === 'green' ? 'selected' : ''}>Green</option>
-                        <option value="purple" ${data?.color === 'purple' ? 'selected' : ''}>Purple</option>
-                        <option value="orange" ${data?.color === 'orange' ? 'selected' : ''}>Orange</option>
-                    </select>
-                </div>
-                <div class="mb-2">
-                    <label class="text-dragon-silver-dark text-sm mb-1 block">Section Content (JSON format)</label>
-                    <textarea id="${id}-children" placeholder='[{"type":"paragraph","data":{"text":"Content here"}},{"type":"image","data":{"url":"...","caption":"..."}}]' rows="6" 
-                              class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 font-mono text-sm">${data?.children ? JSON.stringify(data.children, null, 2) : ''}</textarea>
-                    <p class="text-xs text-dragon-silver-dark mt-1">Add child blocks as JSON array. Supports: paragraph, list, table, image, separator, etc.</p>
-                </div>
-            `;
-            break;
+                    <textarea id="${id}-message" placeholder="Callout message" rows="3" 
+                              class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">${data?.message || ''}</textarea>
+                `;
+            case 'table':
+                const tableData = data?.data || [['Header 1', 'Header 2'], ['Row 1 Col 1', 'Row 1 Col 2']];
+                return `
+                    <div class="mb-2">
+                        <label class="text-dragon-silver-dark text-sm mb-1 block">Table Content</label>
+                        <div id="${id}-table-container" class="space-y-2">
+                            ${tableData.map((row, rowIdx) => `
+                                <div class="flex gap-2">
+                                    ${row.map((cell, cellIdx) => `
+                                        <input type="text" value="${cell}" placeholder="${rowIdx === 0 ? 'Header' : 'Cell'}" 
+                                               class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm ${rowIdx === 0 ? 'font-semibold' : ''}"
+                                               data-row="${rowIdx}" data-col="${cellIdx}">
+                                    `).join('')}
+                                    <button type="button" onclick="removeTableRow('${id}', ${rowIdx})" class="text-red-500 hover:text-red-400 ${rowIdx === 0 ? 'invisible' : ''}">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="mt-2 flex gap-2">
+                            <button type="button" onclick="addTableRow('${id}')" class="text-dragon-red hover:text-dragon-red-bright text-sm">
+                                <i class="fas fa-plus mr-1"></i> Add Row
+                            </button>
+                            <button type="button" onclick="addTableColumn('${id}')" class="text-dragon-red hover:text-dragon-red-bright text-sm">
+                                <i class="fas fa-plus mr-1"></i> Add Column
+                            </button>
+                        </div>
+                    </div>
+                `;
+            case 'separator':
+                return `
+                    <div class="text-center text-dragon-silver-dark py-4">
+                        <i class="fas fa-minus"></i> Horizontal separator line
+                    </div>
+                `;
+            case 'osrs_header':
+                return `
+                    <div class="mb-2">
+                        <label class="text-dragon-silver-dark text-sm mb-1 block">Main Header</label>
+                        <input type="text" id="${id}-header" placeholder="Main header text" value="${data?.header || ''}" 
+                               class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                    </div>
+                    <div class="mb-2">
+                        <label class="text-dragon-silver-dark text-sm mb-1 block">Subheader (optional)</label>
+                        <input type="text" id="${id}-subheader" placeholder="Subheader text" value="${data?.subheader || ''}" 
+                               class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
+                    </div>
+                    <div class="mb-2">
+                        <label class="text-dragon-silver-dark text-sm mb-1 block">Color Scheme</label>
+                        <select id="${id}-color" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
+                            <option value="gold" ${data?.color === 'gold' ? 'selected' : ''}>Gold (Classic OSRS)</option>
+                            <option value="red" ${data?.color === 'red' ? 'selected' : ''}>Red (Dragon Theme)</option>
+                            <option value="cyan" ${data?.color === 'cyan' ? 'selected' : ''}>Cyan (Quest)</option>
+                            <option value="green" ${data?.color === 'green' ? 'selected' : ''}>Green (Success)</option>
+                            <option value="white" ${data?.color === 'white' ? 'selected' : ''}>White (Standard)</option>
+                        </select>
+                    </div>
+                `;
+            case 'patch_notes_section':
+                return `
+                    <div class="bg-dragon-surface rounded-lg p-4 border-2 border-red-900">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-red-500 font-semibold flex items-center gap-2">
+                                <i class="fas fa-wrench"></i> Patch Notes Content
+                            </h4>
+                        </div>
+                        <div id="${id}-children" class="space-y-3 mb-3 min-h-[100px] bg-dragon-black/30 rounded p-3">
+                            <p class="text-dragon-silver-dark text-sm text-center py-4">No blocks yet. Add blocks below.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('paragraph')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
+                                <i class="fas fa-paragraph"></i> Paragraph
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('list')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
+                                <i class="fas fa-list"></i> List
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('code')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
+                                <i class="fas fa-code"></i> Code
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('separator')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
+                                <i class="fas fa-minus"></i> Separator
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('alert')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
+                                <i class="fas fa-exclamation-triangle"></i> Alert
+                            </button>
+                        </div>
+                    </div>
+                `;
+            case 'custom_section':
+                return `
+                    <div class="mb-2">
+                        <label class="text-dragon-silver-dark text-sm mb-1 block">Section Title</label>
+                        <input type="text" id="${id}-title" placeholder="Section title" value="${data?.title || ''}" 
+                               class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                    </div>
+                    <div class="mb-2">
+                        <label class="text-dragon-silver-dark text-sm mb-1 block">Color Scheme</label>
+                        <select id="${id}-color" class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                            <option value="primary" ${data?.color === 'primary' ? 'selected' : ''}>Primary (Red)</option>
+                            <option value="gold" ${data?.color === 'gold' ? 'selected' : ''}>Gold</option>
+                            <option value="blue" ${data?.color === 'blue' ? 'selected' : ''}>Blue</option>
+                            <option value="green" ${data?.color === 'green' ? 'selected' : ''}>Green</option>
+                            <option value="purple" ${data?.color === 'purple' ? 'selected' : ''}>Purple</option>
+                            <option value="orange" ${data?.color === 'orange' ? 'selected' : ''}>Orange</option>
+                        </select>
+                    </div>
+                    <div class="bg-dragon-surface rounded-lg p-4 border-2 border-dragon-border">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-dragon-silver font-semibold flex items-center gap-2">
+                                <i class="fas fa-folder-open"></i> Section Content
+                            </h4>
+                        </div>
+                        <div id="${id}-children" class="space-y-3 mb-3 min-h-[100px] bg-dragon-black/30 rounded p-3">
+                            <p class="text-dragon-silver-dark text-sm text-center py-4">No blocks yet. Add blocks below.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('paragraph')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
+                                <i class="fas fa-paragraph"></i> Paragraph
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('list')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
+                                <i class="fas fa-list"></i> List
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('image')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
+                                <i class="fas fa-image"></i> Image
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('table')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
+                                <i class="fas fa-table"></i> Table
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('code')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
+                                <i class="fas fa-code"></i> Code
+                            </button>
+                            <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('separator')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
+                                <i class="fas fa-minus"></i> Separator
+                            </button>
+                        </div>
+                    </div>
+                `;
+            default:
+                return '';
+        }
     }
     
-    content += `
-            </div>
-        </div>
-    `;
+    initializeNestedEditor(sectionId, children = []) {
+        // Create nested editor for this section
+        const nestedEditor = new BlockEditor(`${sectionId}-children`, sectionId, false);
+        
+        // Load children blocks if provided
+        children.forEach(childBlock => {
+            nestedEditor.addBlock(childBlock.type, childBlock.data);
+        });
+    }
     
-    blockDiv.innerHTML = content;
-    blockEditor.appendChild(blockDiv);
+    removeBlock(blockId) {
+        const block = this.container.querySelector(`[data-id="${blockId}"]`);
+        if (block) {
+            // If it's a section, cleanup nested editor
+            const type = block.dataset.type;
+            if (type === 'patch_notes_section' || type === 'custom_section') {
+                nestedEditors.delete(blockId);
+            }
+            block.remove();
+        }
+    }
     
-    // Drag and drop events
-    blockDiv.addEventListener('dragstart', handleDragStart);
-    blockDiv.addEventListener('dragover', handleDragOver);
-    blockDiv.addEventListener('drop', handleDrop);
-    blockDiv.addEventListener('dragend', handleDragEnd);
-}
-
-function removeBlock(id) {
-    const block = document.querySelector(`[data-id="${id}"]`);
-    if (block) {
-        block.remove();
+    setupDragDrop(blockDiv) {
+        blockDiv.addEventListener('dragstart', (e) => {
+            blockDiv.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', blockDiv.innerHTML);
+        });
+        
+        blockDiv.addEventListener('dragend', () => {
+            blockDiv.classList.remove('dragging');
+        });
+        
+        blockDiv.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const afterElement = this.getDragAfterElement(e.clientY);
+            const dragging = this.container.querySelector('.dragging');
+            if (dragging && dragging.dataset.context === this.contextId) {
+                if (afterElement == null) {
+                    this.container.appendChild(dragging);
+                } else {
+                    this.container.insertBefore(dragging, afterElement);
+                }
+            }
+        });
+    }
+    
+    getDragAfterElement(y) {
+        const draggableElements = [...this.container.querySelectorAll('.block-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            if (child.dataset.context !== this.contextId) return closest;
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+    
+    serialize() {
+        const blocks = [];
+        const blockElements = this.container.querySelectorAll(`.block-item[data-context="${this.contextId}"]`);
+        
+        blockElements.forEach(block => {
+            const type = block.dataset.type;
+            const id = block.dataset.id;
+            const blockData = { type: type, data: {} };
+            
+            this.serializeBlockData(blockData, id, type);
+            blocks.push(blockData);
+        });
+        
+        return blocks;
+    }
+    
+    serializeBlockData(blockData, id, type) {
+        switch(type) {
+            case 'header':
+                blockData.data.level = parseInt(document.getElementById(`${id}-level`)?.value || 2);
+                blockData.data.text = document.getElementById(`${id}-text`)?.value || '';
+                break;
+            case 'paragraph':
+                blockData.data.text = document.getElementById(`${id}-text`)?.value || '';
+                break;
+            case 'list':
+                blockData.data.style = document.getElementById(`${id}-style`)?.value || 'unordered';
+                const items = document.querySelectorAll(`#${id}-items input`);
+                blockData.data.items = Array.from(items).map(input => input.value).filter(v => v.trim());
+                break;
+            case 'code':
+                blockData.data.code = document.getElementById(`${id}-code`)?.value || '';
+                break;
+            case 'alert':
+                blockData.data.type = document.getElementById(`${id}-alertType`)?.value || 'info';
+                blockData.data.message = document.getElementById(`${id}-message`)?.value || '';
+                break;
+            case 'image':
+                blockData.data.url = document.getElementById(`${id}-url`)?.value || '';
+                blockData.data.caption = document.getElementById(`${id}-caption`)?.value || '';
+                break;
+            case 'callout':
+                blockData.data.type = document.getElementById(`${id}-calloutType`)?.value || 'info';
+                blockData.data.title = document.getElementById(`${id}-title`)?.value || '';
+                blockData.data.message = document.getElementById(`${id}-message`)?.value || '';
+                break;
+            case 'table':
+                const tableContainer = document.getElementById(`${id}-table-container`);
+                if (tableContainer) {
+                    const tableRows = tableContainer.querySelectorAll('div');
+                    const tableArray = [];
+                    tableRows.forEach(row => {
+                        const cells = row.querySelectorAll('input');
+                        const rowData = Array.from(cells).map(cell => cell.value);
+                        tableArray.push(rowData);
+                    });
+                    blockData.data.data = tableArray;
+                }
+                break;
+            case 'separator':
+                break;
+            case 'osrs_header':
+                blockData.data.header = document.getElementById(`${id}-header`)?.value || '';
+                blockData.data.subheader = document.getElementById(`${id}-subheader`)?.value || '';
+                blockData.data.color = document.getElementById(`${id}-color`)?.value || 'gold';
+                break;
+            case 'patch_notes_section':
+                // Recursively serialize nested blocks
+                const patchEditor = nestedEditors.get(id);
+                blockData.data.children = patchEditor ? patchEditor.serialize() : [];
+                break;
+            case 'custom_section':
+                blockData.data.title = document.getElementById(`${id}-title`)?.value || '';
+                blockData.data.color = document.getElementById(`${id}-color`)?.value || 'primary';
+                // Recursively serialize nested blocks
+                const customEditor = nestedEditors.get(id);
+                blockData.data.children = customEditor ? customEditor.serialize() : [];
+                break;
+        }
     }
 }
 
+// Initialize root editor
+let rootEditor;
+document.addEventListener('DOMContentLoaded', function() {
+    rootEditor = new BlockEditor('blockEditor', 'root', true);
+    rootEditor.addBlock('header', {text: 'Update Title', level: 2});
+});
+
+// Global wrapper for backward compatibility with button onclick
+function addBlock(type, data = null) {
+    if (rootEditor) {
+        rootEditor.addBlock(type, data);
+    }
+}
+
+// Global removeBlock dispatcher
+function removeBlock(blockId) {
+    // Try root editor first
+    if (rootEditor) {
+        rootEditor.removeBlock(blockId);
+    }
+    // Try nested editors
+    nestedEditors.forEach(editor => {
+        editor.removeBlock(blockId);
+    });
+}
+
+// Helper functions for list items
 function addListItem(blockId) {
     const itemsContainer = document.getElementById(`${blockId}-items`);
     const newItem = document.createElement('div');
@@ -546,6 +770,7 @@ function removeListItem(btn) {
     btn.parentElement.remove();
 }
 
+// Helper functions for tables
 function addTableRow(blockId) {
     const container = document.getElementById(`${blockId}-table-container`);
     const firstRow = container.querySelector('div');
@@ -599,47 +824,6 @@ function removeTableRow(blockId, rowIdx) {
     }
 }
 
-let draggedElement = null;
-
-function handleDragStart(e) {
-    draggedElement = this;
-    this.classList.add('dragging');
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-    const afterElement = getDragAfterElement(e.clientY);
-    const blockEditor = document.getElementById('blockEditor');
-    if (afterElement == null) {
-        blockEditor.appendChild(draggedElement);
-    } else {
-        blockEditor.insertBefore(draggedElement, afterElement);
-    }
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-}
-
-function handleDragEnd(e) {
-    this.classList.remove('dragging');
-}
-
-function getDragAfterElement(y) {
-    const blockEditor = document.getElementById('blockEditor');
-    const draggableElements = [...blockEditor.querySelectorAll('.block-item:not(.dragging)')];
-    
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
 // Handle image upload
 async function handleImageUpload(blockId, input) {
     if (!input.files || !input.files[0]) return;
@@ -683,88 +867,9 @@ async function handleImageUpload(blockId, input) {
     }
 }
 
-// Generate JSON before submit
+// Form submission - serialize using BlockEditor
 document.getElementById('updateForm').addEventListener('submit', function(e) {
-    const blocks = [];
-    const blockElements = document.querySelectorAll('.block-item');
-    
-    blockElements.forEach(block => {
-        const type = block.dataset.type;
-        const id = block.dataset.id;
-        const blockData = { type: type, data: {} };
-        
-        switch(type) {
-            case 'header':
-                blockData.data.level = parseInt(document.getElementById(`${id}-level`).value);
-                blockData.data.text = document.getElementById(`${id}-text`).value;
-                break;
-            case 'paragraph':
-                blockData.data.text = document.getElementById(`${id}-text`).value;
-                break;
-            case 'list':
-                blockData.data.style = document.getElementById(`${id}-style`).value;
-                const items = document.querySelectorAll(`#${id}-items input`);
-                blockData.data.items = Array.from(items).map(input => input.value).filter(v => v.trim());
-                break;
-            case 'code':
-                blockData.data.code = document.getElementById(`${id}-code`).value;
-                break;
-            case 'alert':
-                blockData.data.type = document.getElementById(`${id}-alertType`).value;
-                blockData.data.message = document.getElementById(`${id}-message`).value;
-                break;
-            case 'image':
-                blockData.data.url = document.getElementById(`${id}-url`).value;
-                blockData.data.caption = document.getElementById(`${id}-caption`).value;
-                break;
-            case 'callout':
-                blockData.data.type = document.getElementById(`${id}-calloutType`).value;
-                blockData.data.title = document.getElementById(`${id}-title`).value;
-                blockData.data.message = document.getElementById(`${id}-message`).value;
-                break;
-            case 'table':
-                const tableContainer = document.getElementById(`${id}-table-container`);
-                const tableRows = tableContainer.querySelectorAll('div');
-                const tableArray = [];
-                tableRows.forEach(row => {
-                    const cells = row.querySelectorAll('input');
-                    const rowData = Array.from(cells).map(cell => cell.value);
-                    tableArray.push(rowData);
-                });
-                blockData.data.data = tableArray;
-                break;
-            case 'separator':
-                break;
-            case 'osrs_header':
-                blockData.data.header = document.getElementById(`${id}-header`).value;
-                blockData.data.subheader = document.getElementById(`${id}-subheader`).value;
-                blockData.data.color = document.getElementById(`${id}-color`).value;
-                break;
-            case 'patch_notes_section':
-                try {
-                    const childrenText = document.getElementById(`${id}-children`).value.trim();
-                    blockData.data.children = childrenText ? JSON.parse(childrenText) : [];
-                } catch (e) {
-                    alert(`Invalid JSON in patch notes section ${id}`);
-                    blockData.data.children = [];
-                }
-                break;
-            case 'custom_section':
-                blockData.data.title = document.getElementById(`${id}-title`).value;
-                blockData.data.color = document.getElementById(`${id}-color`).value;
-                try {
-                    const childrenText = document.getElementById(`${id}-children`).value.trim();
-                    blockData.data.children = childrenText ? JSON.parse(childrenText) : [];
-                } catch (e) {
-                    alert(`Invalid JSON in custom section ${id}`);
-                    blockData.data.children = [];
-                }
-                break;
-        }
-        
-        blocks.push(blockData);
-    });
-    
+    const blocks = rootEditor.serialize();
     const content = { blocks: blocks };
     document.getElementById('contentJson').value = JSON.stringify(content, null, 2);
 });
