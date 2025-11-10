@@ -226,7 +226,7 @@ class UpdateRenderer
         $color = $colors[$colorScheme] ?? $colors['gold'];
         
         $headerStyle = '
-            font-family: "Press Start 2P", monospace, system-ui;
+            font-family: \'Press Start 2P\', monospace, system-ui;
             font-size: 1.5rem;
             line-height: 1.8;
             color: ' . $color . ';
@@ -240,7 +240,7 @@ class UpdateRenderer
         ';
         
         $subheaderStyle = '
-            font-family: "Press Start 2P", monospace, system-ui;
+            font-family: \'Press Start 2P\', monospace, system-ui;
             font-size: 0.875rem;
             line-height: 1.6;
             color: ' . $color . ';
