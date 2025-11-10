@@ -555,12 +555,18 @@ class BlockEditor {
                 `;
             case 'custom_section':
                 const customTitleId = id + '-title';
+                const customTagId = id + '-tag';
                 const customColorId = id + '-color';
                 const customChildrenId = id + '-children';
                 return `
                     <div class="mb-2">
                         <label class="text-dragon-silver-dark text-sm mb-1 block">Section Title</label>
                         <input type="text" id="${customTitleId}" placeholder="Section title" value="${data?.title || ''}" 
+                               class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
+                    </div>
+                    <div class="mb-2">
+                        <label class="text-dragon-silver-dark text-sm mb-1 block">Section Tag</label>
+                        <input type="text" id="${customTagId}" placeholder="Tag text (e.g., SECTION, UPDATE, INFO)" value="${data?.tag || 'SECTION'}" 
                                class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 mb-2">
                     </div>
                     <div class="mb-2">
@@ -577,7 +583,7 @@ class BlockEditor {
                     <div class="bg-dragon-surface rounded-lg p-4 border-2 border-dragon-border">
                         <div class="flex items-center justify-between mb-3">
                             <h4 class="text-dragon-silver font-semibold flex items-center gap-2">
-                                <span class="osrs-tag">SECTION</span> Section Content
+                                <span class="osrs-tag">${data?.tag || 'SECTION'}</span> Section Content
                             </h4>
                         </div>
                         <div id="${customChildrenId}" class="space-y-3 mb-3 min-h-[100px] bg-dragon-black/30 rounded p-3">
@@ -759,6 +765,7 @@ class BlockEditor {
                 break;
             case 'custom_section':
                 blockData.data.title = document.getElementById(`${id}-title`)?.value || '';
+                blockData.data.tag = document.getElementById(`${id}-tag`)?.value || 'SECTION';
                 blockData.data.color = document.getElementById(`${id}-color`)?.value || 'primary';
                 // Recursively serialize nested blocks
                 const customEditor = nestedEditors.get(id);
