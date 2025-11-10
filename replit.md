@@ -52,7 +52,10 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
 - **Public Homepage & Content System:**
     - Features an Events System with full management, status tracking, and display.
     - Includes a comprehensive Updates/News System with:
-        - Block-based content editor (header, paragraph, list, code, image, alert) with drag-and-drop functionality
+        - Block-based content editor with drag-and-drop functionality:
+            - Standard blocks: header, paragraph, list, code, image, alert
+            - Enhanced blocks: callout/highlight (5 color types), table (dynamic rows/columns), separator
+            - OSRS-style pixelated header with subheader support (5 color schemes using Press Start 2P font)
         - Advanced publishing workflow with draft/published states and scheduling capabilities
         - Featured updates and pinned posts for highlighting important announcements (pinned updates appear first on all listings)
         - Hotfix system: allows updates to be attached to parent updates without appearing in main listings, displayed at the end of parent update pages
