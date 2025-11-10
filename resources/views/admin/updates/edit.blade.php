@@ -645,7 +645,7 @@ class BlockEditor {
     }
     
     removeBlock(blockId) {
-        const block = this.container.querySelector(\`[data-id="\${blockId}"]\`);
+        const block = this.container.querySelector(`[data-id="${blockId}"]`);
         if (block) {
             // If it's a section, cleanup nested editor
             const type = block.dataset.type;
@@ -698,7 +698,7 @@ class BlockEditor {
     
     serialize() {
         const blocks = [];
-        const blockElements = this.container.querySelectorAll(\`.block-item[data-context="\${this.contextId}"]\`);
+        const blockElements = this.container.querySelectorAll(`.block-item[data-context="${this.contextId}"]`);
         
         blockElements.forEach(block => {
             const type = block.dataset.type;
@@ -715,35 +715,35 @@ class BlockEditor {
     serializeBlockData(blockData, id, type) {
         switch(type) {
             case 'header':
-                blockData.data.level = parseInt(document.getElementById(\`\${id}-level\`)?.value || 2);
-                blockData.data.text = document.getElementById(\`\${id}-text\`)?.value || '';
+                blockData.data.level = parseInt(document.getElementById(`${id}-level`)?.value || 2);
+                blockData.data.text = document.getElementById(`${id}-text`)?.value || '';
                 break;
             case 'paragraph':
-                blockData.data.text = document.getElementById(\`\${id}-text\`)?.value || '';
+                blockData.data.text = document.getElementById(`${id}-text`)?.value || '';
                 break;
             case 'list':
-                blockData.data.style = document.getElementById(\`\${id}-style\`)?.value || 'unordered';
-                const items = document.querySelectorAll(\`#\${id}-items input\`);
+                blockData.data.style = document.getElementById(`${id}-style`)?.value || 'unordered';
+                const items = document.querySelectorAll(`#${id}-items input`);
                 blockData.data.items = Array.from(items).map(input => input.value).filter(v => v.trim());
                 break;
             case 'code':
-                blockData.data.code = document.getElementById(\`\${id}-code\`)?.value || '';
+                blockData.data.code = document.getElementById(`${id}-code`)?.value || '';
                 break;
             case 'alert':
-                blockData.data.type = document.getElementById(\`\${id}-alertType\`)?.value || 'info';
-                blockData.data.message = document.getElementById(\`\${id}-message\`)?.value || '';
+                blockData.data.type = document.getElementById(`${id}-alertType`)?.value || 'info';
+                blockData.data.message = document.getElementById(`${id}-message`)?.value || '';
                 break;
             case 'image':
-                blockData.data.url = document.getElementById(\`\${id}-url\`)?.value || '';
-                blockData.data.caption = document.getElementById(\`\${id}-caption\`)?.value || '';
+                blockData.data.url = document.getElementById(`${id}-url`)?.value || '';
+                blockData.data.caption = document.getElementById(`${id}-caption`)?.value || '';
                 break;
             case 'callout':
-                blockData.data.type = document.getElementById(\`\${id}-calloutType\`)?.value || 'info';
-                blockData.data.title = document.getElementById(\`\${id}-title\`)?.value || '';
-                blockData.data.message = document.getElementById(\`\${id}-message\`)?.value || '';
+                blockData.data.type = document.getElementById(`${id}-calloutType`)?.value || 'info';
+                blockData.data.title = document.getElementById(`${id}-title`)?.value || '';
+                blockData.data.message = document.getElementById(`${id}-message`)?.value || '';
                 break;
             case 'table':
-                const tableContainer = document.getElementById(\`\${id}-table-container\`);
+                const tableContainer = document.getElementById(`${id}-table-container`);
                 if (tableContainer) {
                     const tableRows = tableContainer.querySelectorAll('div');
                     const tableArray = [];
@@ -758,9 +758,9 @@ class BlockEditor {
             case 'separator':
                 break;
             case 'osrs_header':
-                blockData.data.header = document.getElementById(\`\${id}-header\`)?.value || '';
-                blockData.data.subheader = document.getElementById(\`\${id}-subheader\`)?.value || '';
-                blockData.data.color = document.getElementById(\`\${id}-color\`)?.value || 'gold';
+                blockData.data.header = document.getElementById(`${id}-header`)?.value || '';
+                blockData.data.subheader = document.getElementById(`${id}-subheader`)?.value || '';
+                blockData.data.color = document.getElementById(`${id}-color`)?.value || 'gold';
                 break;
             case 'patch_notes_section':
                 // Recursively serialize nested blocks
@@ -768,8 +768,8 @@ class BlockEditor {
                 blockData.data.children = patchEditor ? patchEditor.serialize() : [];
                 break;
             case 'custom_section':
-                blockData.data.title = document.getElementById(\`\${id}-title\`)?.value || '';
-                blockData.data.color = document.getElementById(\`\${id}-color\`)?.value || 'primary';
+                blockData.data.title = document.getElementById(`${id}-title`)?.value || '';
+                blockData.data.color = document.getElementById(`${id}-color`)?.value || 'primary';
                 // Recursively serialize nested blocks
                 const customEditor = nestedEditors.get(id);
                 blockData.data.children = customEditor ? customEditor.serialize() : [];
@@ -795,16 +795,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Helper functions for list items
 function addListItem(blockId) {
-    const itemsContainer = document.getElementById(\`\${blockId}-items\`);
+    const itemsContainer = document.getElementById(`${blockId}-items`);
     const newItem = document.createElement('div');
     newItem.className = 'flex gap-2';
-    newItem.innerHTML = \`
+    newItem.innerHTML = `
         <input type="text" placeholder="List item" 
                class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">
         <button type="button" onclick="removeListItem(this)" class="text-red-500 hover:text-red-400">
             <i class="fas fa-minus-circle"></i>
         </button>
-    \`;
+    `;
     itemsContainer.appendChild(newItem);
 }
 
@@ -814,7 +814,7 @@ function removeListItem(btn) {
 
 // Helper functions for tables
 function addTableRow(blockId) {
-    const container = document.getElementById(\`\${blockId}-table-container\`);
+    const container = document.getElementById(`${blockId}-table-container`);
     const firstRow = container.querySelector('div');
     const colCount = firstRow.querySelectorAll('input').length;
     const rowCount = container.querySelectorAll('div').length;
@@ -823,23 +823,23 @@ function addTableRow(blockId) {
     newRow.className = 'flex gap-2';
     let rowHTML = '';
     for (let i = 0; i < colCount; i++) {
-        rowHTML += \`
+        rowHTML += `
             <input type="text" placeholder="Cell" 
                    class="flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm"
-                   data-row="\${rowCount}" data-col="\${i}">
-        \`;
+                   data-row="${rowCount}" data-col="${i}">
+        `;
     }
-    rowHTML += \`
-        <button type="button" onclick="removeTableRow('\${blockId}', \${rowCount})" class="text-red-500 hover:text-red-400">
+    rowHTML += `
+        <button type="button" onclick="removeTableRow('${blockId}', ${rowCount})" class="text-red-500 hover:text-red-400">
             <i class="fas fa-times"></i>
         </button>
-    \`;
+    `;
     newRow.innerHTML = rowHTML;
     container.appendChild(newRow);
 }
 
 function addTableColumn(blockId) {
-    const container = document.getElementById(\`\${blockId}-table-container\`);
+    const container = document.getElementById(`${blockId}-table-container`);
     const rows = container.querySelectorAll('div');
     
     rows.forEach((row, rowIdx) => {
@@ -850,7 +850,7 @@ function addTableColumn(blockId) {
         const newInput = document.createElement('input');
         newInput.type = 'text';
         newInput.placeholder = rowIdx === 0 ? 'Header' : 'Cell';
-        newInput.className = \`flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm \${rowIdx === 0 ? 'font-semibold' : ''}\`;
+        newInput.className = `flex-1 bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2 text-sm ${rowIdx === 0 ? 'font-semibold' : ''}`;
         newInput.dataset.row = rowIdx;
         newInput.dataset.col = colCount;
         
@@ -859,7 +859,7 @@ function addTableColumn(blockId) {
 }
 
 function removeTableRow(blockId, rowIdx) {
-    const container = document.getElementById(\`\${blockId}-table-container\`);
+    const container = document.getElementById(`${blockId}-table-container`);
     const rows = container.querySelectorAll('div');
     if (rows.length > 2) {
         rows[rowIdx].remove();
@@ -874,8 +874,8 @@ async function handleImageUpload(blockId, input) {
     const formData = new FormData();
     formData.append('image', file);
     
-    const urlInput = document.getElementById(\`\${blockId}-url\`);
-    const preview = document.getElementById(\`\${blockId}-preview\`);
+    const urlInput = document.getElementById(`${blockId}-url`);
+    const preview = document.getElementById(`${blockId}-preview`);
     const previewImg = preview.querySelector('img');
     
     try {
