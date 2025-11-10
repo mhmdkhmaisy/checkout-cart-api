@@ -43,6 +43,8 @@ class UpdateRenderer
             'table' => self::renderTable($data),
             'separator' => self::renderSeparator($data),
             'osrs_header' => self::renderOsrsHeader($data),
+            'patch_notes_section' => self::renderPatchNotesSection($data),
+            'custom_section' => self::renderCustomSection($data),
             default => self::renderParagraph($data),
         };
     }
@@ -248,7 +250,7 @@ class UpdateRenderer
             letter-spacing: 1px;
             margin-bottom: 1.5rem;
             opacity: 0.8;
-            padding-left: 1.5rem;
+            text-align: center;
             image-rendering: pixelated;
             -webkit-font-smoothing: none;
             -moz-osx-font-smoothing: grayscale;
@@ -259,6 +261,61 @@ class UpdateRenderer
         
         if ($subheader) {
             $html .= '<div style="' . $subheaderStyle . '">' . e($subheader) . '</div>';
+        }
+        
+        $html .= '</div>';
+        
+        return $html;
+    }
+
+    private static function renderPatchNotesSection($data)
+    {
+        $children = $data['children'] ?? [];
+        
+        $html = '<div style="background: rgba(196, 30, 58, 0.08); border-left: 4px solid var(--primary-color, #c41e3a); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">';
+        $html .= '<div style="display: flex; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid rgba(196, 30, 58, 0.3);">';
+        $html .= '<i class="fas fa-wrench" style="color: var(--primary-color, #c41e3a); font-size: 1.25rem; margin-right: 0.75rem;"></i>';
+        $html .= '<h3 style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color, #c41e3a); margin: 0;">Patch Notes</h3>';
+        $html .= '</div>';
+        
+        if (!empty($children)) {
+            foreach ($children as $child) {
+                $html .= self::renderBlock($child);
+            }
+        }
+        
+        $html .= '</div>';
+        
+        return $html;
+    }
+
+    private static function renderCustomSection($data)
+    {
+        $title = $data['title'] ?? 'Section';
+        $children = $data['children'] ?? [];
+        $colorScheme = $data['color'] ?? 'primary';
+        
+        $colors = [
+            'primary' => ['bg' => 'rgba(196, 30, 58, 0.08)', 'border' => '#c41e3a', 'text' => '#c41e3a'],
+            'gold' => ['bg' => 'rgba(212, 165, 116, 0.08)', 'border' => '#d4a574', 'text' => '#d4a574'],
+            'blue' => ['bg' => 'rgba(59, 130, 246, 0.08)', 'border' => '#3b82f6', 'text' => '#3b82f6'],
+            'green' => ['bg' => 'rgba(34, 197, 94, 0.08)', 'border' => '#22c55e', 'text' => '#22c55e'],
+            'purple' => ['bg' => 'rgba(168, 85, 247, 0.08)', 'border' => '#a855f7', 'text' => '#a855f7'],
+            'orange' => ['bg' => 'rgba(255, 107, 53, 0.08)', 'border' => '#ff6b35', 'text' => '#ff6b35'],
+        ];
+        
+        $colorSet = $colors[$colorScheme] ?? $colors['primary'];
+        
+        $html = '<div style="background: ' . $colorSet['bg'] . '; border-left: 4px solid ' . $colorSet['border'] . '; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">';
+        $html .= '<div style="display: flex; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid ' . $colorSet['border'] . '30;">';
+        $html .= '<i class="fas fa-folder-open" style="color: ' . $colorSet['text'] . '; font-size: 1.25rem; margin-right: 0.75rem;"></i>';
+        $html .= '<h3 style="font-size: 1.5rem; font-weight: 700; color: ' . $colorSet['text'] . '; margin: 0;">' . e($title) . '</h3>';
+        $html .= '</div>';
+        
+        if (!empty($children)) {
+            foreach ($children as $child) {
+                $html .= self::renderBlock($child);
+            }
         }
         
         $html .= '</div>';
