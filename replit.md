@@ -56,6 +56,12 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
             - Standard blocks: header, paragraph, list, code, image, alert
             - Enhanced blocks: callout/highlight (5 color types), table (dynamic rows/columns), separator
             - OSRS-style pixelated header with subheader support (5 color schemes using Press Start 2P font)
+            - Nested section components: Patch Notes Section (red-themed) and Custom Section (6 color schemes)
+            - Interactive nested block editor: sections contain their own toolbar buttons to add child blocks
+            - Scoped drag-and-drop: nested blocks can only be reordered within their parent section
+            - Refactored BlockEditor class architecture manages both root and nested editor contexts
+            - Recursive serialization/deserialization for saving and loading nested content structures
+            - Single-level nesting limitation prevents infinite nesting (sections cannot contain other sections)
         - Advanced publishing workflow with draft/published states and scheduling capabilities
         - Featured updates and pinned posts for highlighting important announcements (pinned updates appear first on all listings)
         - Hotfix system: allows updates to be attached to parent updates without appearing in main listings, displayed at the end of parent update pages
