@@ -212,7 +212,7 @@ class UpdateController extends Controller
             $updateUrl = route('updates.show', $update->slug);
             
             // Build header message
-            $headerMessage = "📢 **New Update: {$update->title}**\n\n";
+            $headerMessage = "📢 **New Update: {$update->title}**\n";
             
             if ($update->category) {
                 $headerMessage .= "**Category:** {$update->category}\n";
@@ -221,8 +221,6 @@ class UpdateController extends Controller
             if ($update->author) {
                 $headerMessage .= "**Author:** {$update->author}\n";
             }
-            
-            $headerMessage .= "\n━━━━━━━━━━━━━━━━━━\n";
             
             // Send header
             $response = Http::post($webhookUrl, ['content' => $headerMessage]);
@@ -235,7 +233,7 @@ class UpdateController extends Controller
             $this->sendContentBlocksToDiscord($content, $webhookUrl);
             
             // Send footer with link
-            $footerMessage = "━━━━━━━━━━━━━━━━━━\n🔗 **Read full update:** {$updateUrl}";
+            $footerMessage = "🔗 **Read full update:** {$updateUrl}";
             $response = Http::post($webhookUrl, ['content' => $footerMessage]);
             if (!$response->successful()) {
                 throw new \Exception('Discord API error: ' . $response->body());
@@ -640,7 +638,8 @@ class UpdateController extends Controller
                 return '';
 
             case 'separator':
-                return "━━━━━━━━━━━━━━━━━━";
+                // Return empty for separators - they're handled contextually
+                return '';
 
             case 'image':
                 // Images are handled separately in processBlockForDiscord
