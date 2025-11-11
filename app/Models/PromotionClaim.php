@@ -16,12 +16,14 @@ class PromotionClaim extends Model
         'total_spent_during_promo',
         'last_claimed_at',
         'claimed_ingame',
+        'claimable_at',
     ];
 
     protected $casts = [
         'total_spent_during_promo' => 'decimal:2',
         'last_claimed_at' => 'datetime',
         'claimed_ingame' => 'boolean',
+        'claimable_at' => 'datetime',
     ];
 
     public function promotion()
@@ -63,5 +65,10 @@ class PromotionClaim extends Model
         }
 
         return true;
+    }
+
+    public function isClaimable()
+    {
+        return $this->claimable_at !== null && $this->canClaim();
     }
 }

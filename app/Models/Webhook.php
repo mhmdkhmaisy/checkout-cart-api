@@ -8,4 +8,25 @@ use Illuminate\Database\Eloquent\Model;
 class Webhook extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'name',
+        'url',
+        'event_type',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeForEvent($query, string $eventType)
+    {
+        return $query->where('event_type', $eventType);
+    }
 }
