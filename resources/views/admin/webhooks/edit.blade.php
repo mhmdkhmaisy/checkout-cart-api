@@ -72,6 +72,9 @@
                     <option value="promotion.claimed" {{ old('event_type', $webhook->event_type) == 'promotion.claimed' ? 'selected' : '' }}>
                         Promotion Claimed
                     </option>
+                    <option value="promotion.limit_reached" {{ old('event_type', $webhook->event_type) == 'promotion.limit_reached' ? 'selected' : '' }}>
+                        Promotion Limit Reached
+                    </option>
                     <option value="update.published" {{ old('event_type', $webhook->event_type) == 'update.published' ? 'selected' : '' }}>
                         Update Published
                     </option>
