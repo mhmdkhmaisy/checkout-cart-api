@@ -112,6 +112,11 @@ class WebhookController extends Controller
                     array_merge($payload, ['capture' => $captureResult])
                 );
 
+                // Track promotion progress
+                if ($order->username) {
+                    $this->promotionManager->trackSpending($order->username, $order->amount);
+                }
+
                 Log::info("Order {$order->id} marked as paid with capture ID: {$captureResult['capture_id']}");
             } else {
                 // Capture failed but order still approved
