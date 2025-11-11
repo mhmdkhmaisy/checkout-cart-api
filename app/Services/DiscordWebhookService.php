@@ -150,6 +150,80 @@ class DiscordWebhookService
         ];
     }
 
+    public function buildPromotionGoalReachedPayload($promotion, $claim, $username, $eligibleCount)
+    {
+        $eligibleRemaining = null;
+        if ($promotion->global_claim_limit) {
+            $eligibleRemaining = $promotion->global_claim_limit - $eligibleCount;
+        }
+
+        $message = "✅ **Promotion Goal Reached!**\n\n";
+        $message .= "**User:** {$username}\n";
+        $message .= "**Promotion:** {$promotion->title}\n\n";
+        $message .= "**Stats:**\n";
+        $message .= "• Eligible Users: {$eligibleCount}";
+        
+        if ($eligibleRemaining !== null) {
+            $message .= " / {$promotion->global_claim_limit}\n";
+            $message .= "• Remaining: {$eligibleRemaining}\n";
+        } else {
+            $message .= "\n";
+        }
+        
+        if ($promotion->end_at) {
+            $daysLeft = now()->diffInDays($promotion->end_at, false);
+            if ($daysLeft >= 0) {
+                $message .= "• Ends in: {$daysLeft} day(s)\n";
+            } else {
+                $message .= "• Status: Expired\n";
+            }
+        }
+
+        $itemsList = '';
+        if (!empty($promotion->reward_items)) {
+            foreach ($promotion->reward_items as $item) {
+                $itemsList .= "• " . $item['item_amount'] . "x " . $item['item_name'] . "\n";
+            }
+        }
+
+        $fields = [
+            [
+                'name' => 'Eligible Users',
+                'value' => (string)$eligibleCount,
+                'inline' => true
+            ],
+            [
+                'name' => 'Remaining Slots',
+                'value' => $eligibleRemaining !== null ? (string)$eligibleRemaining : 'Unlimited',
+                'inline' => true
+            ],
+        ];
+
+        if ($itemsList) {
+            $fields[] = [
+                'name' => '🎁 Reward Items',
+                'value' => $itemsList,
+                'inline' => false
+            ];
+        }
+
+        return [
+            'content' => $message,
+            'embeds' => [
+                [
+                    'title' => '✅ Promotion Goal Reached',
+                    'description' => "**{$username}** reached the goal for **{$promotion->title}**",
+                    'color' => 3066993,
+                    'fields' => $fields,
+                    'footer' => [
+                        'text' => 'Promotion ID: ' . $promotion->id
+                    ],
+                    'timestamp' => now()->toIso8601String()
+                ]
+            ]
+        ];
+    }
+
     public function buildPromotionClaimedPayload($promotion, $claim, $username)
     {
         $claimsRemaining = null;

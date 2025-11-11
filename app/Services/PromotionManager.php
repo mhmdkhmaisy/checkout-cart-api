@@ -109,33 +109,25 @@ class PromotionManager
                     ->first();
                 
                 if ($claim && $previousAmount < $promo->min_amount && $claim->total_spent_during_promo >= $promo->min_amount) {
-                    // Increment claim count when threshold is reached (game server will mark claimed_ingame later)
+                    // Mark as eligible when threshold is reached
                     $claim->claimable_at = now();
-                    $claim->claim_count++;
-                    $claim->last_claimed_at = now();
                     $claim->save();
                     
-                    // Increment global claim counter
-                    if ($promo->global_claim_limit) {
-                        $promo->increment('claimed_global');
-                        $promo->refresh(); // Reload to get updated claimed_global value
-                    }
-                    
-                    // Clear cache to reflect updated claim counts
+                    // Clear cache to reflect updated eligibility
                     Cache::forget('active_promotions');
                     
-                    Log::info("User {$username} auto-claimed promotion #{$promo->id}: {$promo->title}");
+                    // Get eligible users count
+                    $eligibleCount = PromotionClaim::where('promotion_id', $promo->id)
+                        ->where('total_spent_during_promo', '>=', $promo->min_amount)
+                        ->count();
                     
-                    // Send Discord notification
+                    Log::info("User {$username} reached promotion #{$promo->id} goal - now {$eligibleCount} eligible users");
+                    
+                    // Send Discord notification for goal reached
                     $this->discordWebhook->sendNotification(
                         'promotion.claimed',
-                        $this->discordWebhook->buildPromotionClaimedPayload($promo, $claim, $username)
+                        $this->discordWebhook->buildPromotionGoalReachedPayload($promo, $claim, $username, $eligibleCount)
                     );
-                    
-                    // If recurrent type, reset progress for next claim
-                    if ($promo->bonus_type === 'recurrent') {
-                        $claim->decrement('total_spent_during_promo', $promo->min_amount);
-                    }
                 }
             } catch (\Exception $e) {
                 Log::error("Failed to track spending for promotion {$promo->id}: " . $e->getMessage());
