@@ -108,6 +108,15 @@ class PromotionManager
                     ->where('username', $username)
                     ->first();
                 
+                Log::info("Promotion spending tracked", [
+                    'promotion_id' => $promo->id,
+                    'username' => $username,
+                    'previous_amount' => $previousAmount,
+                    'new_amount' => $claim->total_spent_during_promo,
+                    'min_amount' => $promo->min_amount,
+                    'will_trigger_notification' => ($previousAmount < $promo->min_amount && $claim->total_spent_during_promo >= $promo->min_amount)
+                ]);
+                
                 if ($claim && $previousAmount < $promo->min_amount && $claim->total_spent_during_promo >= $promo->min_amount) {
                     // Mark as eligible when threshold is reached
                     $claim->claimable_at = now();
