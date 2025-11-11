@@ -100,12 +100,17 @@
                                        title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{{ route('admin.updates.send-to-discord', $update) }}" 
-                                       class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors inline-block"
-                                       title="Send to Discord"
-                                       onclick="return confirm('Send this update to Discord as a screenshot?');">
-                                        <i class="fab fa-discord"></i>
-                                    </a>
+                                    <form action="{{ route('admin.updates.send-to-discord', $update) }}" 
+                                          method="POST" 
+                                          class="inline"
+                                          onsubmit="return confirm('Send this update to Discord as a screenshot?');">
+                                        @csrf
+                                        <button type="submit" 
+                                                class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+                                                title="Send to Discord">
+                                            <i class="fab fa-discord"></i>
+                                        </button>
+                                    </form>
                                     <form action="{{ route('admin.updates.destroy', $update) }}" 
                                           method="POST" 
                                           class="inline" 
