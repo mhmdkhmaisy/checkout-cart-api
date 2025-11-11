@@ -365,15 +365,15 @@ class UpdateController extends Controller
         }
         
         $children = $data['children'] ?? [];
-        $fields = [];
         $description = '';
         $currentFieldContent = '';
+        $images = [];
         
         foreach ($children as $child) {
             $childType = $child['type'] ?? 'paragraph';
             $childData = $child['data'] ?? [];
             
-            // Handle images in embeds
+            // Collect images to display in embeds
             if ($childType === 'image') {
                 // Flush current field content
                 if (trim($currentFieldContent)) {
@@ -381,17 +381,17 @@ class UpdateController extends Controller
                     $currentFieldContent = '';
                 }
                 
-                // Add image URL
+                // Store image for later
                 $imageUrl = $childData['url'] ?? $childData['file']['url'] ?? '';
                 if ($imageUrl && !str_starts_with($imageUrl, 'http')) {
                     $imageUrl = url($imageUrl);
                 }
                 if ($imageUrl) {
                     $caption = $childData['caption'] ?? '';
-                    $description .= ($description ? "\n\n" : '') . "[🖼️ Image]($imageUrl)";
-                    if ($caption) {
-                        $description .= "\n*" . strip_tags($caption) . "*";
-                    }
+                    $images[] = [
+                        'url' => $imageUrl,
+                        'caption' => $caption
+                    ];
                 }
                 continue;
             }
@@ -429,15 +429,37 @@ class UpdateController extends Controller
             $description = substr($description, 0, 3997) . '...';
         }
         
-        // Send embed
+        // Send main embed with first image
         $embed = [
             'title' => $sectionTitle,
             'description' => $description ?: 'No content',
             'color' => $color
         ];
         
+        // Add first image to the main embed
+        if (!empty($images)) {
+            $firstImage = array_shift($images);
+            $embed['image'] = ['url' => $firstImage['url']];
+            if ($firstImage['caption']) {
+                $embed['footer'] = ['text' => strip_tags($firstImage['caption'])];
+            }
+        }
+        
         Http::post($webhookUrl, ['embeds' => [$embed]]);
         usleep(300000);
+        
+        // Send additional images as separate embeds
+        foreach ($images as $img) {
+            $imageEmbed = [
+                'color' => $color,
+                'image' => ['url' => $img['url']]
+            ];
+            if ($img['caption']) {
+                $imageEmbed['description'] = '*' . strip_tags($img['caption']) . '*';
+            }
+            Http::post($webhookUrl, ['embeds' => [$imageEmbed]]);
+            usleep(300000);
+        }
     }
 
     private function formatTableForEmbed($data)
