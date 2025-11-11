@@ -106,19 +106,17 @@ class PromotionManager
                 $previousAmount = $claim->total_spent_during_promo ?? 0;
                 
                 // Explicitly set the new amount (handles NULL values properly)
-                $claim->total_spent_during_promo = $previousAmount + $amount;
+                $newAmount = $previousAmount + $amount;
+                $claim->total_spent_during_promo = $newAmount;
                 $claim->save();
-                
-                // Refresh to get the saved value
-                $claim->refresh();
                 
                 Log::info("Promotion spending tracked", [
                     'promotion_id' => $promo->id,
                     'username' => $username,
                     'previous_amount' => $previousAmount,
-                    'new_amount' => $claim->total_spent_during_promo,
+                    'new_amount' => $newAmount,
                     'min_amount' => $promo->min_amount,
-                    'will_trigger_notification' => ($previousAmount < $promo->min_amount && $claim->total_spent_during_promo >= $promo->min_amount)
+                    'will_trigger_notification' => ($previousAmount < $promo->min_amount && $newAmount >= $promo->min_amount)
                 ]);
                 
                 if ($claim && $previousAmount < $promo->min_amount && $claim->total_spent_during_promo >= $promo->min_amount) {
