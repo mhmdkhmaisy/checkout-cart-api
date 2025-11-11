@@ -245,19 +245,17 @@ class PromotionManager
                             return;
                         }
                         
-                        // Re-count eligible users within the transaction
-                        $eligibleCount = PromotionClaim::where('promotion_id', $promo->id)
-                            ->where('total_spent_during_promo', '>=', $lockedPromo->min_amount)
-                            ->count();
-                        
-                        // Check if global limit has been reached
-                        $globalLimitReached = $lockedPromo->global_claim_limit && $eligibleCount >= $lockedPromo->global_claim_limit;
+                        // Check if global limit has been reached using claimed_global counter
+                        // We use claimed_global instead of counting eligible users to avoid race conditions
+                        // (the current user's spending was already updated, so they'd be included in the count)
+                        $currentClaimedGlobal = $lockedPromo->claimed_global ?? 0;
+                        $globalLimitReached = $lockedPromo->global_claim_limit && $currentClaimedGlobal >= $lockedPromo->global_claim_limit;
                         
                         if ($globalLimitReached) {
                             Log::warning("User {$username} reached goal for promotion #{$promo->id} but global limit already reached", [
                                 'promotion_id' => $promo->id,
                                 'username' => $username,
-                                'eligible_count' => $eligibleCount,
+                                'claimed_global' => $currentClaimedGlobal,
                                 'global_limit' => $lockedPromo->global_claim_limit
                             ]);
                             return;
