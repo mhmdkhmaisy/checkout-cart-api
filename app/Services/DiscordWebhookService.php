@@ -100,6 +100,39 @@ class DiscordWebhookService
             $message .= "• End: No expiration\n";
         }
 
+        $itemsList = '';
+        if (!empty($promotion->reward_items)) {
+            foreach ($promotion->reward_items as $item) {
+                $itemsList .= $item['item_amount'] . 'x' . $item['item_name'] . "\n";
+            }
+        }
+
+        $fields = [
+            [
+                'name' => 'Required Amount',
+                'value' => '$' . number_format($promotion->min_amount, 2),
+                'inline' => true
+            ],
+            [
+                'name' => 'Type',
+                'value' => ucfirst($promotion->bonus_type),
+                'inline' => true
+            ],
+            [
+                'name' => 'Global Limit',
+                'value' => $promotion->global_claim_limit ?: 'Unlimited',
+                'inline' => true
+            ],
+        ];
+
+        if ($itemsList) {
+            $fields[] = [
+                'name' => '🎁 Reward Items',
+                'value' => $itemsList,
+                'inline' => false
+            ];
+        }
+
         return [
             'content' => $message,
             'embeds' => [
@@ -107,23 +140,7 @@ class DiscordWebhookService
                     'title' => '🎁 ' . $promotion->title,
                     'description' => $promotion->description,
                     'color' => 5814783,
-                    'fields' => [
-                        [
-                            'name' => 'Required Amount',
-                            'value' => '$' . number_format($promotion->min_amount, 2),
-                            'inline' => true
-                        ],
-                        [
-                            'name' => 'Type',
-                            'value' => ucfirst($promotion->bonus_type),
-                            'inline' => true
-                        ],
-                        [
-                            'name' => 'Global Limit',
-                            'value' => $promotion->global_claim_limit ?: 'Unlimited',
-                            'inline' => true
-                        ],
-                    ],
+                    'fields' => $fields,
                     'footer' => [
                         'text' => 'Promotion ID: ' . $promotion->id
                     ],
@@ -162,6 +179,34 @@ class DiscordWebhookService
             }
         }
 
+        $itemsList = '';
+        if (!empty($promotion->reward_items)) {
+            foreach ($promotion->reward_items as $item) {
+                $itemsList .= $item['item_amount'] . 'x' . $item['item_name'] . "\n";
+            }
+        }
+
+        $fields = [
+            [
+                'name' => 'Total Claims',
+                'value' => (string)$promotion->claimed_global,
+                'inline' => true
+            ],
+            [
+                'name' => 'Claims Remaining',
+                'value' => $claimsRemaining !== null ? (string)$claimsRemaining : 'Unlimited',
+                'inline' => true
+            ],
+        ];
+
+        if ($itemsList) {
+            $fields[] = [
+                'name' => '🎁 Claimed Items',
+                'value' => $itemsList,
+                'inline' => false
+            ];
+        }
+
         return [
             'content' => $message,
             'embeds' => [
@@ -169,18 +214,7 @@ class DiscordWebhookService
                     'title' => '✅ Promotion Claimed',
                     'description' => "**{$username}** claimed **{$promotion->title}**",
                     'color' => 3066993,
-                    'fields' => [
-                        [
-                            'name' => 'Total Claims',
-                            'value' => (string)$promotion->claimed_global,
-                            'inline' => true
-                        ],
-                        [
-                            'name' => 'Claims Remaining',
-                            'value' => $claimsRemaining !== null ? (string)$claimsRemaining : 'Unlimited',
-                            'inline' => true
-                        ],
-                    ],
+                    'fields' => $fields,
                     'footer' => [
                         'text' => 'Promotion ID: ' . $promotion->id
                     ],

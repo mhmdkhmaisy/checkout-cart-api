@@ -173,6 +173,11 @@
                                value="{{ old('start_at') }}"
                                class="w-full px-4 py-3 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent transition-all @error('start_at') border-red-500 @enderror"
                                required>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <button type="button" onclick="setStartNow()" class="px-3 py-1 bg-dragon-red hover:bg-dragon-red-bright text-dragon-silver rounded text-xs transition-colors">
+                                NOW
+                            </button>
+                        </div>
                         @error('start_at')
                             <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -188,6 +193,26 @@
                                value="{{ old('end_at') }}"
                                class="w-full px-4 py-3 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent transition-all @error('end_at') border-red-500 @enderror"
                                required>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <button type="button" onclick="setEndFromNow(30)" class="px-3 py-1 bg-dragon-border hover:bg-dragon-silver-dark text-dragon-silver rounded text-xs transition-colors">
+                                +30 min
+                            </button>
+                            <button type="button" onclick="setEndFromNow(60)" class="px-3 py-1 bg-dragon-border hover:bg-dragon-silver-dark text-dragon-silver rounded text-xs transition-colors">
+                                +1 hour
+                            </button>
+                            <button type="button" onclick="setEndFromNow(360)" class="px-3 py-1 bg-dragon-border hover:bg-dragon-silver-dark text-dragon-silver rounded text-xs transition-colors">
+                                +6 hours
+                            </button>
+                            <button type="button" onclick="setEndFromNow(1440)" class="px-3 py-1 bg-dragon-border hover:bg-dragon-silver-dark text-dragon-silver rounded text-xs transition-colors">
+                                +1 day
+                            </button>
+                            <button type="button" onclick="setEndFromNow(10080)" class="px-3 py-1 bg-dragon-border hover:bg-dragon-silver-dark text-dragon-silver rounded text-xs transition-colors">
+                                +1 week
+                            </button>
+                            <button type="button" onclick="setEndFromNow(43200)" class="px-3 py-1 bg-dragon-border hover:bg-dragon-silver-dark text-dragon-silver rounded text-xs transition-colors">
+                                +30 days
+                            </button>
+                        </div>
                         @error('end_at')
                             <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -223,6 +248,26 @@
 
 <script>
 let rewardItemIndex = 1;
+
+function formatDateTimeLocal(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function setStartNow() {
+    const now = new Date();
+    document.getElementById('start_at').value = formatDateTimeLocal(now);
+}
+
+function setEndFromNow(minutes) {
+    const now = new Date();
+    const future = new Date(now.getTime() + minutes * 60000);
+    document.getElementById('end_at').value = formatDateTimeLocal(future);
+}
 
 document.getElementById('add-reward-item').addEventListener('click', function() {
     const container = document.getElementById('reward-items-container');
