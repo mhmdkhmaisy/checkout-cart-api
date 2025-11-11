@@ -1,0 +1,20 @@
+[2025-11-11 22:34:55] production.INFO: Webhook event logged successfully {"order_id":35,"event_type":"PAYMENT.CAPTURE.COMPLETED","final_order_status":"paid"} 
+[2025-11-11 22:34:55] production.INFO: Starting spending track for promotion {"promotion_id":5,"username":"0202015","amount_to_add":31.98} 
+[2025-11-11 22:34:55] production.WARNING: Claim ID mismatch detected and fixed {"cached_id":9732,"actual_id":18,"promotion_id":5,"username":"0202015"} 
+[2025-11-11 22:34:55] production.INFO: Claim record retrieved/created {"promotion_id":5,"username":"0202015","cached_claim_id":9732,"actual_claim_id":18,"total_spent_raw":"0.00","total_spent_type":"string","is_null":false} 
+[2025-11-11 22:34:55] production.INFO: Calculated new amount {"promotion_id":5,"username":"0202015","previous_amount":"0.00","amount_added":31.98,"new_amount_calculated":31.98} 
+[2025-11-11 22:34:55] production.INFO: Before direct update {"claim_id":18,"current_db_value":"0.00"} 
+[2025-11-11 22:34:55] production.INFO: Update executed {"claim_id":18,"affected_rows":1,"value_set":31.98} 
+[2025-11-11 22:34:55] production.INFO: After direct update {"claim_id":18,"new_db_value":"31.98","expected_value":31.98,"values_match":true} 
+[2025-11-11 22:34:55] production.INFO: Database verification {"promotion_id":5,"username":"0202015","db_total_spent":"31.98","db_record_exists":true} 
+[2025-11-11 22:34:55] production.INFO: Promotion spending tracked {"promotion_id":5,"username":"0202015","previous_amount":"0.00","new_amount":31.98,"min_amount":"15.00","will_trigger_notification":true} 
+[2025-11-11 22:34:55] production.WARNING: User 0202015 reached goal for promotion #5 but global limit already reached {"promotion_id":5,"username":"0202015","eligible_count":5,"global_limit":"5"} 
+[2025-11-11 22:34:55] production.INFO: Tracked 31.98 spending for user 0202015 across 1 promotions  
+[2025-11-11 22:34:55] production.INFO: Order 35 marked as paid with capture ID: 06417194N6687105L  
+[2025-11-11 22:34:59] production.INFO: Payment success page accessed {"payment_id":"7SV82746AM730891S","order_id":"35","query_params":{"order_id":"35","token":"7SV82746AM730891S","PayerID":"T5B3Q4E6WK4KC"}} 
+[2025-11-11 22:35:01] production.INFO: Payment success page accessed {"payment_id":"7SV82746AM730891S","order_id":"35","query_params":{"order_id":"35","token":"7SV82746AM730891S","PayerID":"T5B3Q4E6WK4KC"}} 
+[2025-11-11 22:35:07] production.INFO: PayPal webhook received {"event_type":"PAYMENT.CAPTURE.COMPLETED","resource_id":"06417194N6687105L"} 
+[2025-11-11 22:35:07] production.INFO: PayPal capture 06417194N6687105L already processed for order 35  
+[2025-11-11 22:35:07] production.INFO: Payment completion event logged {"order_id":35,"current_status":"paid","event_status":"paid","will_update_status":false} 
+[2025-11-11 22:35:07] production.INFO: Order status not updated - already in appropriate state {"order_id":35,"current_status":"paid","event_status":"paid","event_type":"PAYMENT.CAPTURE.COMPLETED"} 
+[2025-11-11 22:35:07] production.INFO: Webhook event logged successfully {"order_id":35,"event_type":"PAYMENT.CAPTURE.COMPLETED","final_order_status":"paid"} 
