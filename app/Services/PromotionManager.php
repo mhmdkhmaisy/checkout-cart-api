@@ -109,10 +109,34 @@ class PromotionManager
                     ->first();
                 
                 if ($claim && $previousAmount < $promo->min_amount && $claim->total_spent_during_promo >= $promo->min_amount) {
+                    // Auto-claim the promotion when threshold is reached
                     $claim->claimable_at = now();
+                    $claim->claim_count++;
+                    $claim->last_claimed_at = now();
+                    $claim->claimed_ingame = 1;
                     $claim->save();
                     
-                    Log::info("User {$username} reached promotion #{$promo->id} threshold - auto-marked as claimable");
+                    // Increment global claim counter
+                    if ($promo->global_claim_limit) {
+                        $promo->increment('claimed_global');
+                        $promo->refresh(); // Reload to get updated claimed_global value
+                    }
+                    
+                    // Clear cache to reflect updated claim counts
+                    Cache::forget('active_promotions');
+                    
+                    Log::info("User {$username} auto-claimed promotion #{$promo->id}: {$promo->title}");
+                    
+                    // Send Discord notification
+                    $this->discordWebhook->sendNotification(
+                        'promotion.claimed',
+                        $this->discordWebhook->buildPromotionClaimedPayload($promo, $claim, $username)
+                    );
+                    
+                    // If recurrent type, reset progress for next claim
+                    if ($promo->bonus_type === 'recurrent') {
+                        $claim->decrement('total_spent_during_promo', $promo->min_amount);
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error("Failed to track spending for promotion {$promo->id}: " . $e->getMessage());
