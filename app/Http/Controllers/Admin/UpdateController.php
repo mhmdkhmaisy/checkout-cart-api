@@ -8,9 +8,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use App\Helpers\UpdateRenderer;
+use App\Services\DiscordWebhookService;
 
 class UpdateController extends Controller
 {
+    protected $discordWebhook;
+
+    public function __construct(DiscordWebhookService $discordWebhook)
+    {
+        $this->discordWebhook = $discordWebhook;
+    }
     public function index(Request $request)
     {
         $query = Update::query();
@@ -200,10 +207,10 @@ class UpdateController extends Controller
 
     public function sendToDiscord(Update $update)
     {
-        $webhookUrl = config('services.discord.webhook_url');
+        $webhooks = $this->discordWebhook->getActiveWebhooks('update.published');
         
-        if (!$webhookUrl) {
-            return redirect()->back()->with('error', 'Discord webhook URL is not configured. Please add DISCORD_WEBHOOK_URL to your .env file.');
+        if ($webhooks->isEmpty()) {
+            return redirect()->back()->with('error', 'No active Discord webhooks configured for update notifications. Please add a webhook in the Webhook Management section.');
         }
 
         try {
@@ -222,24 +229,43 @@ class UpdateController extends Controller
                 $headerMessage .= "**Author:** {$update->author}\n";
             }
             
-            // Send header
-            $response = Http::post($webhookUrl, ['content' => $headerMessage]);
-            if (!$response->successful()) {
-                throw new \Exception('Discord API error: ' . $response->body());
+            $sentCount = 0;
+            $errors = [];
+            
+            foreach ($webhooks as $webhook) {
+                try {
+                    // Send header
+                    $response = Http::post($webhook->url, ['content' => $headerMessage]);
+                    if (!$response->successful()) {
+                        throw new \Exception('Discord API error: ' . $response->body());
+                    }
+                    usleep(300000); // 0.3 second delay
+                    
+                    // Process content blocks and send with images in proper positions
+                    $this->sendContentBlocksToDiscord($content, $webhook->url);
+                    
+                    // Send footer with link
+                    $footerMessage = "🔗 **Read full update:** {$updateUrl}";
+                    $response = Http::post($webhook->url, ['content' => $footerMessage]);
+                    if (!$response->successful()) {
+                        throw new \Exception('Discord API error: ' . $response->body());
+                    }
+                    
+                    $sentCount++;
+                } catch (\Exception $e) {
+                    $errors[] = "Failed to send to {$webhook->name}: " . $e->getMessage();
+                }
             }
-            usleep(300000); // 0.3 second delay
             
-            // Process content blocks and send with images in proper positions
-            $this->sendContentBlocksToDiscord($content, $webhookUrl);
-            
-            // Send footer with link
-            $footerMessage = "🔗 **Read full update:** {$updateUrl}";
-            $response = Http::post($webhookUrl, ['content' => $footerMessage]);
-            if (!$response->successful()) {
-                throw new \Exception('Discord API error: ' . $response->body());
+            if ($sentCount > 0) {
+                $message = "Update sent to {$sentCount} Discord webhook(s) successfully!";
+                if (!empty($errors)) {
+                    $message .= " Some webhooks failed: " . implode(', ', $errors);
+                }
+                return redirect()->back()->with('success', $message);
+            } else {
+                return redirect()->back()->with('error', 'Failed to send to all webhooks: ' . implode(', ', $errors));
             }
-            
-            return redirect()->back()->with('success', 'Update sent to Discord successfully!');
             
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to send to Discord: ' . $e->getMessage());

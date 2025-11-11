@@ -160,6 +160,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'owner'])->group(fun
     Route::resource('promotions', PromotionController::class);
     Route::patch('promotions/{promotion}/toggle-active', [PromotionController::class, 'toggleActive'])->name('promotions.toggle-active');
 
+    // Webhook management
+    Route::resource('webhooks', App\Http\Controllers\Admin\WebhookController::class);
+    Route::patch('webhooks/{webhook}/toggle-active', [App\Http\Controllers\Admin\WebhookController::class, 'toggleActive'])->name('webhooks.toggle-active');
+
 });
 
 // Payment completion pages (NEW ROUTES)

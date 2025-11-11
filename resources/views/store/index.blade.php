@@ -417,9 +417,9 @@
                             <div style="background: linear-gradient(90deg, var(--accent-gold) 0%, var(--accent-ember) 100%); height: 100%; width: {{ min(100, $progress['progress_percent'] ?? 0) }}%; transition: width 0.3s ease;"></div>
                         </div>
                         @if($progress['can_claim'] ?? false)
-                        <button onclick="claimPromotion({{ $promo->id }})" class="btn btn-primary" style="width: 100%; margin-top: 0.75rem; background: var(--accent-gold); color: #000; font-weight: 800; padding: 0.6rem; font-size: 0.8rem;">
-                            <i class="fas fa-gift"></i> CLAIM REWARD
-                        </button>
+                        <div style="width: 100%; margin-top: 0.75rem; background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%); border: 1px solid #22c55e; color: #22c55e; font-weight: 700; padding: 0.75rem; font-size: 0.75rem; text-align: center; border-radius: 6px;">
+                            <i class="fas fa-check-circle"></i> GOAL REACHED! Login to claim your rewards in-game
+                        </div>
                         @endif
                     </div>
                     @endif
@@ -994,41 +994,6 @@ async function checkout(paymentMethod) {
             errorMessage += 'Please try again';
         }
         
-        alert(errorMessage);
-    }
-}
-
-// Claim promotion reward
-async function claimPromotion(promotionId) {
-    if (!currentUsername) {
-        alert('Please set your username first to claim rewards');
-        return;
-    }
-    
-    try {
-        const response = await $.ajax({
-            url: `/promotions/${promotionId}/claim`,
-            type: 'POST',
-            data: JSON.stringify({ username: currentUsername }),
-            contentType: 'application/json',
-            dataType: 'json'
-        });
-        
-        if (response.success) {
-            alert('🎉 ' + response.message + '\n\nRewards:\n' + response.rewards.map(r => `- ${r.item_name} x${r.item_amount}`).join('\n'));
-            // Reload the page to refresh promotion status
-            location.reload();
-        } else {
-            alert('Failed to claim promotion: ' + (response.message || 'Unknown error'));
-        }
-    } catch (error) {
-        console.error('Claim error:', error);
-        let errorMessage = 'Failed to claim promotion: ';
-        if (error.responseJSON && error.responseJSON.message) {
-            errorMessage += error.responseJSON.message;
-        } else {
-            errorMessage += 'Please try again';
-        }
         alert(errorMessage);
     }
 }

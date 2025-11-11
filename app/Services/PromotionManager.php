@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\Log;
 
 class PromotionManager
 {
+    protected $discordWebhook;
+
+    public function __construct(DiscordWebhookService $discordWebhook)
+    {
+        $this->discordWebhook = $discordWebhook;
+    }
     /**
      * Get all active promotions (cached for performance)
      */
@@ -85,13 +91,24 @@ class PromotionManager
         $activePromos = $this->getActivePromotions();
 
         foreach ($activePromos as $promo) {
-            PromotionClaim::updateOrCreate(
+            $claim = PromotionClaim::updateOrCreate(
                 [
                     'promotion_id' => $promo->id,
                     'username' => $username,
                 ],
                 []
-            )->increment('total_spent_during_promo', $amount);
+            );
+            
+            $previousAmount = $claim->total_spent_during_promo;
+            $claim->increment('total_spent_during_promo', $amount);
+            $claim->refresh();
+            
+            if ($previousAmount < $promo->min_amount && $claim->total_spent_during_promo >= $promo->min_amount) {
+                $claim->claimable_at = now();
+                $claim->save();
+                
+                Log::info("User {$username} reached promotion #{$promo->id} threshold - auto-marked as claimable");
+            }
         }
 
         Log::info("Tracked ${amount} spending for user {$username} across " . $activePromos->count() . " promotions");
@@ -136,6 +153,11 @@ class PromotionManager
             Cache::forget('active_promotions');
 
             Log::info("User {$username} claimed promotion #{$promo->id}: {$promo->title}");
+
+            $this->discordWebhook->sendNotification(
+                'promotion.claimed',
+                $this->discordWebhook->buildPromotionClaimedPayload($promo, $claim, $username)
+            );
 
             return [
                 'success' => true,
@@ -187,6 +209,13 @@ class PromotionManager
         $promotion = Promotion::create($data);
         
         Cache::forget('active_promotions');
+        
+        $this->discordWebhook->sendNotification(
+            'promotion.created',
+            $this->discordWebhook->buildPromotionCreatedPayload($promotion)
+        );
+        
+        Log::info("Promotion created and webhook sent", ['promotion_id' => $promotion->id]);
         
         return $promotion;
     }
