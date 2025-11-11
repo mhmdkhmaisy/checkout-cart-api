@@ -38,13 +38,9 @@
                             <div class="flex flex-col">
                                 <span class="font-semibold text-dragon-silver">{{ $promo->title }}</span>
                                 <div class="mt-1">
-                                    @if($promo->isUpcoming())
-                                        <span class="inline-block px-2 py-1 text-xs rounded bg-blue-600 text-blue-100">Upcoming</span>
-                                    @elseif($promo->isCurrentlyActive())
-                                        <span class="inline-block px-2 py-1 text-xs rounded bg-green-600 text-green-100">Active</span>
-                                    @elseif($promo->isExpired())
-                                        <span class="inline-block px-2 py-1 text-xs rounded bg-gray-600 text-gray-100">Expired</span>
-                                    @endif
+                                    <span class="inline-block px-2 py-1 text-xs rounded bg-{{ $promo->status_color }}-600 text-{{ $promo->status_color }}-100">
+                                        {{ $promo->status_label }}
+                                    </span>
                                 </div>
                             </div>
                         </td>

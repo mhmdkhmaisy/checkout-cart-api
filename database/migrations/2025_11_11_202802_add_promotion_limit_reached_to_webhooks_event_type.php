@@ -7,7 +7,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE webhooks MODIFY COLUMN event_type ENUM('promotion.created', 'promotion.claimed', 'promotion.limit_reached', 'update.published') DEFAULT 'promotion.created'");
+        DB::statement("ALTER TABLE webhooks MODIFY COLUMN event_type ENUM('promotion.created', 'promotion.claimed', 'promotion.limit_reached', 'promotion.expired', 'update.published') DEFAULT 'promotion.created'");
     }
 
     public function down(): void

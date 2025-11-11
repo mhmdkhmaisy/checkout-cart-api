@@ -360,6 +360,77 @@ class DiscordWebhookService
         ];
     }
 
+    public function buildPromotionExpiredPayload($promotion)
+    {
+        $eligibleCount = $promotion->claims()
+            ->where('total_spent_during_promo', '>=', $promotion->min_amount)
+            ->count();
+
+        $message = "⏰ **Promotion Expired**\n\n";
+        $message .= "**{$promotion->title}** has ended.\n\n";
+        $message .= "**Final Stats:**\n";
+        $message .= "• Eligible Users: {$eligibleCount}";
+        
+        if ($promotion->global_claim_limit) {
+            $message .= " / {$promotion->global_claim_limit}\n";
+            $remaining = $promotion->global_claim_limit - $eligibleCount;
+            if ($remaining > 0) {
+                $message .= "• Unclaimed Slots: {$remaining}\n";
+            }
+        } else {
+            $message .= "\n";
+        }
+
+        $message .= "• Status: Expired\n";
+        $message .= "• Ended: " . $promotion->end_at->format('M d, Y H:i') . "\n";
+
+        $itemsList = '';
+        if (!empty($promotion->reward_items)) {
+            foreach ($promotion->reward_items as $item) {
+                $itemsList .= "• " . $item['item_amount'] . "x " . $item['item_name'] . "\n";
+            }
+        }
+
+        $fields = [
+            [
+                'name' => 'Eligible Users',
+                'value' => $promotion->global_claim_limit 
+                    ? "{$eligibleCount} / {$promotion->global_claim_limit}" 
+                    : (string)$eligibleCount,
+                'inline' => true
+            ],
+            [
+                'name' => 'Status',
+                'value' => '⏰ Expired',
+                'inline' => true
+            ],
+        ];
+
+        if ($itemsList) {
+            $fields[] = [
+                'name' => '🎁 Reward Items',
+                'value' => $itemsList,
+                'inline' => false
+            ];
+        }
+
+        return [
+            'content' => $message,
+            'embeds' => [
+                [
+                    'title' => '⏰ Promotion Expired',
+                    'description' => "**{$promotion->title}** has reached its end date",
+                    'color' => 9807270,
+                    'fields' => $fields,
+                    'footer' => [
+                        'text' => 'Promotion ID: ' . $promotion->id . ' • Ended on ' . $promotion->end_at->format('M d, Y H:i')
+                    ],
+                    'timestamp' => now()->toIso8601String()
+                ]
+            ]
+        ];
+    }
+
     protected function formatRelativeTime($dateTime)
     {
         if (!$dateTime) {

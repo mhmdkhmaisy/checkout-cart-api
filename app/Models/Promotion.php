@@ -87,4 +87,49 @@ class Promotion extends Model
 
         return min(100, ($this->claimed_global / $this->global_claim_limit) * 100);
     }
+
+    public function getStatusAttribute()
+    {
+        if ($this->hasReachedGlobalLimit()) {
+            return 'limit_reached';
+        }
+
+        if ($this->isExpired()) {
+            return 'expired';
+        }
+
+        if ($this->isUpcoming()) {
+            return 'upcoming';
+        }
+
+        if ($this->isCurrentlyActive()) {
+            return 'active';
+        }
+
+        return 'inactive';
+    }
+
+    public function getStatusLabelAttribute()
+    {
+        return match($this->status) {
+            'active' => 'Active',
+            'expired' => 'Expired',
+            'limit_reached' => 'Limit Reached',
+            'upcoming' => 'Upcoming',
+            'inactive' => 'Inactive',
+            default => 'Unknown'
+        };
+    }
+
+    public function getStatusColorAttribute()
+    {
+        return match($this->status) {
+            'active' => 'green',
+            'expired' => 'gray',
+            'limit_reached' => 'red',
+            'upcoming' => 'blue',
+            'inactive' => 'yellow',
+            default => 'gray'
+        };
+    }
 }

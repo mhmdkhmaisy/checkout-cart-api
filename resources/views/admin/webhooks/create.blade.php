@@ -74,6 +74,9 @@
                     <option value="promotion.limit_reached" {{ old('event_type') == 'promotion.limit_reached' ? 'selected' : '' }}>
                         Promotion Limit Reached
                     </option>
+                    <option value="promotion.expired" {{ old('event_type') == 'promotion.expired' ? 'selected' : '' }}>
+                        Promotion Expired
+                    </option>
                     <option value="update.published" {{ old('event_type') == 'update.published' ? 'selected' : '' }}>
                         Update Published
                     </option>

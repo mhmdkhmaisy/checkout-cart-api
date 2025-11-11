@@ -34,7 +34,7 @@ class WebhookController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:128',
             'url' => 'required|url|max:512',
-            'event_type' => 'required|in:promotion.created,promotion.claimed,promotion.limit_reached,update.published',
+            'event_type' => 'required|in:promotion.created,promotion.claimed,promotion.limit_reached,promotion.expired,update.published',
             'is_active' => 'boolean',
         ]);
 
@@ -67,7 +67,7 @@ class WebhookController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:128',
             'url' => 'required|url|max:512',
-            'event_type' => 'required|in:promotion.created,promotion.claimed,promotion.limit_reached,update.published',
+            'event_type' => 'required|in:promotion.created,promotion.claimed,promotion.limit_reached,promotion.expired,update.published',
             'is_active' => 'boolean',
         ]);
 

@@ -399,16 +399,34 @@ class PromotionManager
      */
     public function expireOldPromotions()
     {
-        $expired = Promotion::where('is_active', true)
+        $promotionsToExpire = Promotion::where('is_active', true)
             ->where('end_at', '<', now())
-            ->update(['is_active' => false]);
+            ->get();
 
-        if ($expired > 0) {
-            Cache::forget('active_promotions');
-            Log::info("Expired {$expired} promotions");
+        $expiredCount = 0;
+
+        foreach ($promotionsToExpire as $promo) {
+            $promo->update(['is_active' => false]);
+            $expiredCount++;
+
+            $this->discordWebhook->sendNotification(
+                'promotion.expired',
+                $this->discordWebhook->buildPromotionExpiredPayload($promo)
+            );
+
+            Log::info("Promotion #{$promo->id} expired and notification sent", [
+                'promotion_id' => $promo->id,
+                'title' => $promo->title,
+                'end_at' => $promo->end_at
+            ]);
         }
 
-        return $expired;
+        if ($expiredCount > 0) {
+            Cache::forget('active_promotions');
+            Log::info("Expired {$expiredCount} promotions");
+        }
+
+        return $expiredCount;
     }
 
     /**
