@@ -92,12 +92,14 @@ class PromotionManager
 
         foreach ($activePromos as $promo) {
             try {
-                $claim = PromotionClaim::updateOrCreate(
+                $claim = PromotionClaim::firstOrCreate(
                     [
                         'promotion_id' => $promo->id,
                         'username' => $username,
                     ],
-                    []
+                    [
+                        'total_spent_during_promo' => 0
+                    ]
                 );
                 
                 $previousAmount = $claim->total_spent_during_promo;
