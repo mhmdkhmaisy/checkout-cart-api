@@ -92,6 +92,12 @@ class PromotionManager
 
         foreach ($activePromos as $promo) {
             try {
+                Log::info("Starting spending track for promotion", [
+                    'promotion_id' => $promo->id,
+                    'username' => $username,
+                    'amount_to_add' => $amount
+                ]);
+                
                 $claim = PromotionClaim::firstOrCreate(
                     [
                         'promotion_id' => $promo->id,
@@ -102,8 +108,22 @@ class PromotionManager
                     ]
                 );
                 
+                Log::info("Claim record retrieved/created", [
+                    'promotion_id' => $promo->id,
+                    'username' => $username,
+                    'claim_id' => $claim->id,
+                    'total_spent_raw' => $claim->total_spent_during_promo,
+                    'total_spent_type' => gettype($claim->total_spent_during_promo),
+                    'is_null' => $claim->total_spent_during_promo === null
+                ]);
+                
                 // Handle NULL values by coalescing to 0 (fixes records created before this fix)
                 if ($claim->total_spent_during_promo === null) {
+                    Log::warning("Found NULL total_spent_during_promo, fixing to 0", [
+                        'promotion_id' => $promo->id,
+                        'username' => $username,
+                        'claim_id' => $claim->id
+                    ]);
                     $claim->total_spent_during_promo = 0;
                 }
                 
@@ -111,8 +131,36 @@ class PromotionManager
                 
                 // Add the spending amount
                 $newAmount = $previousAmount + $amount;
+                
+                Log::info("Calculated new amount", [
+                    'promotion_id' => $promo->id,
+                    'username' => $username,
+                    'previous_amount' => $previousAmount,
+                    'amount_added' => $amount,
+                    'new_amount_calculated' => $newAmount
+                ]);
+                
                 $claim->total_spent_during_promo = $newAmount;
                 $claim->save();
+                
+                Log::info("Saved claim to database", [
+                    'promotion_id' => $promo->id,
+                    'username' => $username,
+                    'claim_id' => $claim->id,
+                    'saved_amount' => $claim->total_spent_during_promo
+                ]);
+                
+                // Verify what's actually in the database
+                $verifyRecord = PromotionClaim::where('promotion_id', $promo->id)
+                    ->where('username', $username)
+                    ->first();
+                
+                Log::info("Database verification", [
+                    'promotion_id' => $promo->id,
+                    'username' => $username,
+                    'db_total_spent' => $verifyRecord ? $verifyRecord->total_spent_during_promo : 'NOT_FOUND',
+                    'db_record_exists' => $verifyRecord !== null
+                ]);
                 
                 Log::info("Promotion spending tracked", [
                     'promotion_id' => $promo->id,
