@@ -263,6 +263,29 @@ class PromotionManager
                             'promotion.claimed',
                             $this->discordWebhook->buildPromotionGoalReachedPayload($promo, $claim, $username, $eligibleCount)
                         );
+                        
+                        // Check if global limit has been reached after adding this user
+                        if ($promo->global_claim_limit && $eligibleCount >= $promo->global_claim_limit) {
+                            Log::warning("Promotion #{$promo->id} has reached its global limit", [
+                                'promotion_id' => $promo->id,
+                                'eligible_count' => $eligibleCount,
+                                'global_limit' => $promo->global_claim_limit
+                            ]);
+                            
+                            // Deactivate the promotion
+                            $promo->update(['is_active' => false]);
+                            
+                            // Clear cache again to reflect deactivated status
+                            Cache::forget('active_promotions');
+                            
+                            // Send limit reached notification
+                            $this->discordWebhook->sendNotification(
+                                'promotion.limit_reached',
+                                $this->discordWebhook->buildPromotionLimitReachedPayload($promo)
+                            );
+                            
+                            Log::info("Promotion #{$promo->id} deactivated and limit reached notification sent");
+                        }
                     }
                 }
             } catch (\Exception $e) {

@@ -92,12 +92,17 @@ class DiscordWebhookService
         }
         
         $message .= "\n**Duration:**\n";
-        $message .= "• Start: <t:" . $promotion->start_at->timestamp . ":F>\n";
+        
+        $startTime = $this->formatRelativeStartTime($promotion->start_at);
+        if ($startTime) {
+            $message .= "• {$startTime}\n";
+        }
         
         if ($promotion->end_at) {
-            $message .= "• End: <t:" . $promotion->end_at->timestamp . ":F>\n";
+            $endTime = $this->formatRelativeTime($promotion->end_at);
+            $message .= "• {$endTime}\n";
         } else {
-            $message .= "• End: No expiration\n";
+            $message .= "• No expiration\n";
         }
 
         $itemsList = '';
@@ -171,12 +176,8 @@ class DiscordWebhookService
         }
         
         if ($promotion->end_at) {
-            $daysLeft = now()->diffInDays($promotion->end_at, false);
-            if ($daysLeft >= 0) {
-                $message .= "• Ends in: {$daysLeft} day(s)\n";
-            } else {
-                $message .= "• Status: Expired\n";
-            }
+            $endTime = $this->formatRelativeTime($promotion->end_at);
+            $message .= "• {$endTime}\n";
         }
 
         $itemsList = '';
@@ -245,12 +246,8 @@ class DiscordWebhookService
         }
         
         if ($promotion->end_at) {
-            $daysLeft = now()->diffInDays($promotion->end_at, false);
-            if ($daysLeft >= 0) {
-                $message .= "• Ends in: {$daysLeft} day(s)\n";
-            } else {
-                $message .= "• Status: Expired\n";
-            }
+            $endTime = $this->formatRelativeTime($promotion->end_at);
+            $message .= "• {$endTime}\n";
         }
 
         $itemsList = '';
@@ -298,10 +295,152 @@ class DiscordWebhookService
         ];
     }
 
+    public function buildPromotionLimitReachedPayload($promotion)
+    {
+        $eligibleCount = $promotion->claims()
+            ->where('total_spent_during_promo', '>=', $promotion->min_amount)
+            ->count();
+
+        $message = "🚫 **Promotion Limit Reached!**\n\n";
+        $message .= "**{$promotion->title}** has reached its maximum capacity!\n\n";
+        $message .= "**Final Stats:**\n";
+        $message .= "• Eligible Users: {$eligibleCount} / {$promotion->global_claim_limit}\n";
+        $message .= "• Status: Closed\n";
+        
+        $timeRemaining = $this->formatRelativeTime($promotion->end_at);
+        if ($timeRemaining) {
+            $message .= "• {$timeRemaining}\n";
+        }
+
+        $message .= "\n**This promotion is now closed to new participants.**\n";
+        $message .= "Eligible users can still claim their rewards until the promotion ends.";
+
+        $itemsList = '';
+        if (!empty($promotion->reward_items)) {
+            foreach ($promotion->reward_items as $item) {
+                $itemsList .= "• " . $item['item_amount'] . "x " . $item['item_name'] . "\n";
+            }
+        }
+
+        $fields = [
+            [
+                'name' => 'Eligible Users',
+                'value' => "{$eligibleCount} / {$promotion->global_claim_limit}",
+                'inline' => true
+            ],
+            [
+                'name' => 'Status',
+                'value' => '🚫 Limit Reached',
+                'inline' => true
+            ],
+        ];
+
+        if ($itemsList) {
+            $fields[] = [
+                'name' => '🎁 Reward Items',
+                'value' => $itemsList,
+                'inline' => false
+            ];
+        }
+
+        return [
+            'content' => $message,
+            'embeds' => [
+                [
+                    'title' => '🚫 Promotion Limit Reached',
+                    'description' => "**{$promotion->title}** has reached maximum capacity ({$eligibleCount}/{$promotion->global_claim_limit})",
+                    'color' => 15158332, // Red color
+                    'fields' => $fields,
+                    'footer' => [
+                        'text' => 'Promotion ID: ' . $promotion->id . ' • Closed to new participants'
+                    ],
+                    'timestamp' => now()->toIso8601String()
+                ]
+            ]
+        ];
+    }
+
+    protected function formatRelativeTime($dateTime)
+    {
+        if (!$dateTime) {
+            return null;
+        }
+
+        $now = now();
+        $isPast = $dateTime->isPast();
+        $diff = abs($now->diffInSeconds($dateTime));
+
+        // Calculate time units
+        $hours = floor($diff / 3600);
+        $days = floor($hours / 24);
+        $weeks = floor($days / 7);
+
+        if ($isPast) {
+            if ($weeks > 0) {
+                return "Ended " . $weeks . " week" . ($weeks > 1 ? 's' : '') . " ago";
+            } elseif ($days > 0) {
+                return "Ended " . $days . " day" . ($days > 1 ? 's' : '') . " ago";
+            } elseif ($hours > 0) {
+                return "Ended " . $hours . " hour" . ($hours > 1 ? 's' : '') . " ago";
+            } else {
+                return "Ended recently";
+            }
+        } else {
+            if ($weeks > 0) {
+                return "Ends in " . $weeks . " week" . ($weeks > 1 ? 's' : '');
+            } elseif ($days > 0) {
+                return "Ends in " . $days . " day" . ($days > 1 ? 's' : '');
+            } elseif ($hours > 0) {
+                return "Ends in " . $hours . " hour" . ($hours > 1 ? 's' : '');
+            } else {
+                return "Ends very soon";
+            }
+        }
+    }
+
+    protected function formatRelativeStartTime($dateTime)
+    {
+        if (!$dateTime) {
+            return null;
+        }
+
+        $now = now();
+        $isPast = $dateTime->isPast();
+        $diff = abs($now->diffInSeconds($dateTime));
+
+        // Calculate time units
+        $hours = floor($diff / 3600);
+        $days = floor($hours / 24);
+        $weeks = floor($days / 7);
+
+        if ($isPast) {
+            if ($weeks > 0) {
+                return "Started " . $weeks . " week" . ($weeks > 1 ? 's' : '') . " ago";
+            } elseif ($days > 0) {
+                return "Started " . $days . " day" . ($days > 1 ? 's' : '') . " ago";
+            } elseif ($hours > 0) {
+                return "Started " . $hours . " hour" . ($hours > 1 ? 's' : '') . " ago";
+            } else {
+                return "Started recently";
+            }
+        } else {
+            if ($weeks > 0) {
+                return "Starts in " . $weeks . " week" . ($weeks > 1 ? 's' : '');
+            } elseif ($days > 0) {
+                return "Starts in " . $days . " day" . ($days > 1 ? 's' : '');
+            } elseif ($hours > 0) {
+                return "Starts in " . $hours . " hour" . ($hours > 1 ? 's' : '');
+            } else {
+                return "Starts very soon";
+            }
+        }
+    }
+
     public function clearCache()
     {
         Cache::forget('webhooks.promotion.created');
         Cache::forget('webhooks.promotion.claimed');
+        Cache::forget('webhooks.promotion.limit_reached');
         Cache::forget('webhooks.update.published');
     }
 }
