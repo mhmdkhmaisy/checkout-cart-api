@@ -206,11 +206,52 @@ class UpdateController extends Controller
             return redirect()->back()->with('error', 'Discord webhook URL is not configured. Please add DISCORD_WEBHOOK_URL to your .env file.');
         }
 
-        // Store the update ID in session for screenshot capture
-        session(['discord_pending_update_id' => $update->id]);
-        
-        // Return JavaScript to open screenshot capture page
-        return view('admin.updates.discord-capture', compact('update'));
+        try {
+            // Convert update content to Discord format
+            $content = json_decode($update->content, true);
+            $formattedContent = $this->convertContentToDiscord($content);
+            
+            // Build the message
+            $updateUrl = route('updates.show', $update->slug);
+            $message = "📢 **New Update: {$update->title}**\n\n";
+            
+            if ($update->category) {
+                $message .= "**Category:** {$update->category}\n";
+            }
+            
+            if ($update->author) {
+                $message .= "**Author:** {$update->author}\n";
+            }
+            
+            $message .= "\n━━━━━━━━━━━━━━━━━━\n\n";
+            $message .= $formattedContent;
+            $message .= "\n\n━━━━━━━━━━━━━━━━━━\n";
+            $message .= "🔗 **Read full update:** {$updateUrl}";
+            
+            // Discord has a 2000 character limit per message
+            // Split if necessary
+            $messages = $this->splitDiscordMessage($message);
+            
+            foreach ($messages as $msg) {
+                $response = Http::post($webhookUrl, [
+                    'content' => $msg
+                ]);
+                
+                if (!$response->successful()) {
+                    throw new \Exception('Discord API error: ' . $response->body());
+                }
+                
+                // Small delay between messages to avoid rate limiting
+                if (count($messages) > 1) {
+                    usleep(500000); // 0.5 second delay
+                }
+            }
+            
+            return redirect()->back()->with('success', 'Update sent to Discord successfully!');
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to send to Discord: ' . $e->getMessage());
+        }
     }
 
     public function showScreenshotView(Update $update)
@@ -250,6 +291,38 @@ class UpdateController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
+    }
+
+    private function splitDiscordMessage($message, $limit = 1900)
+    {
+        if (strlen($message) <= $limit) {
+            return [$message];
+        }
+        
+        $messages = [];
+        $lines = explode("\n", $message);
+        $current = '';
+        
+        foreach ($lines as $line) {
+            if (strlen($current . "\n" . $line) > $limit) {
+                if ($current) {
+                    $messages[] = $current;
+                    $current = $line;
+                } else {
+                    // Single line is too long, split it
+                    $messages[] = substr($line, 0, $limit);
+                    $current = substr($line, $limit);
+                }
+            } else {
+                $current .= ($current ? "\n" : '') . $line;
+            }
+        }
+        
+        if ($current) {
+            $messages[] = $current;
+        }
+        
+        return $messages;
     }
 
     private function convertContentToDiscord($content)
@@ -363,6 +436,66 @@ class UpdateController extends Controller
 
             case 'separator':
                 return "━━━━━━━━━━━━━━━━━━";
+
+            case 'image':
+                $url = $data['url'] ?? $data['file']['url'] ?? '';
+                $caption = $data['caption'] ?? '';
+                if ($url) {
+                    // Make sure URL is absolute
+                    if (!str_starts_with($url, 'http')) {
+                        $url = url($url);
+                    }
+                    $text = "🖼️ **Image:** $url";
+                    if ($caption) {
+                        $text .= "\n*$caption*";
+                    }
+                    return $text;
+                }
+                return '';
+
+            case 'table':
+                $content = $data['content'] ?? [];
+                $withHeadings = $data['withHeadings'] ?? false;
+                
+                if (empty($content)) {
+                    return '';
+                }
+                
+                $tableText = "📊 **Table:**\n```\n";
+                
+                foreach ($content as $rowIndex => $row) {
+                    $cells = array_map(function($cell) {
+                        // Strip HTML tags and limit length
+                        return str_pad(strip_tags($cell ?? ''), 20);
+                    }, $row);
+                    
+                    $tableText .= implode(' | ', $cells) . "\n";
+                    
+                    // Add separator after header if withHeadings is true
+                    if ($withHeadings && $rowIndex === 0) {
+                        $tableText .= str_repeat('-', count($row) * 23) . "\n";
+                    }
+                }
+                
+                $tableText .= "```";
+                return $tableText;
+
+            case 'quote':
+                $text = $data['text'] ?? '';
+                $caption = $data['caption'] ?? '';
+                $alignment = $data['alignment'] ?? 'left';
+                
+                $quoteText = "> " . str_replace("\n", "\n> ", $text);
+                if ($caption) {
+                    $quoteText .= "\n— *$caption*";
+                }
+                return $quoteText;
+
+            case 'delimiter':
+                return "✦ ✦ ✦";
+
+            case 'raw':
+                return $data['html'] ?? '';
 
             default:
                 return '';
