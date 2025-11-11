@@ -102,13 +102,15 @@ class PromotionManager
                     ]
                 );
                 
-                $previousAmount = $claim->total_spent_during_promo;
-                $claim->increment('total_spent_during_promo', $amount);
+                // Handle NULL values by coalescing to 0
+                $previousAmount = $claim->total_spent_during_promo ?? 0;
                 
-                // Reload the claim to get updated values
-                $claim = PromotionClaim::where('promotion_id', $promo->id)
-                    ->where('username', $username)
-                    ->first();
+                // Explicitly set the new amount (handles NULL values properly)
+                $claim->total_spent_during_promo = $previousAmount + $amount;
+                $claim->save();
+                
+                // Refresh to get the saved value
+                $claim->refresh();
                 
                 Log::info("Promotion spending tracked", [
                     'promotion_id' => $promo->id,
