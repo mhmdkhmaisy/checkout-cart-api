@@ -109,11 +109,10 @@ class PromotionManager
                     ->first();
                 
                 if ($claim && $previousAmount < $promo->min_amount && $claim->total_spent_during_promo >= $promo->min_amount) {
-                    // Auto-claim the promotion when threshold is reached
+                    // Increment claim count when threshold is reached (game server will mark claimed_ingame later)
                     $claim->claimable_at = now();
                     $claim->claim_count++;
                     $claim->last_claimed_at = now();
-                    $claim->claimed_ingame = 1;
                     $claim->save();
                     
                     // Increment global claim counter
