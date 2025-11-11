@@ -140,16 +140,37 @@ class PromotionManager
                     'new_amount_calculated' => $newAmount
                 ]);
                 
+                // Check current value before update
+                $beforeUpdate = DB::table('promotion_claims')
+                    ->where('id', $claim->id)
+                    ->value('total_spent_during_promo');
+                
+                Log::info("Before direct update", [
+                    'claim_id' => $claim->id,
+                    'current_db_value' => $beforeUpdate
+                ]);
+                
                 // Use direct database update to ensure it persists
-                DB::table('promotion_claims')
+                $affectedRows = DB::table('promotion_claims')
                     ->where('id', $claim->id)
                     ->update(['total_spent_during_promo' => $newAmount]);
                 
-                Log::info("Updated database directly", [
-                    'promotion_id' => $promo->id,
-                    'username' => $username,
+                Log::info("Update executed", [
                     'claim_id' => $claim->id,
-                    'updated_amount' => $newAmount
+                    'affected_rows' => $affectedRows,
+                    'value_set' => $newAmount
+                ]);
+                
+                // Check immediately after
+                $afterUpdate = DB::table('promotion_claims')
+                    ->where('id', $claim->id)
+                    ->value('total_spent_during_promo');
+                
+                Log::info("After direct update", [
+                    'claim_id' => $claim->id,
+                    'new_db_value' => $afterUpdate,
+                    'expected_value' => $newAmount,
+                    'values_match' => ($afterUpdate == $newAmount)
                 ]);
                 
                 // Verify what's actually in the database
