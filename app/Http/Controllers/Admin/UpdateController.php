@@ -274,22 +274,20 @@ class UpdateController extends Controller
         $type = $block['type'] ?? 'paragraph';
         $data = $block['data'] ?? [];
         
-        // Handle blocks with nested children (custom_section, patch_notes_section)
+        // Handle blocks with nested children (custom_section, patch_notes_section) as embeds
         if (in_array($type, ['custom_section', 'patch_notes_section'])) {
-            // Add section header to buffer
-            if ($type === 'custom_section') {
-                $title = $data['title'] ?? 'Section';
-                $tag = $data['tag'] ?? 'SECTION';
-                $textBuffer .= ($textBuffer ? "\n\n" : '') . "`$tag` **$title**";
-            } else if ($type === 'patch_notes_section') {
-                $textBuffer .= ($textBuffer ? "\n\n" : '') . "🔧 **PATCH NOTES**";
+            // Flush any accumulated text before sending the embed
+            if (trim($textBuffer)) {
+                $messages = $this->splitDiscordMessage($textBuffer);
+                foreach ($messages as $msg) {
+                    Http::post($webhookUrl, ['content' => $msg]);
+                    usleep(300000);
+                }
+                $textBuffer = '';
             }
             
-            // Process children recursively
-            $children = $data['children'] ?? [];
-            foreach ($children as $child) {
-                $this->processBlockForDiscord($child, $webhookUrl, $textBuffer);
-            }
+            // Create and send section as embed
+            $this->sendSectionAsEmbed($block, $webhookUrl);
             return;
         }
         
@@ -348,6 +346,125 @@ class UpdateController extends Controller
         if ($blockText) {
             $textBuffer .= ($textBuffer ? "\n\n" : '') . $blockText;
         }
+    }
+
+    private function sendSectionAsEmbed($block, $webhookUrl)
+    {
+        $type = $block['type'] ?? 'paragraph';
+        $data = $block['data'] ?? [];
+        
+        // Determine section title and color
+        if ($type === 'custom_section') {
+            $title = $data['title'] ?? 'Section';
+            $tag = $data['tag'] ?? '';
+            $sectionTitle = $tag ? "[$tag] $title" : $title;
+            $color = 5814783; // Blue color
+        } else {
+            $sectionTitle = "🔧 PATCH NOTES";
+            $color = 15158332; // Red color
+        }
+        
+        $children = $data['children'] ?? [];
+        $fields = [];
+        $description = '';
+        $currentFieldContent = '';
+        
+        foreach ($children as $child) {
+            $childType = $child['type'] ?? 'paragraph';
+            $childData = $child['data'] ?? [];
+            
+            // Handle images in embeds
+            if ($childType === 'image') {
+                // Flush current field content
+                if (trim($currentFieldContent)) {
+                    $description .= ($description ? "\n\n" : '') . trim($currentFieldContent);
+                    $currentFieldContent = '';
+                }
+                
+                // Add image URL
+                $imageUrl = $childData['url'] ?? $childData['file']['url'] ?? '';
+                if ($imageUrl && !str_starts_with($imageUrl, 'http')) {
+                    $imageUrl = url($imageUrl);
+                }
+                if ($imageUrl) {
+                    $caption = $childData['caption'] ?? '';
+                    $description .= ($description ? "\n\n" : '') . "[🖼️ Image]($imageUrl)";
+                    if ($caption) {
+                        $description .= "\n*" . strip_tags($caption) . "*";
+                    }
+                }
+                continue;
+            }
+            
+            // Handle tables in embeds
+            if ($childType === 'table') {
+                // Flush current content
+                if (trim($currentFieldContent)) {
+                    $description .= ($description ? "\n\n" : '') . trim($currentFieldContent);
+                    $currentFieldContent = '';
+                }
+                
+                // Add table as field
+                $tableContent = $this->formatTableForEmbed($childData);
+                if ($tableContent && strlen($description . $tableContent) < 4000) {
+                    $description .= ($description ? "\n\n" : '') . $tableContent;
+                }
+                continue;
+            }
+            
+            // Regular text content
+            $childText = $this->convertBlockToDiscord($child);
+            if ($childText) {
+                $currentFieldContent .= ($currentFieldContent ? "\n\n" : '') . $childText;
+            }
+        }
+        
+        // Add remaining content to description
+        if (trim($currentFieldContent)) {
+            $description .= ($description ? "\n\n" : '') . trim($currentFieldContent);
+        }
+        
+        // Truncate description if too long
+        if (strlen($description) > 4000) {
+            $description = substr($description, 0, 3997) . '...';
+        }
+        
+        // Send embed
+        $embed = [
+            'title' => $sectionTitle,
+            'description' => $description ?: 'No content',
+            'color' => $color
+        ];
+        
+        Http::post($webhookUrl, ['embeds' => [$embed]]);
+        usleep(300000);
+    }
+
+    private function formatTableForEmbed($data)
+    {
+        $content = $data['content'] ?? [];
+        $withHeadings = $data['withHeadings'] ?? false;
+        
+        if (empty($content)) {
+            return '';
+        }
+        
+        $tableText = "```\n";
+        
+        foreach ($content as $rowIndex => $row) {
+            $cells = array_map(function($cell) {
+                return str_pad(strip_tags($cell ?? ''), 15);
+            }, $row);
+            
+            $tableText .= implode(' | ', $cells) . "\n";
+            
+            if ($withHeadings && $rowIndex === 0) {
+                $tableText .= str_repeat('-', count($row) * 18) . "\n";
+            }
+        }
+        
+        $tableText .= "```";
+        return $tableText;
     }
 
     private function formatTableForDiscord($data)
