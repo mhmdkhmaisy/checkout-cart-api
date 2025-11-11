@@ -140,14 +140,16 @@ class PromotionManager
                     'new_amount_calculated' => $newAmount
                 ]);
                 
-                $claim->total_spent_during_promo = $newAmount;
-                $claim->save();
+                // Use direct database update to ensure it persists
+                DB::table('promotion_claims')
+                    ->where('id', $claim->id)
+                    ->update(['total_spent_during_promo' => $newAmount]);
                 
-                Log::info("Saved claim to database", [
+                Log::info("Updated database directly", [
                     'promotion_id' => $promo->id,
                     'username' => $username,
                     'claim_id' => $claim->id,
-                    'saved_amount' => $claim->total_spent_during_promo
+                    'updated_amount' => $newAmount
                 ]);
                 
                 // Verify what's actually in the database
@@ -171,10 +173,11 @@ class PromotionManager
                     'will_trigger_notification' => ($previousAmount < $promo->min_amount && $newAmount >= $promo->min_amount)
                 ]);
                 
-                if ($claim && $previousAmount < $promo->min_amount && $claim->total_spent_during_promo >= $promo->min_amount) {
+                if ($previousAmount < $promo->min_amount && $newAmount >= $promo->min_amount) {
                     // Mark as eligible when threshold is reached
-                    $claim->claimable_at = now();
-                    $claim->save();
+                    DB::table('promotion_claims')
+                        ->where('id', $claim->id)
+                        ->update(['claimable_at' => now()]);
                     
                     // Clear cache to reflect updated eligibility
                     Cache::forget('active_promotions');

@@ -1,0 +1,16 @@
+[2025-11-11 20:44:32] production.INFO: Order status not updated - already in appropriate state {"order_id":25,"current_status":"paid","event_status":"paid","event_type":"PAYMENT.CAPTURE.COMPLETED"} 
+[2025-11-11 20:44:32] production.INFO: Webhook event logged successfully {"order_id":25,"event_type":"PAYMENT.CAPTURE.COMPLETED","final_order_status":"paid"} 
+[2025-11-11 20:44:32] production.INFO: Starting spending track for promotion {"promotion_id":5,"username":"sasas","amount_to_add":14.97} 
+[2025-11-11 20:44:32] production.INFO: Claim record retrieved/created {"promotion_id":5,"username":"sasas","claim_id":8634,"total_spent_raw":"0.00","total_spent_type":"string","is_null":false} 
+[2025-11-11 20:44:32] production.INFO: Calculated new amount {"promotion_id":5,"username":"sasas","previous_amount":"0.00","amount_added":14.97,"new_amount_calculated":14.97} 
+[2025-11-11 20:44:32] production.INFO: Saved claim to database {"promotion_id":5,"username":"sasas","claim_id":8634,"saved_amount":"14.97"} 
+[2025-11-11 20:44:32] production.INFO: Database verification {"promotion_id":5,"username":"sasas","db_total_spent":"0.00","db_record_exists":true} 
+[2025-11-11 20:44:32] production.INFO: Promotion spending tracked {"promotion_id":5,"username":"sasas","previous_amount":"0.00","new_amount":14.97,"min_amount":"15.00","will_trigger_notification":false} 
+[2025-11-11 20:44:32] production.INFO: Tracked 14.97 spending for user sasas across 1 promotions  
+[2025-11-11 20:44:32] production.INFO: Order 25 marked as paid with capture ID: 7TH46924LC4512020  
+[2025-11-11 20:44:36] production.INFO: Payment success page accessed {"payment_id":"4UR37647AF5417144","order_id":"25","query_params":{"order_id":"25","token":"4UR37647AF5417144","PayerID":"T5B3Q4E6WK4KC"}} 
+[2025-11-11 20:44:47] production.INFO: PayPal webhook received {"event_type":"PAYMENT.CAPTURE.COMPLETED","resource_id":"7TH46924LC4512020"} 
+[2025-11-11 20:44:47] production.INFO: PayPal capture 7TH46924LC4512020 already processed for order 25  
+[2025-11-11 20:44:47] production.INFO: Payment completion event logged {"order_id":25,"current_status":"paid","event_status":"paid","will_update_status":false} 
+[2025-11-11 20:44:47] production.INFO: Order status not updated - already in appropriate state {"order_id":25,"current_status":"paid","event_status":"paid","event_type":"PAYMENT.CAPTURE.COMPLETED"} 
+[2025-11-11 20:44:47] production.INFO: Webhook event logged successfully {"order_id":25,"event_type":"PAYMENT.CAPTURE.COMPLETED","final_order_status":"paid"} 
