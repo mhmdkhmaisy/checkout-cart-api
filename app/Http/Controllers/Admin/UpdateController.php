@@ -248,60 +248,133 @@ class UpdateController extends Controller
         }
     }
 
-    private function sendContentBlocksToDiscord($content, $webhookUrl)
+    private function sendContentBlocksToDiscord($content, $webhookUrl, &$textBuffer = '')
     {
         if (!$content || !isset($content['blocks'])) {
             return;
         }
 
-        $currentTextBuffer = '';
-        
         foreach ($content['blocks'] as $block) {
-            $type = $block['type'] ?? 'paragraph';
-            
-            // If it's an image, send accumulated text first, then the image
-            if ($type === 'image') {
-                // Send accumulated text
-                if (trim($currentTextBuffer)) {
-                    $messages = $this->splitDiscordMessage($currentTextBuffer);
-                    foreach ($messages as $msg) {
-                        Http::post($webhookUrl, ['content' => $msg]);
-                        usleep(300000);
-                    }
-                    $currentTextBuffer = '';
-                }
-                
-                // Send image
-                $imageUrl = $block['data']['url'] ?? $block['data']['file']['url'] ?? '';
-                if ($imageUrl) {
-                    if (!str_starts_with($imageUrl, 'http')) {
-                        $imageUrl = url($imageUrl);
-                    }
-                    $caption = $block['data']['caption'] ?? '';
-                    $imageMessage = $imageUrl;
-                    if ($caption) {
-                        $imageMessage .= "\n*" . strip_tags($caption) . "*";
-                    }
-                    Http::post($webhookUrl, ['content' => $imageMessage]);
-                    usleep(300000);
-                }
-            } else {
-                // Accumulate non-image content
-                $blockText = $this->convertBlockToDiscord($block);
-                if ($blockText) {
-                    $currentTextBuffer .= ($currentTextBuffer ? "\n\n" : '') . $blockText;
-                }
-            }
+            $this->processBlockForDiscord($block, $webhookUrl, $textBuffer);
         }
         
         // Send any remaining text
-        if (trim($currentTextBuffer)) {
-            $messages = $this->splitDiscordMessage($currentTextBuffer);
+        if (trim($textBuffer)) {
+            $messages = $this->splitDiscordMessage($textBuffer);
             foreach ($messages as $msg) {
                 Http::post($webhookUrl, ['content' => $msg]);
                 usleep(300000);
             }
+            $textBuffer = '';
         }
+    }
+
+    private function processBlockForDiscord($block, $webhookUrl, &$textBuffer)
+    {
+        $type = $block['type'] ?? 'paragraph';
+        $data = $block['data'] ?? [];
+        
+        // Handle blocks with nested children (custom_section, patch_notes_section)
+        if (in_array($type, ['custom_section', 'patch_notes_section'])) {
+            // Add section header to buffer
+            if ($type === 'custom_section') {
+                $title = $data['title'] ?? 'Section';
+                $tag = $data['tag'] ?? 'SECTION';
+                $textBuffer .= ($textBuffer ? "\n\n" : '') . "`$tag` **$title**";
+            } else if ($type === 'patch_notes_section') {
+                $textBuffer .= ($textBuffer ? "\n\n" : '') . "🔧 **PATCH NOTES**";
+            }
+            
+            // Process children recursively
+            $children = $data['children'] ?? [];
+            foreach ($children as $child) {
+                $this->processBlockForDiscord($child, $webhookUrl, $textBuffer);
+            }
+            return;
+        }
+        
+        // Handle images - flush buffer first, then send image
+        if ($type === 'image') {
+            // Send accumulated text
+            if (trim($textBuffer)) {
+                $messages = $this->splitDiscordMessage($textBuffer);
+                foreach ($messages as $msg) {
+                    Http::post($webhookUrl, ['content' => $msg]);
+                    usleep(300000);
+                }
+                $textBuffer = '';
+            }
+            
+            // Send image
+            $imageUrl = $data['url'] ?? $data['file']['url'] ?? '';
+            if ($imageUrl) {
+                if (!str_starts_with($imageUrl, 'http')) {
+                    $imageUrl = url($imageUrl);
+                }
+                $caption = $data['caption'] ?? '';
+                $imageMessage = $imageUrl;
+                if ($caption) {
+                    $imageMessage .= "\n*" . strip_tags($caption) . "*";
+                }
+                Http::post($webhookUrl, ['content' => $imageMessage]);
+                usleep(300000);
+            }
+            return;
+        }
+        
+        // Handle tables - send as separate message
+        if ($type === 'table') {
+            // Send accumulated text first
+            if (trim($textBuffer)) {
+                $messages = $this->splitDiscordMessage($textBuffer);
+                foreach ($messages as $msg) {
+                    Http::post($webhookUrl, ['content' => $msg]);
+                    usleep(300000);
+                }
+                $textBuffer = '';
+            }
+            
+            // Send table
+            $tableText = $this->formatTableForDiscord($data);
+            if ($tableText) {
+                Http::post($webhookUrl, ['content' => $tableText]);
+                usleep(300000);
+            }
+            return;
+        }
+        
+        // All other blocks - accumulate as text
+        $blockText = $this->convertBlockToDiscord($block);
+        if ($blockText) {
+            $textBuffer .= ($textBuffer ? "\n\n" : '') . $blockText;
+        }
+    }
+
+    private function formatTableForDiscord($data)
+    {
+        $content = $data['content'] ?? [];
+        $withHeadings = $data['withHeadings'] ?? false;
+        
+        if (empty($content)) {
+            return '';
+        }
+        
+        $tableText = "📊 **Table:**\n```\n";
+        
+        foreach ($content as $rowIndex => $row) {
+            $cells = array_map(function($cell) {
+                return str_pad(strip_tags($cell ?? ''), 20);
+            }, $row);
+            
+            $tableText .= implode(' | ', $cells) . "\n";
+            
+            if ($withHeadings && $rowIndex === 0) {
+                $tableText .= str_repeat('-', count($row) * 23) . "\n";
+            }
+        }
+        
+        $tableText .= "```";
+        return $tableText;
     }
 
 
@@ -423,62 +496,20 @@ class UpdateController extends Controller
                 return $text;
 
             case 'patch_notes_section':
-                $children = $data['children'] ?? [];
-                $text = "🔧 **PATCH NOTES**\n";
-                foreach ($children as $child) {
-                    $childText = $this->convertBlockToDiscord($child);
-                    if ($childText) {
-                        $text .= $childText . "\n";
-                    }
-                }
-                return $text;
-
             case 'custom_section':
-                $title = $data['title'] ?? 'Section';
-                $tag = $data['tag'] ?? 'SECTION';
-                $children = $data['children'] ?? [];
-                $text = "`$tag` **$title**\n";
-                foreach ($children as $child) {
-                    $childText = $this->convertBlockToDiscord($child);
-                    if ($childText) {
-                        $text .= $childText . "\n";
-                    }
-                }
-                return $text;
+                // Sections with children are handled recursively in processBlockForDiscord
+                return '';
 
             case 'separator':
                 return "━━━━━━━━━━━━━━━━━━";
 
             case 'image':
-                // Images are handled separately in sendContentBlocksToDiscord
+                // Images are handled separately in processBlockForDiscord
                 return '';
 
             case 'table':
-                $content = $data['content'] ?? [];
-                $withHeadings = $data['withHeadings'] ?? false;
-                
-                if (empty($content)) {
-                    return '';
-                }
-                
-                $tableText = "📊 **Table:**\n```\n";
-                
-                foreach ($content as $rowIndex => $row) {
-                    $cells = array_map(function($cell) {
-                        // Strip HTML tags and limit length
-                        return str_pad(strip_tags($cell ?? ''), 20);
-                    }, $row);
-                    
-                    $tableText .= implode(' | ', $cells) . "\n";
-                    
-                    // Add separator after header if withHeadings is true
-                    if ($withHeadings && $rowIndex === 0) {
-                        $tableText .= str_repeat('-', count($row) * 23) . "\n";
-                    }
-                }
-                
-                $tableText .= "```";
-                return $tableText;
+                // Tables are handled separately in processBlockForDiscord
+                return '';
 
             case 'quote':
                 $text = $data['text'] ?? '';
