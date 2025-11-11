@@ -1,0 +1,17 @@
+[2025-11-11 20:57:54] production.INFO: Starting spending track for promotion {"promotion_id":5,"username":"02021lk","amount_to_add":9.98} 
+[2025-11-11 20:57:54] production.INFO: Claim record retrieved/created {"promotion_id":5,"username":"02021lk","claim_id":8842,"total_spent_raw":"0.00","total_spent_type":"string","is_null":false} 
+[2025-11-11 20:57:54] production.INFO: Calculated new amount {"promotion_id":5,"username":"02021lk","previous_amount":"0.00","amount_added":9.98,"new_amount_calculated":9.98} 
+[2025-11-11 20:57:54] production.INFO: Before direct update {"claim_id":8842,"current_db_value":null} 
+[2025-11-11 20:57:54] production.INFO: Update executed {"claim_id":8842,"affected_rows":0,"value_set":9.98} 
+[2025-11-11 20:57:54] production.INFO: After direct update {"claim_id":8842,"new_db_value":null,"expected_value":9.98,"values_match":false} 
+[2025-11-11 20:57:54] production.INFO: Database verification {"promotion_id":5,"username":"02021lk","db_total_spent":"0.00","db_record_exists":true} 
+[2025-11-11 20:57:54] production.INFO: Promotion spending tracked {"promotion_id":5,"username":"02021lk","previous_amount":"0.00","new_amount":9.98,"min_amount":"15.00","will_trigger_notification":false} 
+[2025-11-11 20:57:54] production.INFO: Tracked 9.98 spending for user 02021lk across 1 promotions  
+[2025-11-11 20:57:54] production.INFO: Order 28 marked as paid with capture ID: 7J387767A74222646  
+[2025-11-11 20:57:54] production.INFO: Payment success page accessed {"payment_id":"1P784506M0048084V","order_id":"28","query_params":{"order_id":"28","token":"1P784506M0048084V","PayerID":"T5B3Q4E6WK4KC"}} 
+[2025-11-11 20:57:55] production.INFO: Payment success page accessed {"payment_id":"1P784506M0048084V","order_id":"28","query_params":{"order_id":"28","token":"1P784506M0048084V","PayerID":"T5B3Q4E6WK4KC"}} 
+[2025-11-11 20:58:06] production.INFO: PayPal webhook received {"event_type":"PAYMENT.CAPTURE.COMPLETED","resource_id":"7J387767A74222646"} 
+[2025-11-11 20:58:06] production.INFO: PayPal capture 7J387767A74222646 already processed for order 28  
+[2025-11-11 20:58:06] production.INFO: Payment completion event logged {"order_id":28,"current_status":"paid","event_status":"paid","will_update_status":false} 
+[2025-11-11 20:58:06] production.INFO: Order status not updated - already in appropriate state {"order_id":28,"current_status":"paid","event_status":"paid","event_type":"PAYMENT.CAPTURE.COMPLETED"} 
+[2025-11-11 20:58:06] production.INFO: Webhook event logged successfully {"order_id":28,"event_type":"PAYMENT.CAPTURE.COMPLETED","final_order_status":"paid"} 

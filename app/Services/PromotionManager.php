@@ -108,10 +108,36 @@ class PromotionManager
                     ]
                 );
                 
+                $cachedClaimId = $claim->id;
+                
+                // Find the actual claim record (fixes ID mismatch issue)
+                $actualClaim = PromotionClaim::where('promotion_id', $promo->id)
+                    ->where('username', $username)
+                    ->orderBy('created_at', 'desc')
+                    ->orderBy('id', 'desc')
+                    ->first();
+                
+                if (!$actualClaim) {
+                    throw new \Exception('Claim created but could not be found in database');
+                }
+                
+                // Use the actual claim from database
+                $claim = $actualClaim;
+                
+                if ($cachedClaimId != $claim->id) {
+                    Log::warning("Claim ID mismatch detected and fixed", [
+                        'cached_id' => $cachedClaimId,
+                        'actual_id' => $claim->id,
+                        'promotion_id' => $promo->id,
+                        'username' => $username
+                    ]);
+                }
+                
                 Log::info("Claim record retrieved/created", [
                     'promotion_id' => $promo->id,
                     'username' => $username,
-                    'claim_id' => $claim->id,
+                    'cached_claim_id' => $cachedClaimId,
+                    'actual_claim_id' => $claim->id,
                     'total_spent_raw' => $claim->total_spent_during_promo,
                     'total_spent_type' => gettype($claim->total_spent_during_promo),
                     'is_null' => $claim->total_spent_during_promo === null
