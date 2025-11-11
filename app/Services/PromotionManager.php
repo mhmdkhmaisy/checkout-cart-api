@@ -221,59 +221,89 @@ class PromotionManager
                 ]);
                 
                 if ($previousAmount < $promo->min_amount && $newAmount >= $promo->min_amount) {
-                    // Check if global limit has been reached before marking as eligible
-                    $eligibleCount = PromotionClaim::where('promotion_id', $promo->id)
-                        ->where('total_spent_during_promo', '>=', $promo->min_amount)
-                        ->count();
-                    
-                    $globalLimitReached = $promo->global_claim_limit && $eligibleCount >= $promo->global_claim_limit;
-                    
-                    if ($globalLimitReached) {
-                        Log::warning("User {$username} reached goal for promotion #{$promo->id} but global limit already reached", [
-                            'promotion_id' => $promo->id,
-                            'username' => $username,
-                            'eligible_count' => $eligibleCount,
-                            'global_limit' => $promo->global_claim_limit
-                        ]);
-                    } else {
-                        // Mark as eligible when threshold is reached
-                        DB::table('promotion_claims')
-                            ->where('id', $claim->id)
-                            ->update([
-                                'claimable_at' => now(),
-                                'claim_count' => DB::raw('claim_count + 1') // Increment claim_count when goal is reached
+                    // Use a transaction with row locks to prevent race conditions
+                    DB::transaction(function() use ($promo, $claim, $username) {
+                        // Lock the promotion row to prevent concurrent modifications
+                        $lockedPromo = Promotion::where('id', $promo->id)->lockForUpdate()->first();
+                        
+                        if (!$lockedPromo) {
+                            Log::error("Promotion not found during lock", ['promotion_id' => $promo->id]);
+                            return;
+                        }
+                        
+                        // Lock the claim row to prevent concurrent modifications
+                        $lockedClaim = PromotionClaim::where('id', $claim->id)->lockForUpdate()->first();
+                        
+                        if (!$lockedClaim) {
+                            Log::error("Claim not found during lock", ['claim_id' => $claim->id]);
+                            return;
+                        }
+                        
+                        // Re-check if promotion is still active
+                        if (!$lockedPromo->is_active) {
+                            Log::warning("Promotion #{$promo->id} was deactivated before user {$username} could be marked eligible");
+                            return;
+                        }
+                        
+                        // Re-count eligible users within the transaction
+                        $eligibleCount = PromotionClaim::where('promotion_id', $promo->id)
+                            ->where('total_spent_during_promo', '>=', $lockedPromo->min_amount)
+                            ->count();
+                        
+                        // Check if global limit has been reached
+                        $globalLimitReached = $lockedPromo->global_claim_limit && $eligibleCount >= $lockedPromo->global_claim_limit;
+                        
+                        if ($globalLimitReached) {
+                            Log::warning("User {$username} reached goal for promotion #{$promo->id} but global limit already reached", [
+                                'promotion_id' => $promo->id,
+                                'username' => $username,
+                                'eligible_count' => $eligibleCount,
+                                'global_limit' => $lockedPromo->global_claim_limit
                             ]);
+                            return;
+                        }
+                        
+                        // Mark as eligible when threshold is reached
+                        $lockedClaim->claimable_at = now();
+                        $lockedClaim->claim_count += 1;
+                        $lockedClaim->save();
+                        
+                        // Increment claimed_global counter
+                        $lockedPromo->claimed_global = ($lockedPromo->claimed_global ?? 0) + 1;
+                        $lockedPromo->save();
                         
                         // Clear cache to reflect updated eligibility
                         Cache::forget('active_promotions');
                         
                         // Recount eligible users after adding this one
                         $eligibleCount = PromotionClaim::where('promotion_id', $promo->id)
-                            ->where('total_spent_during_promo', '>=', $promo->min_amount)
+                            ->where('total_spent_during_promo', '>=', $lockedPromo->min_amount)
                             ->count();
                         
-                        $remainingSlots = $promo->global_claim_limit ? ($promo->global_claim_limit - $eligibleCount) : null;
+                        $remainingSlots = $lockedPromo->global_claim_limit ? ($lockedPromo->global_claim_limit - $eligibleCount) : null;
                         
                         Log::info("User {$username} reached promotion #{$promo->id} goal - now {$eligibleCount} eligible users", [
-                            'remaining_slots' => $remainingSlots
+                            'remaining_slots' => $remainingSlots,
+                            'claimed_global' => $lockedPromo->claimed_global
                         ]);
                         
                         // Send Discord notification for goal reached
                         $this->discordWebhook->sendNotification(
                             'promotion.claimed',
-                            $this->discordWebhook->buildPromotionGoalReachedPayload($promo, $claim, $username, $eligibleCount)
+                            $this->discordWebhook->buildPromotionGoalReachedPayload($lockedPromo, $lockedClaim, $username, $eligibleCount)
                         );
                         
                         // Check if global limit has been reached after adding this user
-                        if ($promo->global_claim_limit && $eligibleCount >= $promo->global_claim_limit) {
+                        if ($lockedPromo->global_claim_limit && $eligibleCount >= $lockedPromo->global_claim_limit) {
                             Log::warning("Promotion #{$promo->id} has reached its global limit", [
                                 'promotion_id' => $promo->id,
                                 'eligible_count' => $eligibleCount,
-                                'global_limit' => $promo->global_claim_limit
+                                'global_limit' => $lockedPromo->global_claim_limit
                             ]);
                             
                             // Deactivate the promotion
-                            $promo->update(['is_active' => false]);
+                            $lockedPromo->is_active = false;
+                            $lockedPromo->save();
                             
                             // Clear cache again to reflect deactivated status
                             Cache::forget('active_promotions');
@@ -281,12 +311,12 @@ class PromotionManager
                             // Send limit reached notification
                             $this->discordWebhook->sendNotification(
                                 'promotion.limit_reached',
-                                $this->discordWebhook->buildPromotionLimitReachedPayload($promo)
+                                $this->discordWebhook->buildPromotionLimitReachedPayload($lockedPromo)
                             );
                             
                             Log::info("Promotion #{$promo->id} deactivated and limit reached notification sent");
                         }
-                    }
+                    });
                 }
             } catch (\Exception $e) {
                 Log::error("Failed to track spending for promotion {$promo->id}: " . $e->getMessage());
