@@ -267,6 +267,14 @@ function formatBytes(bytes) {
 }
 
 function formatTime(ms) {
+    // Handle non-numeric values
+    if (ms === null || ms === undefined || isNaN(ms)) {
+        return '0.00 ms';
+    }
+    
+    // Convert to number if it's a string
+    ms = parseFloat(ms);
+    
     if (ms < 1000) return ms.toFixed(2) + ' ms';
     return (ms / 1000).toFixed(2) + ' s';
 }

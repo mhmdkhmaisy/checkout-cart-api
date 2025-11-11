@@ -207,44 +207,38 @@ class UpdateController extends Controller
         }
 
         try {
-            // Convert update content to Discord format
+            // Convert update content to Discord format with proper image positioning
             $content = json_decode($update->content, true);
-            $formattedContent = $this->convertContentToDiscord($content);
-            
-            // Build the message
             $updateUrl = route('updates.show', $update->slug);
-            $message = "📢 **New Update: {$update->title}**\n\n";
+            
+            // Build header message
+            $headerMessage = "📢 **New Update: {$update->title}**\n\n";
             
             if ($update->category) {
-                $message .= "**Category:** {$update->category}\n";
+                $headerMessage .= "**Category:** {$update->category}\n";
             }
             
             if ($update->author) {
-                $message .= "**Author:** {$update->author}\n";
+                $headerMessage .= "**Author:** {$update->author}\n";
             }
             
-            $message .= "\n━━━━━━━━━━━━━━━━━━\n\n";
-            $message .= $formattedContent;
-            $message .= "\n\n━━━━━━━━━━━━━━━━━━\n";
-            $message .= "🔗 **Read full update:** {$updateUrl}";
+            $headerMessage .= "\n━━━━━━━━━━━━━━━━━━\n";
             
-            // Discord has a 2000 character limit per message
-            // Split if necessary
-            $messages = $this->splitDiscordMessage($message);
+            // Send header
+            $response = Http::post($webhookUrl, ['content' => $headerMessage]);
+            if (!$response->successful()) {
+                throw new \Exception('Discord API error: ' . $response->body());
+            }
+            usleep(300000); // 0.3 second delay
             
-            foreach ($messages as $msg) {
-                $response = Http::post($webhookUrl, [
-                    'content' => $msg
-                ]);
-                
-                if (!$response->successful()) {
-                    throw new \Exception('Discord API error: ' . $response->body());
-                }
-                
-                // Small delay between messages to avoid rate limiting
-                if (count($messages) > 1) {
-                    usleep(500000); // 0.5 second delay
-                }
+            // Process content blocks and send with images in proper positions
+            $this->sendContentBlocksToDiscord($content, $webhookUrl);
+            
+            // Send footer with link
+            $footerMessage = "━━━━━━━━━━━━━━━━━━\n🔗 **Read full update:** {$updateUrl}";
+            $response = Http::post($webhookUrl, ['content' => $footerMessage]);
+            if (!$response->successful()) {
+                throw new \Exception('Discord API error: ' . $response->body());
             }
             
             return redirect()->back()->with('success', 'Update sent to Discord successfully!');
@@ -254,44 +248,62 @@ class UpdateController extends Controller
         }
     }
 
-    public function showScreenshotView(Update $update)
+    private function sendContentBlocksToDiscord($content, $webhookUrl)
     {
-        return view('updates.screenshot', compact('update'));
-    }
+        if (!$content || !isset($content['blocks'])) {
+            return;
+        }
 
-    public function processScreenshot(Request $request)
-    {
-        $request->validate([
-            'screenshot' => 'required|file|mimes:png,jpg,jpeg|max:10240',
-            'update_id' => 'required|exists:updates,id'
-        ]);
-
-        $webhookUrl = config('services.discord.webhook_url');
-        $update = Update::findOrFail($request->update_id);
+        $currentTextBuffer = '';
         
-        try {
-            $screenshotFile = $request->file('screenshot');
-            $updateUrl = route('updates.show', $update->slug);
+        foreach ($content['blocks'] as $block) {
+            $type = $block['type'] ?? 'paragraph';
             
-            // Send to Discord with image attachment
-            $response = Http::attach(
-                'file',
-                file_get_contents($screenshotFile->getRealPath()),
-                'update-screenshot.png'
-            )->post($webhookUrl, [
-                'content' => "📢 **New Update: {$update->title}**\n\n🔗 Read more: {$updateUrl}"
-            ]);
-
-            if ($response->successful()) {
-                return response()->json(['success' => true]);
+            // If it's an image, send accumulated text first, then the image
+            if ($type === 'image') {
+                // Send accumulated text
+                if (trim($currentTextBuffer)) {
+                    $messages = $this->splitDiscordMessage($currentTextBuffer);
+                    foreach ($messages as $msg) {
+                        Http::post($webhookUrl, ['content' => $msg]);
+                        usleep(300000);
+                    }
+                    $currentTextBuffer = '';
+                }
+                
+                // Send image
+                $imageUrl = $block['data']['url'] ?? $block['data']['file']['url'] ?? '';
+                if ($imageUrl) {
+                    if (!str_starts_with($imageUrl, 'http')) {
+                        $imageUrl = url($imageUrl);
+                    }
+                    $caption = $block['data']['caption'] ?? '';
+                    $imageMessage = $imageUrl;
+                    if ($caption) {
+                        $imageMessage .= "\n*" . strip_tags($caption) . "*";
+                    }
+                    Http::post($webhookUrl, ['content' => $imageMessage]);
+                    usleep(300000);
+                }
             } else {
-                return response()->json(['success' => false, 'error' => 'Discord API error'], 500);
+                // Accumulate non-image content
+                $blockText = $this->convertBlockToDiscord($block);
+                if ($blockText) {
+                    $currentTextBuffer .= ($currentTextBuffer ? "\n\n" : '') . $blockText;
+                }
             }
-
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+        
+        // Send any remaining text
+        if (trim($currentTextBuffer)) {
+            $messages = $this->splitDiscordMessage($currentTextBuffer);
+            foreach ($messages as $msg) {
+                Http::post($webhookUrl, ['content' => $msg]);
+                usleep(300000);
+            }
         }
     }
+
 
     private function splitDiscordMessage($message, $limit = 1900)
     {
@@ -438,19 +450,7 @@ class UpdateController extends Controller
                 return "━━━━━━━━━━━━━━━━━━";
 
             case 'image':
-                $url = $data['url'] ?? $data['file']['url'] ?? '';
-                $caption = $data['caption'] ?? '';
-                if ($url) {
-                    // Make sure URL is absolute
-                    if (!str_starts_with($url, 'http')) {
-                        $url = url($url);
-                    }
-                    $text = "🖼️ **Image:** $url";
-                    if ($caption) {
-                        $text .= "\n*$caption*";
-                    }
-                    return $text;
-                }
+                // Images are handled separately in sendContentBlocksToDiscord
                 return '';
 
             case 'table':
