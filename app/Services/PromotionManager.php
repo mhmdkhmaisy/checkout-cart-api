@@ -221,26 +221,49 @@ class PromotionManager
                 ]);
                 
                 if ($previousAmount < $promo->min_amount && $newAmount >= $promo->min_amount) {
-                    // Mark as eligible when threshold is reached
-                    DB::table('promotion_claims')
-                        ->where('id', $claim->id)
-                        ->update(['claimable_at' => now()]);
-                    
-                    // Clear cache to reflect updated eligibility
-                    Cache::forget('active_promotions');
-                    
-                    // Get eligible users count
+                    // Check if global limit has been reached before marking as eligible
                     $eligibleCount = PromotionClaim::where('promotion_id', $promo->id)
                         ->where('total_spent_during_promo', '>=', $promo->min_amount)
                         ->count();
                     
-                    Log::info("User {$username} reached promotion #{$promo->id} goal - now {$eligibleCount} eligible users");
+                    $globalLimitReached = $promo->global_claim_limit && $eligibleCount >= $promo->global_claim_limit;
                     
-                    // Send Discord notification for goal reached
-                    $this->discordWebhook->sendNotification(
-                        'promotion.claimed',
-                        $this->discordWebhook->buildPromotionGoalReachedPayload($promo, $claim, $username, $eligibleCount)
-                    );
+                    if ($globalLimitReached) {
+                        Log::warning("User {$username} reached goal for promotion #{$promo->id} but global limit already reached", [
+                            'promotion_id' => $promo->id,
+                            'username' => $username,
+                            'eligible_count' => $eligibleCount,
+                            'global_limit' => $promo->global_claim_limit
+                        ]);
+                    } else {
+                        // Mark as eligible when threshold is reached
+                        DB::table('promotion_claims')
+                            ->where('id', $claim->id)
+                            ->update([
+                                'claimable_at' => now(),
+                                'claim_count' => DB::raw('claim_count + 1') // Increment claim_count when goal is reached
+                            ]);
+                        
+                        // Clear cache to reflect updated eligibility
+                        Cache::forget('active_promotions');
+                        
+                        // Recount eligible users after adding this one
+                        $eligibleCount = PromotionClaim::where('promotion_id', $promo->id)
+                            ->where('total_spent_during_promo', '>=', $promo->min_amount)
+                            ->count();
+                        
+                        $remainingSlots = $promo->global_claim_limit ? ($promo->global_claim_limit - $eligibleCount) : null;
+                        
+                        Log::info("User {$username} reached promotion #{$promo->id} goal - now {$eligibleCount} eligible users", [
+                            'remaining_slots' => $remainingSlots
+                        ]);
+                        
+                        // Send Discord notification for goal reached
+                        $this->discordWebhook->sendNotification(
+                            'promotion.claimed',
+                            $this->discordWebhook->buildPromotionGoalReachedPayload($promo, $claim, $username, $eligibleCount)
+                        );
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error("Failed to track spending for promotion {$promo->id}: " . $e->getMessage());
@@ -272,20 +295,18 @@ class PromotionManager
             }
 
             // Mark as claimed in-game (server will handle actual reward distribution)
-            $claim->claim_count++;
+            // Note: claim_count is already incremented when goal was reached
             $claim->last_claimed_at = now();
             $claim->claimed_ingame = 1;
-            $claim->save();
-
-            // Increment global claim counter
-            if ($promo->global_claim_limit) {
-                $promo->increment('claimed_global');
-            }
-
-            // If recurrent type, reset progress for next claim
+            
+            // If recurrent type, reset progress for next claim period
+            // (they'll need to spend again to reach the goal and increment claim_count again)
             if ($promo->bonus_type === 'recurrent') {
-                $claim->decrement('total_spent_during_promo', $promo->min_amount);
+                $claim->total_spent_during_promo = max(0, $claim->total_spent_during_promo - $promo->min_amount);
+                $claim->claimable_at = null; // Reset claimable status for next cycle
             }
+            
+            $claim->save();
 
             // Clear cache
             Cache::forget('active_promotions');

@@ -427,7 +427,10 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid rgba(212, 165, 116, 0.2); padding-top: 0.5rem;">
                         <span><i class="fas fa-clock"></i> {{ $promo->time_remaining }}</span>
                         @if($promo->global_claim_limit)
-                        <span><i class="fas fa-users"></i> {{ $promo->claimed_global }} / {{ $promo->global_claim_limit }} claimed</span>
+                        @php
+                            $eligibleUsersCount = $promo->claims()->where('total_spent_during_promo', '>=', $promo->min_amount)->count();
+                        @endphp
+                        <span><i class="fas fa-users"></i> {{ $eligibleUsersCount }} / {{ $promo->global_claim_limit }} claimed</span>
                         @endif
                     </div>
                 </div>
