@@ -102,10 +102,14 @@ class PromotionManager
                     ]
                 );
                 
-                // Handle NULL values by coalescing to 0
-                $previousAmount = $claim->total_spent_during_promo ?? 0;
+                // Handle NULL values by coalescing to 0 (fixes records created before this fix)
+                if ($claim->total_spent_during_promo === null) {
+                    $claim->total_spent_during_promo = 0;
+                }
                 
-                // Explicitly set the new amount (handles NULL values properly)
+                $previousAmount = $claim->total_spent_during_promo;
+                
+                // Add the spending amount
                 $newAmount = $previousAmount + $amount;
                 $claim->total_spent_during_promo = $newAmount;
                 $claim->save();
