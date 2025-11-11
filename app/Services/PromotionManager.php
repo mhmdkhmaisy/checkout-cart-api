@@ -91,23 +91,33 @@ class PromotionManager
         $activePromos = $this->getActivePromotions();
 
         foreach ($activePromos as $promo) {
-            $claim = PromotionClaim::updateOrCreate(
-                [
-                    'promotion_id' => $promo->id,
-                    'username' => $username,
-                ],
-                []
-            );
-            
-            $previousAmount = $claim->total_spent_during_promo;
-            $claim->increment('total_spent_during_promo', $amount);
-            $claim->refresh();
-            
-            if ($previousAmount < $promo->min_amount && $claim->total_spent_during_promo >= $promo->min_amount) {
-                $claim->claimable_at = now();
-                $claim->save();
+            try {
+                $claim = PromotionClaim::updateOrCreate(
+                    [
+                        'promotion_id' => $promo->id,
+                        'username' => $username,
+                    ],
+                    []
+                );
                 
-                Log::info("User {$username} reached promotion #{$promo->id} threshold - auto-marked as claimable");
+                $previousAmount = $claim->total_spent_during_promo;
+                $claim->increment('total_spent_during_promo', $amount);
+                
+                // Reload the claim to get updated values
+                $claim = PromotionClaim::where('promotion_id', $promo->id)
+                    ->where('username', $username)
+                    ->first();
+                
+                if ($claim && $previousAmount < $promo->min_amount && $claim->total_spent_during_promo >= $promo->min_amount) {
+                    $claim->claimable_at = now();
+                    $claim->save();
+                    
+                    Log::info("User {$username} reached promotion #{$promo->id} threshold - auto-marked as claimable");
+                }
+            } catch (\Exception $e) {
+                Log::error("Failed to track spending for promotion {$promo->id}: " . $e->getMessage());
+                // Continue with other promotions even if one fails
+                continue;
             }
         }
 
