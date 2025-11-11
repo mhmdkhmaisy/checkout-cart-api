@@ -92,10 +92,10 @@ class DiscordWebhookService
         }
         
         $message .= "\n**Duration:**\n";
-        $message .= "• Start: " . $promotion->start_at->format('M d, Y H:i T') . "\n";
+        $message .= "• Start: <t:" . $promotion->start_at->timestamp . ":F>\n";
         
         if ($promotion->end_at) {
-            $message .= "• End: " . $promotion->end_at->format('M d, Y H:i T') . "\n";
+            $message .= "• End: <t:" . $promotion->end_at->timestamp . ":F>\n";
         } else {
             $message .= "• End: No expiration\n";
         }
@@ -103,7 +103,7 @@ class DiscordWebhookService
         $itemsList = '';
         if (!empty($promotion->reward_items)) {
             foreach ($promotion->reward_items as $item) {
-                $itemsList .= $item['item_amount'] . 'x' . $item['item_name'] . "\n";
+                $itemsList .= "• " . $item['item_amount'] . "x " . $item['item_name'] . "\n";
             }
         }
 
@@ -182,7 +182,7 @@ class DiscordWebhookService
         $itemsList = '';
         if (!empty($promotion->reward_items)) {
             foreach ($promotion->reward_items as $item) {
-                $itemsList .= $item['item_amount'] . 'x' . $item['item_name'] . "\n";
+                $itemsList .= "• " . $item['item_amount'] . "x " . $item['item_name'] . "\n";
             }
         }
 

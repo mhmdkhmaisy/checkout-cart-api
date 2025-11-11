@@ -206,18 +206,44 @@ class PromotionManager
      */
     public function createPromotion(array $data)
     {
-        $promotion = Promotion::create($data);
-        
-        Cache::forget('active_promotions');
-        
-        $this->discordWebhook->sendNotification(
-            'promotion.created',
-            $this->discordWebhook->buildPromotionCreatedPayload($promotion)
-        );
-        
-        Log::info("Promotion created and webhook sent", ['promotion_id' => $promotion->id]);
-        
-        return $promotion;
+        return DB::transaction(function() use ($data) {
+            $promotion = Promotion::create($data);
+            $cachedId = $promotion->id;
+            
+            // Find the promotion we just created by most recent creation
+            $actualPromotion = Promotion::where('title', $data['title'])
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+            
+            if (!$actualPromotion) {
+                throw new \Exception('Promotion created but could not be found in database');
+            }
+            
+            // If the ID changed, update promotion_claims to use the correct ID
+            if ($cachedId != $actualPromotion->id) {
+                Log::warning("Promotion ID mismatch detected and fixed", [
+                    'cached_id' => $cachedId,
+                    'actual_id' => $actualPromotion->id
+                ]);
+                
+                // Update all promotion claims with the correct promotion_id
+                DB::table('promotion_claims')
+                    ->where('promotion_id', $cachedId)
+                    ->update(['promotion_id' => $actualPromotion->id]);
+            }
+            
+            Cache::forget('active_promotions');
+            
+            $this->discordWebhook->sendNotification(
+                'promotion.created',
+                $this->discordWebhook->buildPromotionCreatedPayload($actualPromotion)
+            );
+            
+            Log::info("Promotion created and webhook sent", ['promotion_id' => $actualPromotion->id]);
+            
+            return $actualPromotion;
+        });
     }
 
     /**
