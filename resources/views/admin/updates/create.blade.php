@@ -80,6 +80,9 @@
                     <button type="button" onclick="rootEditor?.addBlock('custom_section')" class="px-3 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg text-sm transition-colors">
                         <i class="fas fa-folder-open mr-1"></i> Add Custom Section
                     </button>
+                    <button type="button" onclick="openAutoFillModal()" class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors">
+                        <i class="fas fa-magic mr-1"></i> Auto-Fill from Text
+                    </button>
                 </div>
 
                 <!-- Hidden textarea for JSON content -->
@@ -258,6 +261,43 @@
                 </a>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Auto-Fill Modal -->
+<div id="autoFillModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-dragon-surface border border-dragon-border rounded-lg shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="p-6 border-b border-dragon-border">
+            <h3 class="text-xl font-bold text-dragon-silver">Auto-Fill from Text</h3>
+            <p class="text-sm text-dragon-silver-dark mt-1">Paste formatted text with headers and items to automatically create blocks</p>
+        </div>
+        
+        <div class="p-6 overflow-y-auto flex-1">
+            <label class="block text-dragon-silver font-semibold mb-2">Paste Your Text</label>
+            <textarea id="autoFillInput" 
+                      class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-4 py-3 focus:border-dragon-red focus:ring-1 focus:ring-dragon-red font-mono text-sm" 
+                      rows="15"
+                      placeholder="**Yippe:**&#10;* Bonereaper Helm -> 100000&#10;* Bonereaper Body -> 100000&#10;&#10;---&#10;&#10;**Emerald Crab:**&#10;* Corrupt Helmet -> 110000&#10;* Corrupt Platebody -> 110000"></textarea>
+            
+            <div id="autoFillError" class="hidden mt-3 p-3 bg-red-900 bg-opacity-30 border border-red-700 rounded text-red-400 text-sm"></div>
+            
+            <div class="mt-3 p-3 bg-blue-900 bg-opacity-30 border border-blue-700 rounded text-blue-300 text-sm">
+                <strong>Format Guide:</strong><br>
+                • Headers: Start with <code>**</code> (e.g., <code>**Boss Name:**</code>)<br>
+                • Items: Start with <code>*</code> or <code>-</code> (e.g., <code>* Item Name -> Price</code>)<br>
+                • Separators: Use <code>---</code> between sections<br>
+                • Price format: <code>Item Name -> 12345</code> (optional)
+            </div>
+        </div>
+        
+        <div class="p-6 border-t border-dragon-border flex gap-3">
+            <button type="button" onclick="processAutoFill()" class="px-6 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg transition-colors">
+                <i class="fas fa-check mr-2"></i> Create Blocks
+            </button>
+            <button type="button" onclick="closeAutoFillModal()" class="px-6 py-2 bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg hover:bg-dragon-surface transition-colors">
+                Cancel
+            </button>
+        </div>
     </div>
 </div>
 
@@ -914,6 +954,126 @@ async function handleImageUpload(blockId, input) {
         urlInput.value = '';
     } finally {
         urlInput.disabled = false;
+    }
+}
+
+// Auto-Fill Modal Functions
+function openAutoFillModal() {
+    document.getElementById('autoFillModal').classList.remove('hidden');
+    document.getElementById('autoFillInput').value = '';
+    document.getElementById('autoFillError').classList.add('hidden');
+}
+
+function closeAutoFillModal() {
+    document.getElementById('autoFillModal').classList.add('hidden');
+}
+
+function parseAutoFillText(text) {
+    const lines = text.split('\n').map(line => line.trim());
+    const sections = [];
+    let currentSection = null;
+    
+    for (let line of lines) {
+        if (!line || line === '---') {
+            continue;
+        }
+        
+        const isHeader = line.startsWith('**') || (line.endsWith(':') && !line.startsWith('*') && !line.startsWith('-'));
+        const isItem = line.startsWith('*') || line.startsWith('-');
+        
+        if (isHeader) {
+            if (currentSection && currentSection.items.length > 0) {
+                sections.push(currentSection);
+            }
+            
+            let headerText = line;
+            if (headerText.startsWith('**')) {
+                headerText = headerText.replace(/^\*\*\s*/, '').replace(/\*\*$/, '');
+            }
+            headerText = headerText.trim();
+            
+            currentSection = {
+                header: headerText,
+                items: []
+            };
+        } else if (isItem) {
+            let itemText = line.replace(/^[*\-]\s*/, '').trim();
+            
+            if (!currentSection) {
+                currentSection = {
+                    header: 'Items',
+                    items: []
+                };
+            }
+            
+            if (itemText) {
+                currentSection.items.push(itemText);
+            }
+        }
+    }
+    
+    if (currentSection && currentSection.items.length > 0) {
+        sections.push(currentSection);
+    }
+    
+    return sections;
+}
+
+function createBlocksFromSections(sections) {
+    if (!rootEditor) {
+        throw new Error('Block editor not initialized');
+    }
+    
+    let blocksCreated = 0;
+    
+    for (const section of sections) {
+        rootEditor.addBlock('header', {
+            level: 3,
+            text: section.header
+        });
+        blocksCreated++;
+        
+        rootEditor.addBlock('list', {
+            style: 'unordered',
+            items: section.items
+        });
+        blocksCreated++;
+    }
+    
+    return blocksCreated;
+}
+
+function processAutoFill() {
+    const input = document.getElementById('autoFillInput').value;
+    const errorDiv = document.getElementById('autoFillError');
+    
+    errorDiv.classList.add('hidden');
+    
+    if (!input.trim()) {
+        errorDiv.textContent = 'Please paste some text to parse.';
+        errorDiv.classList.remove('hidden');
+        return;
+    }
+    
+    try {
+        const sections = parseAutoFillText(input);
+        
+        if (sections.length === 0) {
+            errorDiv.textContent = 'No valid sections found. Make sure you have headers (starting with **) and items (starting with * or -).';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+        
+        const blocksCreated = createBlocksFromSections(sections);
+        
+        closeAutoFillModal();
+        
+        alert(`Successfully created ${blocksCreated} blocks from ${sections.length} section(s)!`);
+        
+    } catch (error) {
+        console.error('Auto-fill error:', error);
+        errorDiv.textContent = `Error: ${error.message}`;
+        errorDiv.classList.remove('hidden');
     }
 }
 
