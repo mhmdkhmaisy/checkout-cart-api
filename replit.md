@@ -76,6 +76,7 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
         - Comprehensive statistics dashboard showing total, published, draft, featured, and pinned counts
         - Status badges in admin panel for pinned, featured, draft, and hotfix updates
         - Update type indicators (Regular/Client Update/Hotfix) in admin interface
+        - Auto-Fill feature: parses formatted text (headers with **, items with */-) to auto-generate header and list blocks, streamlining content creation for item lists and boss drops
     - Displays a tabbed Top Voters Widget (weekly/monthly).
 - **Wiki Documentation System:**
     - Comprehensive documentation platform with Dev-Docs style layout
