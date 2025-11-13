@@ -600,6 +600,9 @@ class BlockEditor {
                             <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('osrs_header')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-xs">
                                 <i class="fas fa-font"></i> OSRS Header
                             </button>
+                            <button type="button" onclick="openAutoFillModal('${id}')" class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs">
+                                <i class="fas fa-magic"></i> Auto-Fill
+                            </button>
                         </div>
                     </div>
                 `;
@@ -669,6 +672,9 @@ class BlockEditor {
                             </button>
                             <button type="button" onclick="nestedEditors.get('${id}')?.addBlock('osrs_header')" class="px-2 py-1 bg-dragon-red hover:bg-dragon-red-bright text-white rounded text-xs">
                                 <i class="fas fa-font"></i> OSRS Header
+                            </button>
+                            <button type="button" onclick="openAutoFillModal('${id}')" class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs">
+                                <i class="fas fa-magic"></i> Auto-Fill
                             </button>
                         </div>
                     </div>
@@ -957,7 +963,10 @@ async function handleImageUpload(blockId, input) {
 }
 
 // Auto-Fill Modal Functions
-function openAutoFillModal() {
+let currentAutoFillContext = 'root';
+
+function openAutoFillModal(contextId = 'root') {
+    currentAutoFillContext = contextId;
     document.getElementById('autoFillModal').classList.remove('hidden');
     document.getElementById('autoFillInput').value = '';
     document.getElementById('autoFillError').classList.add('hidden');
@@ -965,6 +974,7 @@ function openAutoFillModal() {
 
 function closeAutoFillModal() {
     document.getElementById('autoFillModal').classList.add('hidden');
+    currentAutoFillContext = 'root';
 }
 
 function parseAutoFillText(text) {
@@ -1018,21 +1028,23 @@ function parseAutoFillText(text) {
     return sections;
 }
 
-function createBlocksFromSections(sections) {
-    if (!rootEditor) {
-        throw new Error('Block editor not initialized');
+function createBlocksFromSections(sections, contextId = 'root') {
+    const editor = contextId === 'root' ? rootEditor : nestedEditors.get(contextId);
+    
+    if (!editor) {
+        throw new Error('Block editor not initialized for context: ' + contextId);
     }
     
     let blocksCreated = 0;
     
     for (const section of sections) {
-        rootEditor.addBlock('header', {
+        editor.addBlock('header', {
             level: 3,
             text: section.header
         });
         blocksCreated++;
         
-        rootEditor.addBlock('list', {
+        editor.addBlock('list', {
             style: 'unordered',
             items: section.items
         });
@@ -1063,11 +1075,12 @@ function processAutoFill() {
             return;
         }
         
-        const blocksCreated = createBlocksFromSections(sections);
+        const blocksCreated = createBlocksFromSections(sections, currentAutoFillContext);
         
         closeAutoFillModal();
         
-        alert(`Successfully created ${blocksCreated} blocks from ${sections.length} section(s)!`);
+        const contextName = currentAutoFillContext === 'root' ? 'main content' : 'section';
+        alert(`Successfully created ${blocksCreated} blocks from ${sections.length} section(s) in ${contextName}!`);
         
     } catch (error) {
         console.error('Auto-fill error:', error);
