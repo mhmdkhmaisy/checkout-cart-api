@@ -418,8 +418,9 @@ class BlockEditor {
                 `;
             case 'paragraph':
                 return `
-                    <textarea id="${id}-text" placeholder="Paragraph text" rows="3" 
+                    <textarea id="${id}-text" placeholder="Paragraph text (supports **bold**, *italic*, \`highlight\`, and lists with -)&#10;Example:&#10;This is **bold** and *italic* text with \`highlighted code\`.&#10;- List item&#10;  - Nested item" rows="5" 
                               class="w-full bg-dragon-surface border border-dragon-border text-dragon-silver rounded px-3 py-2">${data?.text || ''}</textarea>
+                    <p class="text-xs text-dragon-silver-dark mt-1">Supports: **bold**, *italic*, \`highlight\`, - lists (use 2 spaces for nesting)</p>
                 `;
             case 'list':
                 const items = data?.items || [''];

@@ -68,7 +68,84 @@ class UpdateRenderer
     private static function renderParagraph($data)
     {
         $text = $data['text'] ?? '';
-        return '<p style="margin-bottom: 1rem; line-height: 1.7; color: var(--text-color, #ccc);">' . nl2br(e($text)) . '</p>';
+        $formattedText = self::formatRichText($text);
+        return '<div style="margin-bottom: 1rem; line-height: 1.7; color: var(--text-color, #ccc);">' . $formattedText . '</div>';
+    }
+
+    private static function formatRichText($text)
+    {
+        if (empty($text)) {
+            return '';
+        }
+
+        $lines = explode("\n", $text);
+        $html = '';
+        $inList = false;
+        $listStack = [];
+        
+        foreach ($lines as $line) {
+            $trimmedLine = ltrim($line);
+            $indentLevel = (strlen($line) - strlen($trimmedLine)) / 2; // Assuming 2 spaces per indent
+            
+            // Check if line is a list item
+            if (preg_match('/^-\s+(.*)$/', $trimmedLine, $matches)) {
+                $itemContent = $matches[1];
+                $itemContent = self::formatInlineStyles($itemContent);
+                
+                // Close deeper nested lists if we went back up
+                while (!empty($listStack) && end($listStack) > $indentLevel) {
+                    array_pop($listStack);
+                    $html .= '</ul>';
+                }
+                
+                // Open new list if needed
+                if (empty($listStack) || end($listStack) < $indentLevel) {
+                    $html .= '<ul style="list-style-type: disc; margin-left: 1.5rem; margin-top: 0.25rem; margin-bottom: 0.25rem;">';
+                    $listStack[] = $indentLevel;
+                    $inList = true;
+                }
+                
+                $html .= '<li style="margin-bottom: 0.25rem; color: var(--text-color, #ccc);">' . $itemContent . '</li>';
+            } else {
+                // Close all open lists when we encounter a non-list line
+                while (!empty($listStack)) {
+                    array_pop($listStack);
+                    $html .= '</ul>';
+                }
+                $inList = false;
+                
+                // Regular paragraph line
+                if (trim($line) !== '') {
+                    $formattedLine = self::formatInlineStyles($line);
+                    $html .= '<p style="margin-bottom: 0.5rem;">' . $formattedLine . '</p>';
+                }
+            }
+        }
+        
+        // Close any remaining open lists
+        while (!empty($listStack)) {
+            array_pop($listStack);
+            $html .= '</ul>';
+        }
+        
+        return $html;
+    }
+
+    private static function formatInlineStyles($text)
+    {
+        // Escape HTML first
+        $text = e($text);
+        
+        // Bold: **text** -> <strong>text</strong>
+        $text = preg_replace('/\*\*(.+?)\*\*/', '<strong style="font-weight: 700; color: var(--primary-color, #d40000);">$1</strong>', $text);
+        
+        // Italics: *text* -> <em>text</em>
+        $text = preg_replace('/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/', '<em style="font-style: italic; color: var(--text-color-light, #e0e0e0);">$1</em>', $text);
+        
+        // Inline code/highlight: `text` -> <code>text</code>
+        $text = preg_replace('/`(.+?)`/', '<code style="background: rgba(255, 176, 0, 0.15); color: #FFB000; padding: 0.125rem 0.375rem; border-radius: 4px; font-family: \'Courier New\', monospace; font-size: 0.9em;">$1</code>', $text);
+        
+        return $text;
     }
 
     private static function renderList($data)
