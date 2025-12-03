@@ -16,5 +16,6 @@ class VerifyCsrfToken extends Middleware
         'admin/cache/chunked-upload*',
         'admin/cache/patches/download-combined',
         'admin/cache/patches/check-updates',
+        'vote/callback',
     ];
 }
