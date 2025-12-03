@@ -48,4 +48,9 @@ return [
         'webhook_url' => env('DISCORD_WEBHOOK_URL'),
     ],
 
+    'vote' => [
+        'arena_top100_secret' => env('VOTE_ARENA_TOP100_SECRET'),
+        'rsps_list_secret' => env('VOTE_RSPS_LIST_SECRET'),
+    ],
+
 ];

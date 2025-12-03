@@ -115,9 +115,17 @@ class VoteController extends Controller
         elseif ($request->has('callback')) {
             $uid = $request->get('callback');
         }
-        // RSPS-List sends: userid, voted, userip, and secret
+        // RSPS-List & Arena-Top100 sends: userid, voted, userip, and secret
         elseif ($request->has('userid')) {
             $uid = $request->get('userid');
+        }
+        // Arena-Top100 also supports: id parameter
+        elseif ($request->has('id')) {
+            $uid = $request->get('id');
+        }
+        // RSPS100 sends: user (only on valid votes)
+        elseif ($request->has('user')) {
+            $uid = $request->get('user');
         }
         // Fallback to legacy parameter names
         elseif ($request->has('incentive')) {
@@ -141,7 +149,22 @@ class VoteController extends Controller
             return response('Vote already processed', 200);
         }
 
-        // For RSPS-List, check if the vote was successful (voted=1)
+        // For Arena-Top100 & RSPS-List: Validate secret if provided
+        if ($request->has('secret')) {
+            $secret = $request->get('secret');
+            $arenaSecret = config('services.vote.arena_top100_secret');
+            $rspsListSecret = config('services.vote.rsps_list_secret');
+            
+            // Allow TEST secret for development, or validate against configured secrets
+            if ($secret !== 'TEST' && $secret !== $arenaSecret && $secret !== $rspsListSecret) {
+                // Only reject if we have a configured secret to validate against
+                if ($arenaSecret || $rspsListSecret) {
+                    return response('Invalid secret', 403);
+                }
+            }
+        }
+
+        // For Arena-Top100 & RSPS-List: check if the vote was successful (voted=1)
         if ($request->has('voted') && $request->get('voted') != '1') {
             return response('Vote not successful', 400);
         }
