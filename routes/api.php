@@ -39,6 +39,7 @@ Route::get('/checkout/coinbase/cancel', [CheckoutController::class, 'coinbaseCan
 
 // Claim routes
 Route::get('/claim/{username}', [ClaimController::class, 'claim']);
+Route::get('/claimVote/{playerName}', [ClaimController::class, 'claimVote']);
 
 // Product routes (for testing)
 Route::get('/products', [ProductController::class, 'index']);

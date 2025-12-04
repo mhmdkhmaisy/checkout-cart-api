@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Vote;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -103,5 +104,52 @@ class ClaimController extends Controller
         }
 
         return $items;
+    }
+
+    public function claimVote(string $playerName): JsonResponse
+    {
+        try {
+            return DB::transaction(function () use ($playerName) {
+                $unclaimedVotes = Vote::where('username', $playerName)
+                    ->whereNotNull('callback_date')
+                    ->where('claimed', false)
+                    ->with('site')
+                    ->get();
+
+                if ($unclaimedVotes->isEmpty()) {
+                    return response()->json([
+                        'success' => true,
+                        'votes' => [],
+                        'message' => 'No unclaimed votes found'
+                    ]);
+                }
+
+                $voteIds = $unclaimedVotes->pluck('id')->toArray();
+
+                Vote::whereIn('id', $voteIds)->update(['claimed' => true]);
+
+                $votes = $unclaimedVotes->map(function ($vote) {
+                    return [
+                        'id' => $vote->id,
+                        'site_name' => $vote->site ? $vote->site->title : 'Unknown',
+                        'site_id' => $vote->site_id,
+                        'voted_at' => $vote->callback_date->toIso8601String(),
+                    ];
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'votes' => $votes,
+                    'count' => count($votes),
+                    'message' => count($votes) . ' vote(s) claimed successfully'
+                ]);
+            });
+        } catch (\Exception $e) {
+            Log::error('Error claiming votes for player ' . $playerName . ': ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to claim votes'
+            ], 500);
+        }
     }
 }

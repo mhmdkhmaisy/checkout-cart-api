@@ -31,7 +31,7 @@
                        placeholder="Your in-game username"
                        class="form-input"
                        maxlength="15"
-                       pattern="[A-Za-z0-9_]+"
+                       pattern="[A-Za-z0-9_ ]+"
                        value="{{ session('vote_username') }}">
             </div>
             
@@ -195,8 +195,8 @@ function setUsername() {
         return;
     }
     
-    if (!/^[A-Za-z0-9_]+$/.test(username)) {
-        showError('Username can only contain letters, numbers, and underscores');
+    if (!/^[A-Za-z0-9_ ]+$/.test(username)) {
+        showError('Username can only contain letters, numbers, underscores, and spaces');
         return;
     }
     
