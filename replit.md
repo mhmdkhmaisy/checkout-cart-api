@@ -39,6 +39,8 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
     - Optimized storage architecture stores only compressed patch ZIPs permanently, eliminating original upload duplication.
     - Advanced patch management tools include side-by-side comparison, changelog generation, file history tracking, and integrity verification.
 - **Multi-site Voting System:** Tracks votes and rewards.
+    - Usernames support letters, numbers, underscores, and spaces.
+    - Vote claim API endpoint (`GET /api/claimVote/{playerName}`) returns unclaimed votes and marks them as claimed.
 - **Client Management:** Facilitates distribution and management of game client versions.
 - **Deals & Promotions System:**
     - Store gamification through time-based and spend-based promotional campaigns.
