@@ -29,7 +29,7 @@
             <div>
                 <label class="block text-sm font-medium text-dragon-silver mb-2">Platform</label>
                 <div class="flex items-center p-3 bg-dragon-black border border-dragon-border rounded-lg">
-                    <i class="fas fa-{{ $client->os === 'windows' ? 'windows' : ($client->os === 'macos' ? 'apple' : ($client->os === 'linux' ? 'linux' : 'coffee')) }} mr-2 text-dragon-silver-dark"></i>
+                    <i class="{{ $client->os === 'windows' ? 'fab fa-windows' : ($client->os === 'minimal' ? 'fas fa-feather-alt' : 'fas fa-coffee') }} mr-2 text-dragon-silver-dark"></i>
                     <span class="text-dragon-silver">{{ $client->os_display }}</span>
                 </div>
                 <p class="text-dragon-silver-dark text-sm mt-1">Platform cannot be changed after upload.</p>

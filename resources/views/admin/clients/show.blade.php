@@ -8,7 +8,7 @@
     <div class="glass-effect rounded-lg p-6">
         <div class="flex justify-between items-center mb-6">
             <div class="flex items-center">
-                <i class="fas fa-{{ $client->os === 'windows' ? 'windows' : ($client->os === 'macos' ? 'apple' : ($client->os === 'linux' ? 'linux' : 'coffee')) }} text-2xl mr-3 text-dragon-red"></i>
+                <i class="{{ $client->os === 'windows' ? 'fab fa-windows' : ($client->os === 'minimal' ? 'fas fa-feather-alt' : 'fas fa-coffee') }} text-2xl mr-3 text-dragon-red"></i>
                 <div>
                     <h2 class="text-xl font-semibold text-dragon-silver">{{ $client->os_display }} v{{ $client->version }}</h2>
                     <p class="text-dragon-silver-dark text-sm">Client details and download information</p>
@@ -33,7 +33,7 @@
                     <div>
                         <span class="text-dragon-silver-dark text-sm">Platform:</span>
                         <div class="flex items-center mt-1">
-                            <i class="fas fa-{{ $client->os === 'windows' ? 'windows' : ($client->os === 'macos' ? 'apple' : ($client->os === 'linux' ? 'linux' : 'coffee')) }} mr-2 text-dragon-silver-dark"></i>
+                            <i class="{{ $client->os === 'windows' ? 'fab fa-windows' : ($client->os === 'minimal' ? 'fas fa-feather-alt' : 'fas fa-coffee') }} mr-2 text-dragon-silver-dark"></i>
                             <span class="text-dragon-silver">{{ $client->os_display }}</span>
                         </div>
                     </div>

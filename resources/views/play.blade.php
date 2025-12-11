@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
 @section('title', 'Play Aragon RSPS - Download Game Client')
-@section('description', 'Download the Aragon RSPS game client for Windows, macOS, Linux, or play with our standalone JAR file.')
+@section('description', 'Download the Aragon RSPS game client for Windows or play with our JAR launchers.')
 
 @section('content')
 <div class="fade-in-up" style="max-width: 1000px; margin: 0 auto;">
@@ -18,8 +18,7 @@
 
     @php
         $windowsClient = $clients->get('windows');
-        $macosClient = $clients->get('macos');
-        $linuxClient = $clients->get('linux');
+        $minimalClient = $clients->get('minimal');
         $jarClient = $clients->get('standalone');
     @endphp
 
@@ -50,6 +49,11 @@
            style="font-size: 1.25rem; padding: 1rem 3rem;">
             <i class="fas fa-download"></i> Download for Windows
         </a>
+        <div class="mt-3" style="display: inline-block; background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05)); border: 1px solid rgba(34, 197, 94, 0.3); padding: 0.75rem 1.25rem; border-radius: 8px;">
+            <i class="fas fa-cube" style="color: #22c55e;"></i>
+            <span style="color: #22c55e; font-weight: 500;">JRE Bundled</span>
+            <span class="text-muted" style="font-size: 0.85rem;"> - No Java installation required!</span>
+        </div>
         <p class="text-muted mt-3" style="font-size: 0.9rem;">
             <i class="fas fa-shield-alt"></i> Secure, fast, and optimized for Windows 10+
         </p>
@@ -75,19 +79,23 @@
     </h3>
     
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
-        <!-- macOS Card -->
+        <!-- Minimal Jar Launcher Card -->
         <div class="glass-card text-center" style="padding: 2rem;">
-            <i class="fab fa-apple text-primary" style="font-size: 3.5rem; margin-bottom: 1rem; display: block;"></i>
-            <h4 class="text-primary mb-2" style="font-size: 1.5rem; font-weight: 600;">macOS</h4>
-            @if($macosClient && $macosClient->enabled)
+            <i class="fas fa-feather-alt text-primary" style="font-size: 3.5rem; margin-bottom: 1rem; display: block;"></i>
+            <h4 class="text-primary mb-2" style="font-size: 1.5rem; font-weight: 600;">Minimal Jar Launcher</h4>
+            @if($minimalClient && $minimalClient->enabled)
                 <p class="text-muted mb-3" style="font-size: 0.9rem;">
-                    v{{ $macosClient->version }} • {{ $macosClient->formatted_size }}
+                    v{{ $minimalClient->version }} • {{ $minimalClient->formatted_size }}
                 </p>
-                <a href="{{ $macosClient->download_url }}" 
+                <a href="{{ $minimalClient->download_url }}" 
                    class="btn btn-outline w-full"
-                   onclick="trackDownload('macos', '{{ $macosClient->version }}')">
+                   onclick="trackDownload('minimal', '{{ $minimalClient->version }}')">
                     <i class="fas fa-download"></i> Download
                 </a>
+                <div class="mt-3" style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.8rem;">
+                    <i class="fab fa-java" style="color: #fbbf24;"></i>
+                    <span style="color: #fbbf24;">Requires Java 11+</span>
+                </div>
             @else
                 <p class="text-muted mb-3" style="font-size: 0.9rem;">Coming Soon</p>
                 <button class="btn btn-outline w-full" disabled>
@@ -96,28 +104,7 @@
             @endif
         </div>
 
-        <!-- Linux Card -->
-        <div class="glass-card text-center" style="padding: 2rem;">
-            <i class="fab fa-linux text-primary" style="font-size: 3.5rem; margin-bottom: 1rem; display: block;"></i>
-            <h4 class="text-primary mb-2" style="font-size: 1.5rem; font-weight: 600;">Linux</h4>
-            @if($linuxClient && $linuxClient->enabled)
-                <p class="text-muted mb-3" style="font-size: 0.9rem;">
-                    v{{ $linuxClient->version }} • {{ $linuxClient->formatted_size }}
-                </p>
-                <a href="{{ $linuxClient->download_url }}" 
-                   class="btn btn-outline w-full"
-                   onclick="trackDownload('linux', '{{ $linuxClient->version }}')">
-                    <i class="fas fa-download"></i> Download
-                </a>
-            @else
-                <p class="text-muted mb-3" style="font-size: 0.9rem;">Coming Soon</p>
-                <button class="btn btn-outline w-full" disabled>
-                    <i class="fas fa-clock"></i> Not Available
-                </button>
-            @endif
-        </div>
-
-        <!-- JAR Card -->
+        <!-- Standalone JAR Card -->
         <div class="glass-card text-center" style="padding: 2rem;">
             <i class="fas fa-coffee text-primary" style="font-size: 3.5rem; margin-bottom: 1rem; display: block;"></i>
             <h4 class="text-primary mb-2" style="font-size: 1.5rem; font-weight: 600;">Standalone JAR</h4>

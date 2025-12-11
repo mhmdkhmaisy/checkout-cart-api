@@ -32,7 +32,7 @@
                 @endphp
                 <div class="bg-dragon-black rounded-lg p-4 border {{ $client && $client->enabled ? 'border-green-500' : 'border-dragon-border' }}">
                     <div class="text-center">
-                        <i class="fas fa-{{ $os === 'windows' ? 'windows' : ($os === 'macos' ? 'apple' : ($os === 'linux' ? 'linux' : 'coffee')) }} text-3xl mb-3 {{ $client && $client->enabled ? 'text-green-500' : 'text-dragon-silver-dark' }}"></i>
+                        <i class="{{ $os === 'windows' ? 'fab fa-windows' : ($os === 'minimal' ? 'fas fa-feather-alt' : 'fas fa-coffee') }} text-3xl mb-3 {{ $client && $client->enabled ? 'text-green-500' : 'text-dragon-silver-dark' }}"></i>
                         <h4 class="font-medium text-dragon-silver mb-2">{{ $displayName }}</h4>
                         @if($client)
                             <div class="space-y-1">
@@ -79,7 +79,7 @@
                         <tr class="hover:bg-dragon-black/50 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    <i class="fas fa-{{ $client->os === 'windows' ? 'windows' : ($client->os === 'macos' ? 'apple' : ($client->os === 'linux' ? 'linux' : 'coffee')) }} mr-2 text-dragon-silver-dark"></i>
+                                    <i class="{{ $client->os === 'windows' ? 'fab fa-windows' : ($client->os === 'minimal' ? 'fas fa-feather-alt' : 'fas fa-coffee') }} mr-2 text-dragon-silver-dark"></i>
                                     <span class="text-dragon-silver">{{ $client->os_display }}</span>
                                 </div>
                             </td>

@@ -27,16 +27,14 @@ class Client extends Model
     ];
 
     public const OS_TYPES = [
-        'windows' => 'Windows',
-        'macos' => 'macOS',
-        'linux' => 'Linux',
+        'windows' => 'Windows Launcher',
+        'minimal' => 'Minimal Jar Launcher',
         'standalone' => 'Standalone JAR'
     ];
 
     public const FILE_EXTENSIONS = [
         'windows' => '.exe',
-        'macos' => '.dmg',
-        'linux' => '.AppImage',
+        'minimal' => '.jar',
         'standalone' => '.jar'
     ];
 
