@@ -79,6 +79,13 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
         - Status badges in admin panel for pinned, featured, draft, and hotfix updates
         - Update type indicators (Regular/Client Update/Hotfix) in admin interface
         - Auto-Fill feature: parses formatted text (headers with **, items with */-) to auto-generate header and list blocks, streamlining content creation for item lists and boss drops
+        - Discord webhook integration with robust message ordering:
+            - Automatic notification to configured Discord channels on update publish
+            - Manual "Notify Client Update" button for client updates with optional role mention
+            - Retry mechanism with exponential backoff and Discord rate limit handling
+            - Guaranteed message ordering: header → content blocks → footer link
+            - Sections render as styled Discord embeds with proper color coding
+            - allowed_mentions configuration prevents accidental @everyone/@here pings
     - Displays a tabbed Top Voters Widget (weekly/monthly).
 - **Wiki Documentation System:**
     - Comprehensive documentation platform with Dev-Docs style layout
