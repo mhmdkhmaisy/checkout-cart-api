@@ -15,6 +15,9 @@ class ClaimController extends Controller
 {
     public function claim(string $username, Request $request): JsonResponse
     {
+        // Decode URL-encoded username (handles %20 and + for spaces)
+        $username = urldecode($username);
+        
         $request->validate([
             'server_id' => 'nullable|string|max:100'
         ]);
@@ -108,6 +111,9 @@ class ClaimController extends Controller
 
     public function claimVote(string $playerName): JsonResponse
     {
+        // Decode URL-encoded username (handles %20 and + for spaces)
+        $playerName = urldecode($playerName);
+        
         try {
             return DB::transaction(function () use ($playerName) {
                 $unclaimedVotes = Vote::where('username', $playerName)
