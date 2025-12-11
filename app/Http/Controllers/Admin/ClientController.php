@@ -27,23 +27,55 @@ class ClientController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'os' => 'required|in:' . implode(',', array_keys(Client::OS_TYPES)),
-            'file' => 'required|file|max:512000', // 500MB max
-            'version' => 'nullable|string|regex:/^\d+\.\d+\.\d+$/',
-            'changelog' => 'nullable|string|max:5000',
-            'enabled' => 'boolean'
+        \Log::info('Client upload started', [
+            'os' => $request->os,
+            'has_file' => $request->hasFile('file'),
+            'version' => $request->version,
+            'enabled' => $request->enabled,
+            'valid_os_types' => array_keys(Client::OS_TYPES)
         ]);
+
+        try {
+            $request->validate([
+                'os' => 'required|in:' . implode(',', array_keys(Client::OS_TYPES)),
+                'file' => 'required|file|max:512000', // 500MB max
+                'version' => 'nullable|string|regex:/^\d+\.\d+\.\d+$/',
+                'changelog' => 'nullable|string|max:5000',
+                'enabled' => 'boolean'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Client upload validation failed', ['errors' => $e->errors()]);
+            throw $e;
+        }
 
         $file = $request->file('file');
         $os = $request->os;
         
+        \Log::info('File received', [
+            'filename' => $file->getClientOriginalName(),
+            'size' => $file->getSize(),
+            'os' => $os
+        ]);
+        
         // Auto-generate version if not provided
         $version = $request->version ?: Client::getNextVersion($os);
         
+        \Log::info('Version determined', ['version' => $version]);
+        
         // Validate file extension
-        $expectedExt = Client::FILE_EXTENSIONS[$os];
+        $expectedExt = Client::FILE_EXTENSIONS[$os] ?? null;
+        if (!$expectedExt) {
+            \Log::error('No file extension defined for OS', ['os' => $os, 'available' => Client::FILE_EXTENSIONS]);
+            return back()->withErrors([
+                'file' => "No file extension defined for OS: {$os}"
+            ]);
+        }
+        
         if (!str_ends_with(strtolower($file->getClientOriginalName()), strtolower($expectedExt))) {
+            \Log::error('File extension mismatch', [
+                'expected' => $expectedExt,
+                'got' => $file->getClientOriginalName()
+            ]);
             return back()->withErrors([
                 'file' => "File must have {$expectedExt} extension for {$os}"
             ]);
@@ -95,8 +127,13 @@ class ClientController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             
+            \Log::error('Client upload failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             // Clean up uploaded file if database operation failed
-            if (Storage::exists($filePath)) {
+            if (isset($filePath) && Storage::exists($filePath)) {
                 Storage::delete($filePath);
             }
             

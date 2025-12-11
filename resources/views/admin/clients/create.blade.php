@@ -245,43 +245,59 @@ $(document).ready(function() {
         // Handle completion
         uploadXHR.addEventListener('load', function() {
             console.log('Upload completed with status:', uploadXHR.status);
-            console.log('Response:', uploadXHR.responseText);
+            console.log('Response length:', uploadXHR.responseText.length);
+            console.log('Response preview:', uploadXHR.responseText.substring(0, 500));
             
             if (uploadXHR.status >= 200 && uploadXHR.status < 400) {
-                // Laravel typically returns 302 for successful form submissions with redirect
-                if (uploadXHR.status === 302) {
+                const responseText = uploadXHR.responseText.toLowerCase();
+                
+                // Check for validation errors in HTML response
+                if (responseText.includes('text-red-400') || responseText.includes('is-invalid') || responseText.includes('the os field') || responseText.includes('the file field')) {
+                    // Extract error message if possible
+                    const errorMatch = uploadXHR.responseText.match(/<p class="text-red-400[^>]*>([^<]+)<\/p>/);
+                    if (errorMatch) {
+                        showUploadError('Validation error: ' + errorMatch[1]);
+                    } else {
+                        showUploadError('Validation failed. Check Laravel logs for details. OS value: ' + $('#os').val());
+                    }
+                    return;
+                }
+                
+                // Check for success indicators (redirected to clients page or success message)
+                if (responseText.includes('client management') || responseText.includes('uploaded successfully') || responseText.includes('success')) {
                     showUploadSuccess();
                     setTimeout(() => {
                         window.location.href = "/admin/clients";
                     }, 2000);
-                } else if (uploadXHR.status === 200) {
-                    // Check response content for success indicators
-                    const responseText = uploadXHR.responseText.toLowerCase();
-                    if (responseText.includes('success') || responseText.includes('uploaded') || responseText.includes('created')) {
+                } else {
+                    // Try to parse as JSON for error messages
+                    try {
+                        const response = JSON.parse(uploadXHR.responseText);
+                        if (response.errors) {
+                            let errorMsg = 'Validation errors:\n';
+                            for (let field in response.errors) {
+                                errorMsg += `${field}: ${response.errors[field].join(', ')}\n`;
+                            }
+                            showUploadError(errorMsg);
+                        } else {
+                            showUploadError('Upload may have succeeded. Redirecting...');
+                            setTimeout(() => {
+                                window.location.href = "/admin/clients";
+                            }, 2000);
+                        }
+                    } catch (e) {
+                        // HTML response - assume success if no error indicators
+                        console.log('Non-JSON response, assuming success');
                         showUploadSuccess();
                         setTimeout(() => {
                             window.location.href = "/admin/clients";
                         }, 2000);
-                    } else {
-                        // Try to parse as JSON for error messages
-                        try {
-                            const response = JSON.parse(uploadXHR.responseText);
-                            if (response.errors) {
-                                let errorMsg = 'Validation errors:\n';
-                                for (let field in response.errors) {
-                                    errorMsg += `${field}: ${response.errors[field].join(', ')}\n`;
-                                }
-                                showUploadError(errorMsg);
-                            } else {
-                                showUploadError('Upload failed. Please check the form data and try again.');
-                            }
-                        } catch (e) {
-                            showUploadError('Upload completed but response unclear. Please check the clients page.');
-                        }
                     }
                 }
             } else {
-                showUploadError(`Upload failed with status ${uploadXHR.status}. Please try again.`);
+                console.error('Upload failed with status:', uploadXHR.status);
+                console.error('Response:', uploadXHR.responseText.substring(0, 1000));
+                showUploadError(`Upload failed with status ${uploadXHR.status}. Check browser console for details.`);
             }
         });
 
