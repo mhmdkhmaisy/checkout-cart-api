@@ -43,7 +43,7 @@
                 <label for="file" class="block text-sm font-medium text-dragon-silver mb-2">Client File *</label>
                 <div class="relative">
                     <input type="file" class="w-full bg-dragon-black border border-dragon-border text-dragon-silver rounded-lg px-3 py-2 focus:outline-none focus:border-dragon-red @error('file') border-red-500 @enderror" 
-                           id="file" name="file" required accept=".exe,.dmg,.AppImage,.jar">
+                           id="file" name="file" required accept=".exe,.jar">
                 </div>
                 @error('file')
                     <p class="text-red-400 text-sm mt-1">{{ $message }}</p>
@@ -189,7 +189,7 @@ $(document).ready(function() {
             $('#file').attr('accept', extension);
         } else {
             $('#file-help').text('Maximum file size: 500MB. Expected extension will be shown when you select a platform.');
-            $('#file').attr('accept', '.exe,.dmg,.AppImage,.jar');
+            $('#file').attr('accept', '.exe,.jar');
         }
     });
 
