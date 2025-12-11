@@ -214,11 +214,9 @@ class UpdateController extends Controller
         }
 
         try {
-            // Convert update content to Discord format with proper image positioning
             $content = json_decode($update->content, true);
             $updateUrl = route('updates.show', $update->slug);
             
-            // Build header message
             $headerMessage = "📢 **New Update: {$update->title}**\n";
             
             if ($update->category) {
@@ -234,21 +232,20 @@ class UpdateController extends Controller
             
             foreach ($webhooks as $webhook) {
                 try {
-                    // Send header
-                    $response = Http::post($webhook->url, ['content' => $headerMessage]);
-                    if (!$response->successful()) {
-                        throw new \Exception('Discord API error: ' . $response->body());
+                    $headerSent = $this->sendDiscordMessageWithRetry($webhook->url, ['content' => $headerMessage]);
+                    if (!$headerSent) {
+                        throw new \Exception('Failed to send header message');
                     }
-                    usleep(300000); // 0.3 second delay
                     
-                    // Process content blocks and send with images in proper positions
-                    $this->sendContentBlocksToDiscord($content, $webhook->url);
+                    $contentSent = $this->sendContentBlocksToDiscord($content, $webhook->url);
+                    if (!$contentSent) {
+                        throw new \Exception('Failed to send content blocks - footer not sent to maintain order');
+                    }
                     
-                    // Send footer with link
                     $footerMessage = "🔗 **Read full update:** {$updateUrl}";
-                    $response = Http::post($webhook->url, ['content' => $footerMessage]);
-                    if (!$response->successful()) {
-                        throw new \Exception('Discord API error: ' . $response->body());
+                    $footerSent = $this->sendDiscordMessageWithRetry($webhook->url, ['content' => $footerMessage]);
+                    if (!$footerSent) {
+                        throw new \Exception('Failed to send footer message');
                     }
                     
                     $sentCount++;
@@ -272,28 +269,135 @@ class UpdateController extends Controller
         }
     }
 
-    private function sendContentBlocksToDiscord($content, $webhookUrl, &$textBuffer = '')
+    public function notifyClientUpdate(Request $request, Update $update)
+    {
+        $request->validate([
+            'role_id' => 'nullable|string|max:50'
+        ]);
+
+        $webhooks = $this->discordWebhook->getActiveWebhooks('update.published');
+        
+        if ($webhooks->isEmpty()) {
+            return redirect()->back()->with('error', 'No active Discord webhooks configured. Please add a webhook in the Webhook Management section.');
+        }
+
+        try {
+            $roleId = $request->input('role_id');
+            $roleMention = $roleId ? "<@&{$roleId}>" : '';
+            
+            $message = "🔔 **Client Update Available!**\n\n";
+            $message .= "Please make sure to download the new client or refresh your launcher to be able to see the latest content added to Aragon.";
+            
+            if ($roleMention) {
+                $message .= "\n\n{$roleMention}";
+            }
+            
+            $sentCount = 0;
+            $errors = [];
+            
+            foreach ($webhooks as $webhook) {
+                try {
+                    $payload = [
+                        'content' => $message,
+                    ];
+                    
+                    if ($roleId) {
+                        $payload['allowed_mentions'] = [
+                            'parse' => [],
+                            'roles' => [$roleId]
+                        ];
+                    } else {
+                        $payload['allowed_mentions'] = [
+                            'parse' => []
+                        ];
+                    }
+                    
+                    $success = $this->sendDiscordMessageWithRetry($webhook->url, $payload);
+                    if (!$success) {
+                        throw new \Exception('Failed to send notification after retries');
+                    }
+                    
+                    $sentCount++;
+                } catch (\Exception $e) {
+                    $errors[] = "Failed to send to {$webhook->name}: " . $e->getMessage();
+                }
+            }
+            
+            if ($sentCount > 0) {
+                $message = "Client update notification sent to {$sentCount} Discord webhook(s) successfully!";
+                if (!empty($errors)) {
+                    $message .= " Some webhooks failed: " . implode(', ', $errors);
+                }
+                return redirect()->back()->with('success', $message);
+            } else {
+                return redirect()->back()->with('error', 'Failed to send to all webhooks: ' . implode(', ', $errors));
+            }
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to send notification: ' . $e->getMessage());
+        }
+    }
+
+    private function sendContentBlocksToDiscord($content, $webhookUrl, &$textBuffer = ''): bool
     {
         if (!$content || !isset($content['blocks'])) {
-            return;
+            return true;
         }
 
         foreach ($content['blocks'] as $block) {
-            $this->processBlockForDiscord($block, $webhookUrl, $textBuffer);
+            $success = $this->processBlockForDiscord($block, $webhookUrl, $textBuffer);
+            if (!$success) {
+                return false;
+            }
         }
         
         // Send any remaining text
         if (trim($textBuffer)) {
             $messages = $this->splitDiscordMessage($textBuffer);
             foreach ($messages as $msg) {
-                Http::post($webhookUrl, ['content' => $msg]);
-                usleep(300000);
+                $success = $this->sendDiscordMessageWithRetry($webhookUrl, ['content' => $msg]);
+                if (!$success) {
+                    return false;
+                }
             }
             $textBuffer = '';
         }
+        
+        return true;
     }
 
-    private function processBlockForDiscord($block, $webhookUrl, &$textBuffer)
+    private function sendDiscordMessageWithRetry($webhookUrl, $payload, $maxRetries = 3)
+    {
+        $attempt = 0;
+        
+        while ($attempt < $maxRetries) {
+            $attempt++;
+            
+            try {
+                $response = Http::timeout(10)->post($webhookUrl, $payload);
+                
+                if ($response->successful()) {
+                    usleep(350000);
+                    return true;
+                }
+                
+                if ($response->status() === 429) {
+                    $retryAfter = $response->header('Retry-After');
+                    $waitTime = $retryAfter ? (float)$retryAfter * 1000000 : 1000000;
+                    usleep((int)min($waitTime, 5000000));
+                    continue;
+                }
+                
+                usleep(500000);
+            } catch (\Exception $e) {
+                usleep(500000);
+            }
+        }
+        
+        return false;
+    }
+
+    private function processBlockForDiscord($block, $webhookUrl, &$textBuffer): bool
     {
         $type = $block['type'] ?? 'paragraph';
         $data = $block['data'] ?? [];
@@ -304,15 +408,16 @@ class UpdateController extends Controller
             if (trim($textBuffer)) {
                 $messages = $this->splitDiscordMessage($textBuffer);
                 foreach ($messages as $msg) {
-                    Http::post($webhookUrl, ['content' => $msg]);
-                    usleep(300000);
+                    $success = $this->sendDiscordMessageWithRetry($webhookUrl, ['content' => $msg]);
+                    if (!$success) {
+                        return false;
+                    }
                 }
                 $textBuffer = '';
             }
             
             // Create and send section as embed
-            $this->sendSectionAsEmbed($block, $webhookUrl);
-            return;
+            return $this->sendSectionAsEmbed($block, $webhookUrl);
         }
         
         // Handle images - flush buffer first, then send image
@@ -321,8 +426,10 @@ class UpdateController extends Controller
             if (trim($textBuffer)) {
                 $messages = $this->splitDiscordMessage($textBuffer);
                 foreach ($messages as $msg) {
-                    Http::post($webhookUrl, ['content' => $msg]);
-                    usleep(300000);
+                    $success = $this->sendDiscordMessageWithRetry($webhookUrl, ['content' => $msg]);
+                    if (!$success) {
+                        return false;
+                    }
                 }
                 $textBuffer = '';
             }
@@ -338,10 +445,9 @@ class UpdateController extends Controller
                 if ($caption) {
                     $imageMessage .= "\n*" . strip_tags($caption) . "*";
                 }
-                Http::post($webhookUrl, ['content' => $imageMessage]);
-                usleep(300000);
+                return $this->sendDiscordMessageWithRetry($webhookUrl, ['content' => $imageMessage]);
             }
-            return;
+            return true;
         }
         
         // Handle tables - send as separate message
@@ -350,8 +456,10 @@ class UpdateController extends Controller
             if (trim($textBuffer)) {
                 $messages = $this->splitDiscordMessage($textBuffer);
                 foreach ($messages as $msg) {
-                    Http::post($webhookUrl, ['content' => $msg]);
-                    usleep(300000);
+                    $success = $this->sendDiscordMessageWithRetry($webhookUrl, ['content' => $msg]);
+                    if (!$success) {
+                        return false;
+                    }
                 }
                 $textBuffer = '';
             }
@@ -359,10 +467,9 @@ class UpdateController extends Controller
             // Send table
             $tableText = $this->formatTableForDiscord($data);
             if ($tableText) {
-                Http::post($webhookUrl, ['content' => $tableText]);
-                usleep(300000);
+                return $this->sendDiscordMessageWithRetry($webhookUrl, ['content' => $tableText]);
             }
-            return;
+            return true;
         }
         
         // All other blocks - accumulate as text
@@ -370,9 +477,10 @@ class UpdateController extends Controller
         if ($blockText) {
             $textBuffer .= ($textBuffer ? "\n\n" : '') . $blockText;
         }
+        return true;
     }
 
-    private function sendSectionAsEmbed($block, $webhookUrl)
+    private function sendSectionAsEmbed($block, $webhookUrl): bool
     {
         $type = $block['type'] ?? 'paragraph';
         $data = $block['data'] ?? [];
@@ -469,8 +577,10 @@ class UpdateController extends Controller
             }
         }
         
-        Http::post($webhookUrl, ['embeds' => [$embed]]);
-        usleep(300000);
+        $success = $this->sendDiscordMessageWithRetry($webhookUrl, ['embeds' => [$embed]]);
+        if (!$success) {
+            return false;
+        }
         
         // Send additional images as separate embeds
         foreach ($images as $img) {
@@ -481,9 +591,13 @@ class UpdateController extends Controller
             if ($img['caption']) {
                 $imageEmbed['description'] = '*' . strip_tags($img['caption']) . '*';
             }
-            Http::post($webhookUrl, ['embeds' => [$imageEmbed]]);
-            usleep(300000);
+            $success = $this->sendDiscordMessageWithRetry($webhookUrl, ['embeds' => [$imageEmbed]]);
+            if (!$success) {
+                return false;
+            }
         }
+        
+        return true;
     }
 
     private function formatTableForEmbed($data)

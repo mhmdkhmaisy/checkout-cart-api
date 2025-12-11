@@ -7,9 +7,14 @@
 @section('content')
 <div class="mb-6 flex justify-between items-center">
     <h2 class="text-2xl font-bold text-dragon-silver">All Updates</h2>
-    <a href="{{ route('admin.updates.create') }}" class="px-4 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg transition-colors">
-        <i class="fas fa-plus mr-2"></i> Create Update
-    </a>
+    <div class="flex gap-3">
+        <button onclick="openNotifyModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
+            <i class="fab fa-discord mr-2"></i> Notify Client Update
+        </button>
+        <a href="{{ route('admin.updates.create') }}" class="px-4 py-2 bg-dragon-red hover:bg-dragon-red-bright text-white rounded-lg transition-colors">
+            <i class="fas fa-plus mr-2"></i> Create Update
+        </a>
+    </div>
 </div>
 
 @if(session('success'))
@@ -146,4 +151,89 @@
         </div>
     @endif
 </div>
+
+<div id="notifyModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-dragon-surface border border-dragon-border rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="px-6 py-4 border-b border-dragon-border">
+            <h3 class="text-xl font-bold text-dragon-silver">
+                <i class="fab fa-discord text-indigo-400 mr-2"></i>
+                Notify Client Update
+            </h3>
+        </div>
+        <form id="notifyForm" method="POST" action="">
+            @csrf
+            <div class="px-6 py-4">
+                <p class="text-dragon-silver-dark mb-4">
+                    Send a Discord notification to remind players to update their client or refresh their launcher.
+                </p>
+                <div class="mb-4">
+                    <label for="role_id" class="block text-sm font-medium text-dragon-silver mb-2">
+                        Discord Role ID (Optional)
+                    </label>
+                    <input type="text" 
+                           name="role_id" 
+                           id="role_id" 
+                           class="w-full px-4 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:border-dragon-red focus:outline-none"
+                           placeholder="e.g., 123456789012345678">
+                    <p class="text-xs text-dragon-silver-dark mt-1">
+                        Enter a role ID to mention that role. Leave empty for no ping.
+                    </p>
+                </div>
+                <div class="p-3 bg-dragon-black rounded-lg border border-dragon-border">
+                    <p class="text-sm text-dragon-silver-dark mb-2">Preview:</p>
+                    <p class="text-sm text-dragon-silver">
+                        <strong>Client Update Available!</strong><br>
+                        Please make sure to download the new client or refresh your launcher to be able to see the latest content added to Aragon.
+                        <span id="rolePreview" class="text-indigo-400"></span>
+                    </p>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-dragon-border flex justify-end gap-3">
+                <button type="button" onclick="closeNotifyModal()" class="px-4 py-2 bg-dragon-black border border-dragon-border text-dragon-silver hover:bg-dragon-border rounded-lg transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
+                    <i class="fab fa-discord mr-2"></i> Send Notification
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+function openNotifyModal() {
+    @if($updates->count() > 0)
+        const latestUpdate = @json($updates->first());
+        document.getElementById('notifyForm').action = '{{ url("admin/updates") }}/' + latestUpdate.id + '/notify-client-update';
+    @else
+        alert('No updates available to notify about.');
+        return;
+    @endif
+    document.getElementById('notifyModal').classList.remove('hidden');
+}
+
+function closeNotifyModal() {
+    document.getElementById('notifyModal').classList.add('hidden');
+    document.getElementById('role_id').value = '';
+    document.getElementById('rolePreview').textContent = '';
+}
+
+document.getElementById('role_id').addEventListener('input', function() {
+    const roleId = this.value.trim();
+    const preview = document.getElementById('rolePreview');
+    if (roleId) {
+        preview.textContent = ' @Role';
+    } else {
+        preview.textContent = '';
+    }
+});
+
+document.getElementById('notifyModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeNotifyModal();
+    }
+});
+</script>
+@endpush
