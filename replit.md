@@ -31,6 +31,14 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
     - CSRF protection on all forms
     - Session regeneration on login/logout for security
 - **Donation Management:** Integrates with PayPal and Coinbase Commerce. Products can be organized into categories and configured as bundles/packs containing multiple items.
+- **Auto Payout System:**
+    - Automatic revenue share payouts to team members after PayPal CAPTURE.COMPLETED webhook
+    - Team member management with PayPal email and percentage configuration
+    - Uses net_amount (after PayPal fees) for payout calculations to avoid eating fees alone
+    - Idempotency protection ensures each transaction only triggers payouts once
+    - Admin panel for team member CRUD and payout history viewing
+    - Percentage validation prevents exceeding 100% total allocation
+    - Payout status tracking: pending, processing, completed, failed
 - **Cache File Distribution:**
     - Supports multi-file, folder, and archive uploads (ZIP/TAR) with automatic directory structure preservation.
     - Uses SHA256 for file hashing and duplicate detection.
@@ -87,6 +95,7 @@ The system is built on the Laravel 10.x framework, utilizing PHP 8.2.23.
             - Sections render as styled Discord embeds with proper color coding
             - allowed_mentions configuration prevents accidental @everyone/@here pings
     - Displays a tabbed Top Voters Widget (weekly/monthly).
+    - Public navigation includes Discord button (configurable via DISCORD_INVITE_URL env var)
 - **Wiki Documentation System:**
     - Comprehensive documentation platform with Dev-Docs style layout
     - Table of Contents with automatic smooth scrolling navigation
