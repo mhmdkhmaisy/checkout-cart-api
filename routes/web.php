@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\UpdateController;
 use App\Http\Controllers\Admin\PerformanceController;
 use App\Http\Controllers\Admin\PromotionController;
+use App\Http\Controllers\Admin\TeamMemberController;
 use App\Http\Controllers\PromotionUserController;
 use App\Http\Controllers\Auth\LoginController;
 /*
@@ -164,6 +165,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'owner'])->group(fun
     // Webhook management
     Route::resource('webhooks', App\Http\Controllers\Admin\WebhookController::class);
     Route::patch('webhooks/{webhook}/toggle-active', [App\Http\Controllers\Admin\WebhookController::class, 'toggleActive'])->name('webhooks.toggle-active');
+
+    // Team members & payouts management
+    Route::resource('team-members', TeamMemberController::class);
+    Route::patch('team-members/{team_member}/toggle-active', [TeamMemberController::class, 'toggleActive'])->name('team-members.toggle-active');
+    Route::get('payouts', [TeamMemberController::class, 'payouts'])->name('team-members.payouts');
 
 });
 

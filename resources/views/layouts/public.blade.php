@@ -575,11 +575,8 @@
                     <li><a href="{{ route('vote.index') }}" class="{{ request()->routeIs('vote.*') ? 'active' : '' }}">
                         <i class="fas fa-vote-yea"></i> Vote
                     </a></li>
-                    <li><a href="#" class="">
-                        <i class="fas fa-user"></i> My Profile
-                    </a></li>
-                    <li><a href="#" class="">
-                        <i class="fas fa-users"></i> Players
+                    <li><a href="{{ config('services.discord.invite_url', '#') }}" target="_blank" class="btn-discord" style="background: #5865F2; color: white; padding: 0.5rem 1rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.5rem;">
+                        <i class="fab fa-discord"></i> Discord
                     </a></li>
                     <li><a href="{{ route('play') }}" class="btn btn-primary" style="margin-left: 1rem;">
                         Play Now

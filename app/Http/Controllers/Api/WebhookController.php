@@ -8,6 +8,7 @@ use App\Models\OrderLog;
 use App\Models\OrderEvent;
 use App\Services\WebhookService;
 use App\Services\PromotionManager;
+use App\Services\PayoutService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
@@ -18,11 +19,13 @@ class WebhookController extends Controller
 {
     protected $webhookService;
     protected $promotionManager;
+    protected $payoutService;
 
-    public function __construct(WebhookService $webhookService, PromotionManager $promotionManager)
+    public function __construct(WebhookService $webhookService, PromotionManager $promotionManager, PayoutService $payoutService)
     {
         $this->webhookService = $webhookService;
         $this->promotionManager = $promotionManager;
+        $this->payoutService = $payoutService;
     }
 
     public function paypal(Request $request): JsonResponse
@@ -262,6 +265,14 @@ class WebhookController extends Controller
             // Track promotion progress
             if ($order->username) {
                 $this->promotionManager->trackSpending($order->username, $order->amount);
+            }
+
+            // Process auto payouts to team members (only happens once due to idempotency check)
+            try {
+                $this->payoutService->processPayoutsForOrder($order, $payload);
+                Log::info("Auto payout processed for order {$order->id}");
+            } catch (\Exception $e) {
+                Log::error("Auto payout failed for order {$order->id}: " . $e->getMessage());
             }
 
             Log::info("Order {$order->id} marked as paid with capture ID: {$captureId}");

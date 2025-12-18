@@ -160,6 +160,12 @@
                                 <i class="fas fa-list-alt mr-3"></i>
                                 Payment Logs
                             </a>
+
+                            <a href="{{ route('admin.team-members.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.team-members.*') || request()->routeIs('admin.payouts') ? 'active' : '' }}">
+                                <i class="fas fa-users-cog mr-3"></i>
+                                Team & Payouts
+                            </a>
                         </div>
                     </div>
 
