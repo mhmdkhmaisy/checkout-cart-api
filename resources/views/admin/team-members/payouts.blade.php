@@ -74,6 +74,13 @@
                             {{ $payout->created_at->format('M d, Y H:i') }}
                         </td>
                     </tr>
+                    <tr class="bg-dragon-black/50">
+                        <td colspan="8" class="px-6 py-3">
+                            <p class="text-dragon-silver-dark text-xs">
+                                <i class="fas fa-info-circle mr-2"></i>You have received {{ number_format($payout->percentage, 2) }}% of ${{ number_format($payout->net_amount, 2) }} which amounts to ${{ number_format($payout->payout_amount, 2) }}
+                            </p>
+                        </td>
+                    </tr>
                     @empty
                     <tr>
                         <td colspan="8" class="px-6 py-12 text-center">

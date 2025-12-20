@@ -45,6 +45,15 @@ class WebhookController extends Controller
             $eventType = $payload['event_type'];
             $resourceId = $payload['resource']['id'] ?? null;
 
+            // Handle payout-related webhooks (they have different resource ID structures)
+            if (str_contains($eventType, 'PAYOUTS') || str_contains($eventType, 'PAYOUTS-ITEM')) {
+                Log::info("PayPal payout webhook received and logged", [
+                    'event_type' => $eventType,
+                    'batch_id' => $payload['resource']['batch_header']['payout_batch_id'] ?? null,
+                ]);
+                return response()->json(['success' => true, 'message' => 'Payout webhook logged']);
+            }
+
             if (!$resourceId) {
                 Log::warning('PayPal webhook missing resource ID', $payload);
                 return response()->json(['success' => false, 'error' => 'Missing resource ID'], 400);
