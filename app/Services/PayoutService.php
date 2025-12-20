@@ -121,6 +121,7 @@ class PayoutService
 
             $items = [];
             foreach ($payouts as $payout) {
+                $note = "You have received {$payout->percentage}% of \${$payout->net_amount} which amounts to \${$payout->payout_amount} from Order #{$payout->order_id}";
                 $items[] = [
                     'recipient_type' => 'EMAIL',
                     'amount' => [
@@ -128,7 +129,7 @@ class PayoutService
                         'currency' => $currency,
                     ],
                     'receiver' => $payout->paypal_email,
-                    'note' => "Revenue share payout for Order #{$payout->order_id}",
+                    'note' => $note,
                     'sender_item_id' => "payout_{$payout->id}",
                 ];
             }
