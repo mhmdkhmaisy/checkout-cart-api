@@ -459,9 +459,9 @@
                                 <span class="category-tag">{{ $product->category->name }}</span>
                             @endif
                             
-                            <img src="https://via.placeholder.com/56x56/d40000/e8e8e8?text={{ substr($product->product_name, 0, 1) }}" 
-                                 alt="{{ $product->product_name }}" 
-                                 class="product-image">
+                            <img src="{{ asset('assets/items/' . $product->item_id . '.png') }}" 
+                                alt="{{ $product->product_name }}" 
+                                class="product-image">
                             
                             <div class="product-name">{{ $product->product_name }}</div>
                             
@@ -482,9 +482,9 @@
                                     <div class="bundle-item-grid">
                                         @foreach($product->bundleItems as $item)
                                             <div class="bundle-item">
-                                                <img src="https://via.placeholder.com/24x24/d40000/e8e8e8?text=I" alt="Item">
+                                                <img src="{{ asset('assets/items/' . $item->item_id . '.png') }}" alt="Item">
                                                 <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">
-                                                    {{ $item->qty_unit }}x
+                                                    {{ $item->qty_unit }}x 
                                                 </div>
                                             </div>
                                         @endforeach
