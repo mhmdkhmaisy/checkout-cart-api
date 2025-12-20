@@ -120,14 +120,6 @@ class WebhookController extends Controller
                     $this->promotionManager->trackSpending($order->username, $order->amount);
                 }
 
-                // Process auto payouts to team members (only happens once due to idempotency check)
-                try {
-                    $this->payoutService->processPayoutsForOrder($order, array_merge($payload, ['capture' => $captureResult]));
-                    Log::info("Auto payout processed for order {$order->id}");
-                } catch (\Exception $e) {
-                    Log::error("Auto payout failed for order {$order->id}: " . $e->getMessage());
-                }
-
                 Log::info("Order {$order->id} marked as paid with capture ID: {$captureResult['capture_id']}");
             } else {
                 // Capture failed but order still approved
@@ -240,7 +232,7 @@ class WebhookController extends Controller
             return response()->json(['success' => true, 'message' => 'Order not found - logged for review']);
         }
 
-        // Prevent duplicate processing
+        // Prevent duplicate processing of order status, but still process payouts
         if ($order->status === 'paid') {
             Log::info("PayPal capture {$captureId} already processed for order {$order->id}");
 
@@ -251,6 +243,15 @@ class WebhookController extends Controller
                 'paid',
                 $payload
             );
+
+            // Still process payouts if not already done (idempotency check in PayoutService)
+            try {
+                $this->payoutService->processPayoutsForOrder($order, $payload);
+                Log::info("Auto payout processed for order {$order->id}");
+            } catch (\Exception $e) {
+                Log::error("Auto payout failed for order {$order->id}: " . $e->getMessage());
+            }
+
             return response()->json(['success' => true, 'message' => 'Order already marked as paid']);
         }
 
@@ -273,6 +274,14 @@ class WebhookController extends Controller
             // Track promotion progress
             if ($order->username) {
                 $this->promotionManager->trackSpending($order->username, $order->amount);
+            }
+
+            // Process auto payouts to team members (only happens once due to idempotency check)
+            try {
+                $this->payoutService->processPayoutsForOrder($order, $payload);
+                Log::info("Auto payout processed for order {$order->id}");
+            } catch (\Exception $e) {
+                Log::error("Auto payout failed for order {$order->id}: " . $e->getMessage());
             }
 
             Log::info("Order {$order->id} marked as paid with capture ID: {$captureId}");
