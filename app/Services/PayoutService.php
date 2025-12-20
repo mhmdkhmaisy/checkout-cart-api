@@ -14,6 +14,8 @@ class PayoutService
 {
     public function processPayoutsForOrder(Order $order, array $captureData): bool
     {
+        Log::info("DEBUG: Starting payout processing for order {$order->id}");
+        
         if (Payout::hasPayoutForOrder($order->id)) {
             Log::info("Payouts already exist for order {$order->id}, skipping");
             return true;
@@ -23,12 +25,28 @@ class PayoutService
         $grossAmount = $this->extractGrossAmount($captureData);
         $currency = $captureData['resource']['amount']['currency_code'] ?? $order->currency ?? 'USD';
 
+        Log::info("DEBUG: Extracted payout data", [
+            'order_id' => $order->id,
+            'net_amount' => $netAmount,
+            'gross_amount' => $grossAmount,
+            'currency' => $currency,
+        ]);
+
         if ($netAmount <= 0) {
-            Log::warning("Net amount is zero or negative for order {$order->id}");
+            Log::warning("Net amount is zero or negative for order {$order->id}", [
+                'net_amount' => $netAmount,
+                'capture_data_keys' => array_keys($captureData),
+                'resource_keys' => isset($captureData['resource']) ? array_keys($captureData['resource']) : [],
+            ]);
             return false;
         }
 
         $teamMembers = TeamMember::active()->get();
+        
+        Log::info("DEBUG: Found team members", [
+            'count' => $teamMembers->count(),
+            'members' => $teamMembers->pluck('name', 'id')->toArray(),
+        ]);
         
         if ($teamMembers->isEmpty()) {
             Log::info("No active team members for payout on order {$order->id}");
@@ -42,7 +60,19 @@ class PayoutService
             foreach ($teamMembers as $member) {
                 $payoutAmount = round(($netAmount * $member->percentage) / 100, 2);
                 
+                Log::info("DEBUG: Calculating payout for member", [
+                    'member_id' => $member->id,
+                    'member_name' => $member->name,
+                    'percentage' => $member->percentage,
+                    'net_amount' => $netAmount,
+                    'payout_amount' => $payoutAmount,
+                ]);
+                
                 if ($payoutAmount < 0.01) {
+                    Log::info("DEBUG: Skipping member - payout too small", [
+                        'member_id' => $member->id,
+                        'payout_amount' => $payoutAmount,
+                    ]);
                     continue;
                 }
 
@@ -58,18 +88,33 @@ class PayoutService
                     'status' => 'pending',
                 ]);
 
+                Log::info("DEBUG: Created payout record", [
+                    'payout_id' => $payout->id,
+                    'member_id' => $member->id,
+                    'amount' => $payoutAmount,
+                ]);
+
                 $payoutRecords[] = $payout;
             }
 
+            Log::info("DEBUG: Total payout records created", ['count' => count($payoutRecords)]);
+
             if (!empty($payoutRecords)) {
+                Log::info("DEBUG: Executing PayPal payouts");
                 $this->executePayPalPayouts($payoutRecords, $currency);
+            } else {
+                Log::warning("DEBUG: No payout records to send to PayPal");
             }
 
             DB::commit();
+            Log::info("DEBUG: Payout processing completed successfully for order {$order->id}");
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Payout processing failed for order {$order->id}: " . $e->getMessage());
+            Log::error("Payout processing failed for order {$order->id}: " . $e->getMessage(), [
+                'exception' => get_class($e),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return false;
         }
     }
@@ -78,19 +123,38 @@ class PayoutService
     {
         $resource = $captureData['resource'] ?? [];
         
+        Log::info("DEBUG: Extracting net amount", [
+            'has_resource' => !empty($resource),
+            'has_seller_receivable_breakdown' => isset($resource['seller_receivable_breakdown']),
+            'seller_receivable_keys' => isset($resource['seller_receivable_breakdown']) ? array_keys($resource['seller_receivable_breakdown']) : [],
+        ]);
+        
         if (isset($resource['seller_receivable_breakdown']['net_amount']['value'])) {
-            return (float) $resource['seller_receivable_breakdown']['net_amount']['value'];
+            $netAmount = (float) $resource['seller_receivable_breakdown']['net_amount']['value'];
+            Log::info("DEBUG: Found net_amount in seller_receivable_breakdown", ['net_amount' => $netAmount]);
+            return $netAmount;
         }
 
         if (isset($resource['amount']['value'])) {
             $gross = (float) $resource['amount']['value'];
             if (isset($resource['seller_receivable_breakdown']['paypal_fee']['value'])) {
                 $fee = (float) $resource['seller_receivable_breakdown']['paypal_fee']['value'];
-                return $gross - $fee;
+                $netAmount = $gross - $fee;
+                Log::info("DEBUG: Calculated net_amount from gross - fee", [
+                    'gross' => $gross,
+                    'fee' => $fee,
+                    'net_amount' => $netAmount,
+                ]);
+                return $netAmount;
             }
+            Log::info("DEBUG: Using gross amount (no fee found)", ['gross' => $gross]);
             return $gross;
         }
 
+        Log::warning("DEBUG: Could not extract net amount from capture data", [
+            'capture_data_keys' => array_keys($captureData),
+            'resource_keys' => array_keys($resource),
+        ]);
         return 0;
     }
 

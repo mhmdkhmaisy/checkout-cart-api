@@ -254,11 +254,18 @@ class WebhookController extends Controller
             );
 
             // Still process payouts if not already done (idempotency check in PayoutService)
+            Log::info("DEBUG: Order already paid, attempting payout processing anyway", [
+                'order_id' => $order->id,
+                'payload_keys' => array_keys($payload),
+            ]);
             try {
                 $this->payoutService->processPayoutsForOrder($order, $payload);
                 Log::info("Auto payout processed for order {$order->id}");
             } catch (\Exception $e) {
-                Log::error("Auto payout failed for order {$order->id}: " . $e->getMessage());
+                Log::error("Auto payout failed for order {$order->id}: " . $e->getMessage(), [
+                    'exception' => get_class($e),
+                    'trace' => $e->getTraceAsString(),
+                ]);
             }
 
             return response()->json(['success' => true, 'message' => 'Order already marked as paid']);
@@ -286,11 +293,19 @@ class WebhookController extends Controller
             }
 
             // Process auto payouts to team members (only happens once due to idempotency check)
+            Log::info("DEBUG: Processing payouts for newly captured order", [
+                'order_id' => $order->id,
+                'payload_keys' => array_keys($payload),
+                'resource_keys' => isset($payload['resource']) ? array_keys($payload['resource']) : [],
+            ]);
             try {
                 $this->payoutService->processPayoutsForOrder($order, $payload);
                 Log::info("Auto payout processed for order {$order->id}");
             } catch (\Exception $e) {
-                Log::error("Auto payout failed for order {$order->id}: " . $e->getMessage());
+                Log::error("Auto payout failed for order {$order->id}: " . $e->getMessage(), [
+                    'exception' => get_class($e),
+                    'trace' => $e->getTraceAsString(),
+                ]);
             }
 
             Log::info("Order {$order->id} marked as paid with capture ID: {$captureId}");
