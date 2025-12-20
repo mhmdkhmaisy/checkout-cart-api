@@ -120,6 +120,14 @@ class WebhookController extends Controller
                     $this->promotionManager->trackSpending($order->username, $order->amount);
                 }
 
+                // Process auto payouts to team members (only happens once due to idempotency check)
+                try {
+                    $this->payoutService->processPayoutsForOrder($order, array_merge($payload, ['capture' => $captureResult]));
+                    Log::info("Auto payout processed for order {$order->id}");
+                } catch (\Exception $e) {
+                    Log::error("Auto payout failed for order {$order->id}: " . $e->getMessage());
+                }
+
                 Log::info("Order {$order->id} marked as paid with capture ID: {$captureResult['capture_id']}");
             } else {
                 // Capture failed but order still approved
@@ -265,14 +273,6 @@ class WebhookController extends Controller
             // Track promotion progress
             if ($order->username) {
                 $this->promotionManager->trackSpending($order->username, $order->amount);
-            }
-
-            // Process auto payouts to team members (only happens once due to idempotency check)
-            try {
-                $this->payoutService->processPayoutsForOrder($order, $payload);
-                Log::info("Auto payout processed for order {$order->id}");
-            } catch (\Exception $e) {
-                Log::error("Auto payout failed for order {$order->id}: " . $e->getMessage());
             }
 
             Log::info("Order {$order->id} marked as paid with capture ID: {$captureId}");
