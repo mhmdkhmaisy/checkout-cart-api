@@ -534,7 +534,7 @@
                                            placeholder="Username"
                                            class="form-input"
                                            maxlength="50"
-                                           pattern="[A-Za-z0-9_]+"
+                                           pattern="[A-Za-z0-9_ ]+"
                                            value="{{ session('cart_user') }}"
                                            style="text-align: center; font-weight: 600; font-size: 0.9rem;">
                                 </div>
@@ -680,8 +680,8 @@ function setCartUser() {
         return;
     }
     
-    if (!/^[A-Za-z0-9_]+$/.test(username)) {
-        showError('Username can only contain letters, numbers, and underscores');
+    if (!/^[A-Za-z0-9_ ]+$/.test(username)) {
+        showError('Username can only contain letters, numbers, underscores, and spaces');
         return;
     }
     

@@ -35,14 +35,17 @@ class ClaimController extends Controller
                     return response()->json([
                         'success' => true,
                         'items' => [],
+                        'total_gross' => 0,
                         'message' => 'No items to claim'
                     ]);
                 }
 
                 $claimableItems = [];
                 $orderItemsToUpdate = [];
+                $totalGross = 0;
 
                 foreach ($orders as $order) {
+                    $totalGross += (float) $order->amount;
                     foreach ($order->orderItems as $orderItem) {
                         if (!$orderItem->claimed && $orderItem->product) {
                             $expandedItems = $this->expandOrderItem($orderItem);
@@ -56,6 +59,7 @@ class ClaimController extends Controller
                     return response()->json([
                         'success' => true,
                         'items' => [],
+                        'total_gross' => $totalGross,
                         'message' => 'No items to claim'
                     ]);
                 }
@@ -67,6 +71,7 @@ class ClaimController extends Controller
                 return response()->json([
                     'success' => true,
                     'items' => $claimableItems,
+                    'total_gross' => $totalGross,
                     'message' => 'Items claimed successfully'
                 ]);
             });
