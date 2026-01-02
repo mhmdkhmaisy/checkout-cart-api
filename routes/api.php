@@ -38,8 +38,10 @@ Route::get('/checkout/coinbase/success', [CheckoutController::class, 'coinbaseSu
 Route::get('/checkout/coinbase/cancel', [CheckoutController::class, 'coinbaseCancel']);
 
 // Claim routes
-Route::get('/claim/{username}', [ClaimController::class, 'claim']);
-Route::get('/claimVote/{playerName}', [ClaimController::class, 'claimVote']);
+Route::middleware('claim.auth')->group(function () {
+    Route::get('/claim/{username}', [ClaimController::class, 'claim']);
+    Route::get('/claimVote/{playerName}', [ClaimController::class, 'claimVote']);
+});
 
 // Product routes (for testing)
 Route::get('/products', [ProductController::class, 'index']);
