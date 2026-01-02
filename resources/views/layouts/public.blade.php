@@ -642,7 +642,7 @@
                 </div>
                 <div class="footer-section">
                     <h3>Community</h3>
-                    <a href="#" target="_blank"><i class="fab fa-discord"></i> Discord</a>
+                    <a href="{{ config('services.discord.invite_url', '#') }}" target="_blank"><i class="fab fa-discord"></i> Discord</a>
                     <a href="#" target="_blank"><i class="fab fa-youtube"></i> YouTube</a>
                     <a href="#" target="_blank"><i class="fab fa-twitter"></i> Twitter</a>
                 </div>
@@ -650,7 +650,7 @@
                     <h3>Support</h3>
                     <a href="#">Help Center</a>
                     <a href="#">Bug Reports</a>
-                    <a href="#">Contact Us</a>
+                    <a href="mailto:support@aragon-rsps.com">Contact Us</a>
                 </div>
             </div>
             <div class="footer-bottom">

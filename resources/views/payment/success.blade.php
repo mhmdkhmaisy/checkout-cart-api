@@ -138,13 +138,13 @@
 @section('content')
 <div class="max-w-4xl mx-auto fade-in-up">
     <!-- Success Header -->
-    <div class="success-header">
-        <div class="success-badge">
-            <i class="fas fa-check text-white" style="font-size: 2rem;"></i>
+        <div class="success-header">
+            <div class="success-badge">
+                <i class="fas fa-check text-white" style="font-size: 2rem;"></i>
+            </div>
+            <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem;">Order Successful!</h1>
+            <p class="text-muted" style="font-size: 1.125rem;">Thank you for choosing Aragon RSPS. Your order has been processed.</p>
         </div>
-        <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem;">Payment Successful!</h1>
-        <p class="text-muted" style="font-size: 1.125rem;">Thank you for your purchase. Your order has been processed.</p>
-    </div>
 
     @if($error)
         <!-- Error State -->
@@ -160,7 +160,7 @@
         <!-- Order Details Card -->
         <div class="glass-card mb-4">
             <h2 class="text-primary" style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem;">
-                <i class="fas fa-receipt mr-2"></i>Order Details
+                <i class="fas fa-receipt mr-2"></i>Receipt Details
             </h2>
             
             <div class="grid grid-2 mb-4">
@@ -301,10 +301,10 @@
             <h3 class="text-primary font-bold mb-2" style="font-size: 1.125rem;">Need Help?</h3>
             <p class="text-muted mb-3">If you have any questions about your order or need assistance claiming your items, please contact our support team.</p>
             <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
-                <a href="mailto:support@example.com" class="btn btn-dark">
+                <a href="mailto:support@aragon-rsps.com" class="btn btn-dark">
                     <i class="fas fa-envelope mr-2"></i>Email Support
                 </a>
-                <a href="#" class="btn btn-dark">
+                <a href="{{ config('services.discord.invite_url', '#') }}" target="_blank" class="btn btn-dark">
                     <i class="fab fa-discord mr-2"></i>Discord Support
                 </a>
             </div>

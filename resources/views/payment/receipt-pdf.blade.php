@@ -142,8 +142,8 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">🐉 {{ config('app.name', 'Aragon RSPS') }}</div>
-        <div class="receipt-title">Dragon's Payment Receipt</div>
+        <div class="logo">⚔️ {{ config('app.name', 'Aragon RSPS') }}</div>
+        <div class="receipt-title">Payment Receipt</div>
         <div>Generated on {{ now()->format('F j, Y g:i A') }}</div>
     </div>
 
@@ -155,7 +155,7 @@
                 #{{ $order->id }}
             </div>
             <div class="info-item">
-                <span class="info-label">Dragon Warrior:</span>
+                <span class="info-label">Character Name:</span>
                 {{ $order->username }}
             </div>
             <div class="info-item">
@@ -220,7 +220,7 @@
     <table class="items-table">
         <thead>
             <tr>
-                <th>Dragon's Treasure</th>
+                <th>Item Details</th>
                 <th>Quantity</th>
                 <th>Unit Price</th>
                 <th>Total</th>
@@ -257,16 +257,16 @@
     </table>
 
     <div class="instructions">
-        <div class="instructions-title">🎮 How to Claim Your Dragon's Treasure</div>
+        <div class="instructions-title">🎮 How to Claim Your Items</div>
         <p><strong>1.</strong> Login to the game using the username: <strong>{{ $order->username }}</strong></p>
         <p><strong>2.</strong> Type the command: <span class="command-code">::claim</span></p>
-        <p><strong>3.</strong> Your items will be automatically added to your dragon warrior's inventory!</p>
+        <p><strong>3.</strong> Your items will be automatically added to your inventory!</p>
     </div>
 
     <div class="footer">
-        <p><strong>🐉 {{ config('app.name', 'Aragon RSPS') }} - Dragon's Hoard</strong></p>
-        <p>Thank you for your purchase! If you need assistance, please contact our dragon support team.</p>
-        <p>Email: support@example.com | Discord: discord.gg/example</p>
+        <p><strong>⚔️ {{ config('app.name', 'Aragon RSPS') }}</strong></p>
+        <p>Thank you for your purchase! If you need assistance, please contact our support team.</p>
+        <p>Email: support@aragon-rsps.com | Discord: {{ config('services.discord.invite_url', 'discord.gg/aragon') }}</p>
         <p>This receipt was generated automatically on {{ now()->format('F j, Y \\a\\t g:i A T') }}</p>
     </div>
 </body>

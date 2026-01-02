@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', 'Dragon\'s Store - Aragon RSPS')
+@section('title', 'Aragon\'s Store - Aragon RSPS')
 @section('description', 'Browse and purchase items for Aragon RSPS')
 
 @section('content')
