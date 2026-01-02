@@ -15,7 +15,7 @@ class SecureClaimMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $serverKey = env('RSPS_SERVER_KEY');
+        $serverKey = config('app.rsps_server_key') ?: env('RSPS_SERVER_KEY');
         
         if (!$serverKey) {
             return response()->json([
