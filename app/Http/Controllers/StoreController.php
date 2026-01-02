@@ -54,7 +54,7 @@ class StoreController extends Controller
     public function setUser(Request $request): JsonResponse
     {
         $request->validate([
-            'username' => 'required|string|max:50|regex:/^[A-Za-z0-9_]+$/'
+            'username' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9_ ]+$/']
         ]);
 
         $username = $request->input('username');
