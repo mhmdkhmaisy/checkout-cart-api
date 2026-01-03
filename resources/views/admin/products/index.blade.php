@@ -148,10 +148,13 @@
                         <th class="px-6 py-4 text-left font-semibold text-dragon-red">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="products-table-body" class="divide-y divide-dragon-border">
+                <tbody id="products-table-body" class="divide-y divide-dragon-border sortable-body">
                     @forelse($products as $product)
-                        <tr class="hover:bg-dragon-surface transition-colors" data-product-id="{{ $product->id }}">
-                            <td class="px-6 py-4 text-dragon-silver">{{ $product->id }}</td>
+                        <tr class="hover:bg-dragon-surface transition-colors cursor-move" data-product-id="{{ $product->id }}">
+                            <td class="px-6 py-4 text-dragon-silver">
+                                <i class="fas fa-grip-vertical text-dragon-border mr-2"></i>
+                                {{ $product->id }}
+                            </td>
                             <td class="px-6 py-4 font-medium text-dragon-silver">{{ $product->product_name }}</td>
                             <td class="px-6 py-4 text-dragon-silver">
                                 {{ $product->category ? $product->category->name : '-' }}
@@ -513,6 +516,45 @@ document.getElementById('product-form').addEventListener('submit', function(e) {
 document.getElementById('product-modal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeModal();
+    }
+});
+
+// Initialize Sortable
+document.addEventListener('DOMContentLoaded', function() {
+    const el = document.getElementById('products-table-body');
+    if (el) {
+        Sortable.create(el, {
+            animation: 150,
+            handle: '.cursor-move',
+            onEnd: function() {
+                const order = Array.from(el.querySelectorAll('tr')).map(tr => tr.dataset.productId);
+                
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                
+                fetch('{{ route("admin.products.update-order") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ order: order })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('Order updated');
+                    } else {
+                        showMessage('Failed to update order', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('Error updating order', 'error');
+                });
+            }
+        });
     }
 });
 </script>

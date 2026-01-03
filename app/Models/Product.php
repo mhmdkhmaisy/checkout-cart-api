@@ -15,7 +15,8 @@ class Product extends Model
         'item_id',
         'qty_unit',
         'price',
-        'is_active'
+        'is_active',
+        'sort_order'
     ];
 
     protected $casts = [

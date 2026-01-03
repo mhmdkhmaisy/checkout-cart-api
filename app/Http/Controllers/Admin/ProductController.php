@@ -14,9 +14,23 @@ class ProductController extends Controller
 {
     public function index(): View
     {
-        $products = Product::with('category', 'bundleItems')->orderBy('product_name')->paginate(20);
+        $products = Product::with('category', 'bundleItems')->orderBy('sort_order')->orderBy('product_name')->paginate(50);
         $categories = Category::orderBy('name')->get();
         return view('admin.products.index', compact('products', 'categories'));
+    }
+
+    public function updateOrder(Request $request): JsonResponse
+    {
+        $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'exists:products,id'
+        ]);
+
+        foreach ($request->order as $index => $id) {
+            Product::where('id', $id)->update(['sort_order' => $index]);
+        }
+
+        return response()->json(['success' => true]);
     }
 
     public function create(): View
@@ -147,7 +161,8 @@ class ProductController extends Controller
                 'item_id' => 'required|integer',
                 'qty_unit' => 'required|integer|min:1',
                 'price' => 'required|numeric|min:0.01',
-                'is_active' => 'boolean'
+                'is_active' => 'boolean',
+                'sort_order' => 'nullable|integer'
             ]);
 
             $data = $validated;

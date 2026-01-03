@@ -84,7 +84,15 @@
         .sidebar-section-arrow.rotated {
             transform: rotate(180deg);
         }
+        .cursor-move {
+            cursor: move;
+        }
+        .sortable-ghost {
+            opacity: 0.4;
+            background: rgba(212, 0, 0, 0.1) !important;
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body class="bg-dragon-black text-dragon-silver min-h-screen">
     <div class="flex">

@@ -22,6 +22,7 @@ class StoreController extends Controller
     {
         $query = Product::with(['category', 'bundleItems'])
             ->active()
+            ->orderBy('sort_order')
             ->orderBy('product_name');
 
         if ($request->has('category') && $request->category !== 'all') {

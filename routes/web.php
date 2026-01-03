@@ -34,6 +34,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->midd
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'owner'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     
+    Route::post('products/update-order', [ProductController::class, 'updateOrder'])->name('products.update-order');
     Route::resource('products', ProductController::class);
     Route::resource('categories', CategoryController::class)->except(['show', 'create']);
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
