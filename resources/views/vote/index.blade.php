@@ -190,7 +190,7 @@ function setUsername() {
         return;
     }
     
-    if (username.length < 3 || username.length > 15) {
+    if (username.length < 1 || username.length > 15) {
         showError('Username must be between 3 and 15 characters');
         return;
     }
