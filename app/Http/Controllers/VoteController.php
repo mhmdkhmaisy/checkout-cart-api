@@ -35,7 +35,7 @@ class VoteController extends Controller
     public function setUsername(Request $request)
     {
         $request->validate([
-            'username' => 'required|string|min:3|max:15|regex:/^[A-Za-z0-9_ ]+$/'
+            'username' => 'required|string|min:1|max:50|regex:/^[A-Za-z0-9_ ]+$/'
         ]);
 
         $username = $request->username;
@@ -52,7 +52,7 @@ class VoteController extends Controller
     public function vote(Request $request, VoteSite $site)
     {
         $request->validate([
-            'username' => 'required|string|min:1|max:15|regex:/^[A-Za-z0-9_ ]+$/'
+            'username' => 'required|string|min:1|max:50|regex:/^[A-Za-z0-9_ ]+$/'
         ]);
 
         $username = $request->username;
