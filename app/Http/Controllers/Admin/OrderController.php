@@ -93,7 +93,7 @@ class OrderController extends Controller
                 'product_id' => $product->id,
                 'product_name' => $product->product_name,
                 'price' => $product->price,
-                'quantity' => $item['quantity'],
+                'qty_units' => $product->qty_unit,
                 'total_qty' => $product->qty_unit * $item['quantity'],
                 'claimed' => false,
             ]);

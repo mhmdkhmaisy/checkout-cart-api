@@ -37,18 +37,18 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                         <label class="block text-sm font-medium text-crimson-primary mb-2">Character Username</label>
-                        <input type="text" name="username" required class="w-full px-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all placeholder:text-metallic-gray/50" placeholder="e.g. AragonPlayer">
+                        <input type="text" name="username" required class="w-full px-4 py-2.5 bg-dragon-surface border border-dragon rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all placeholder:text-metallic-gray/50" placeholder="e.g. AragonPlayer">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-crimson-primary mb-2">Total Amount ($)</label>
                         <div class="relative">
                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-metallic-gray">$</span>
-                            <input type="number" name="amount" step="0.01" required class="w-full pl-8 pr-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all" value="0.00">
+                            <input type="number" name="amount" step="0.01" required class="w-full pl-8 pr-4 py-2.5 bg-dragon-surface border border-dragon rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all" value="0.00">
                         </div>
                     </div>
-                    <div>
+                    <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-crimson-primary mb-2">Payment Method</label>
-                        <select name="payment_method" class="w-full px-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all">
+                        <select name="payment_method" class="w-full px-4 py-2.5 bg-dragon-surface border border-dragon rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all">
                             <option value="paypal">PayPal (Simulated)</option>
                             <option value="manual">Manual/Cash</option>
                             <option value="crypto">Crypto</option>
@@ -62,13 +62,13 @@
                         <span class="text-[10px] uppercase tracking-wider text-metallic-gray font-bold">Multiple items allowed</span>
                     </label>
                     <div id="product-container" class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                        <div class="product-row flex gap-3 p-3 bg-dragon-darker/50 rounded-xl border border-dragon/20 group hover:border-crimson-primary/30 transition-all">
+                        <div class="product-row flex gap-3 p-3 bg-dragon-surface rounded-xl border border-dragon group hover:border-crimson-primary/30 transition-all">
                             <select name="products[0][id]" class="flex-1 bg-transparent border-none text-metallic-silver outline-none cursor-pointer">
                                 @foreach(\App\Models\Product::active()->orderBy('product_name')->get() as $product)
                                     <option value="{{ $product->id }}">{{ $product->product_name }} - ${{ number_format($product->price, 2) }}</option>
                                 @endforeach
                             </select>
-                            <div class="w-24 flex items-center bg-dragon-darker rounded-lg px-2 border border-dragon/30">
+                            <div class="w-24 flex items-center bg-dragon-darker rounded-lg px-2 border border-dragon">
                                 <span class="text-[10px] text-metallic-gray uppercase font-bold mr-2">Qty</span>
                                 <input type="number" name="products[0][quantity]" value="1" min="1" class="w-full bg-transparent border-none text-metallic-silver text-center outline-none">
                             </div>
@@ -109,7 +109,7 @@
         function addProductRow() {
             const container = document.getElementById('product-container');
             const row = document.createElement('div');
-            row.className = 'product-row flex gap-3 p-3 bg-dragon-darker/50 rounded-xl border border-dragon/20 group hover:border-crimson-primary/30 transition-all animate-in slide-in-from-top-2 duration-200';
+            row.className = 'product-row flex gap-3 p-3 bg-dragon-surface rounded-xl border border-dragon group hover:border-crimson-primary/30 transition-all animate-in slide-in-from-top-2 duration-200';
             
             let options = '';
             productList.forEach(p => {
@@ -120,7 +120,7 @@
                 <select name="products[${productCount}][id]" class="flex-1 bg-transparent border-none text-metallic-silver outline-none cursor-pointer">
                     ${options}
                 </select>
-                <div class="w-24 flex items-center bg-dragon-darker rounded-lg px-2 border border-dragon/30">
+                <div class="w-24 flex items-center bg-dragon-darker rounded-lg px-2 border border-dragon">
                     <span class="text-[10px] text-metallic-gray uppercase font-bold mr-2">Qty</span>
                     <input type="number" name="products[${productCount}][quantity]" value="1" min="1" class="w-full bg-transparent border-none text-metallic-silver text-center outline-none">
                 </div>
