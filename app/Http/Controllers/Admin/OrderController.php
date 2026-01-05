@@ -66,4 +66,39 @@ class OrderController extends Controller
         $order->load('orderItems.product');
         return view('admin.orders.show', compact('order'));
     }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'username' => 'required|string|max:50',
+            'amount' => 'required|numeric|min:0',
+            'payment_method' => 'required|string',
+            'products' => 'required|array',
+            'products.*.id' => 'required|exists:products,id',
+            'products.*.quantity' => 'required|integer|min:1',
+        ]);
+
+        $order = Order::create([
+            'username' => $request->username,
+            'amount' => $request->amount,
+            'payment_method' => $request->payment_method,
+            'status' => 'paid',
+            'currency' => 'USD',
+            'payment_id' => 'MANUAL-' . strtoupper(bin2hex(random_bytes(4))),
+        ]);
+
+        foreach ($request->products as $item) {
+            $product = \App\Models\Product::find($item['id']);
+            $order->items()->create([
+                'product_id' => $product->id,
+                'product_name' => $product->product_name,
+                'price' => $product->price,
+                'quantity' => $item['quantity'],
+                'total_qty' => $product->qty_unit * $item['quantity'],
+                'claimed' => false,
+            ]);
+        }
+
+        return redirect()->route('admin.orders.index')->with('success', 'Order created successfully.');
+    }
 }
