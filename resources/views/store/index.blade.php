@@ -591,8 +591,8 @@
                                         <i class="fab fa-paypal"></i> CHECKOUT WITH PAYPAL
                                     </button>
                                     
-                                    <button onclick="checkout('coinbase')" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem; padding: 0.7rem; font-size: 0.8rem; background: #0052ff; box-shadow: none;" id="coinbase-checkout-btn" disabled>
-                                        <i class="fab fa-bitcoin"></i> CHECKOUT WITH COINBASE
+                                    <button onclick="openCryptoModal()" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem; padding: 0.7rem; font-size: 0.8rem; background: #262626; border-color: var(--border-color); color: var(--text-muted); box-shadow: none;" id="coinbase-checkout-btn">
+                                        <i class="fab fa-bitcoin"></i> CHECKOUT WITH CRYPTO
                                     </button>
                                     
                                     <button onclick="showClearBasketModal()" class="btn btn-secondary" style="width: 100%; padding: 0.6rem; font-size: 0.75rem;">
@@ -632,6 +632,40 @@
     </div>
 </div>
 
+<!-- Crypto Ticket Modal -->
+<div id="cryptoModal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 10001; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div style="background: rgba(10, 10, 10, 0.98); border: 1px solid var(--primary-color); border-radius: 12px; width: 100%; max-width: 450px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: modalIn 0.3s ease-out;">
+        <div style="background: rgba(212, 0, 0, 0.1); padding: 1.5rem; border-bottom: 1px solid rgba(212, 0, 0, 0.2); text-align: center;">
+            <div style="width: 60px; height: 60px; background: rgba(212, 0, 0, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; border: 1px solid var(--primary-color);">
+                <i class="fab fa-bitcoin" style="font-size: 2rem; color: var(--primary-color);"></i>
+            </div>
+            <h3 style="color: var(--text-light); font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem; text-transform: uppercase;">Crypto Payments</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;">Automatic crypto checkout is temporarily disabled.</p>
+        </div>
+        
+        <div style="padding: 1.5rem; text-align: center;">
+            <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.6;">
+                To pay with Bitcoin, Ethereum, or other cryptocurrencies, please <span style="color: var(--primary-color); font-weight: 700;">open a support ticket</span> on our Discord server.
+            </p>
+            
+            <a href="{{ config('services.discord.invite_url') }}" target="_blank" class="btn btn-primary" style="display: block; width: 100%; padding: 1rem; font-weight: 800; margin-bottom: 1rem; text-decoration: none;">
+                <i class="fab fa-discord"></i> JOIN OUR DISCORD
+            </a>
+            
+            <button onclick="closeCryptoModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+                Maybe Later
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+</style>
+
 @push('scripts')
 <script>
 let currentView = 'grid';
@@ -669,6 +703,18 @@ function showClearBasketModal() {
         clearCartItems,
         'Clear Basket'
     );
+}
+
+function openCryptoModal() {
+    const modal = document.getElementById('cryptoModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeCryptoModal() {
+    const modal = document.getElementById('cryptoModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
 }
 
 // Set Cart User
