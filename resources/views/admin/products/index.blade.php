@@ -20,127 +20,120 @@
     <div id="message-container"></div>
 
     <!-- Create/Edit Form Modal -->
-    <div id="product-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-dragon-surface rounded-2xl shadow-2xl p-6 w-full max-w-2xl border border-dragon/30 animate-in fade-in zoom-in duration-200">
-                <div class="flex justify-between items-center mb-6 border-b border-dragon/30 pb-4">
-                    <h3 id="modal-title" class="text-2xl font-bold text-crimson-primary flex items-center gap-2">
-                        <i class="fas fa-box-open text-lg"></i>
-                        Add New Product
-                    </h3>
-                    <button onclick="closeModal()" class="text-metallic-gray hover:text-white transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+    <div id="product-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+        <div class="glass-effect rounded-2xl w-full max-w-2xl border border-dragon shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 my-8">
+            <div class="bg-dragon-surface px-6 py-4 border-b border-dragon flex justify-between items-center text-white">
+                <h3 id="modal-title" class="text-xl font-bold text-crimson-primary flex items-center gap-2 uppercase tracking-wider">
+                    <i class="fas fa-box-open text-sm"></i>
+                    Add New Product
+                </h3>
+                <button onclick="closeModal()" class="text-metallic-gray hover:text-white transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <form id="product-form" class="p-6">
+                @csrf
+                <input type="hidden" id="product-id" name="product_id">
+                <input type="hidden" id="form-method" name="_method" value="POST">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="product_name" class="block text-[11px] font-bold text-crimson-primary mb-2 uppercase tracking-widest">Product Name</label>
+                        <input type="text" 
+                               id="product_name" 
+                               name="product_name" 
+                               class="w-full px-4 py-2.5 bg-dragon-surface border border-dragon rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all placeholder:text-metallic-gray/30"
+                               placeholder="e.g. 100x Dragon Bones"
+                               required>
+                        <div id="product_name_error" class="text-red-400 text-[10px] mt-1 hidden font-bold uppercase"></div>
+                    </div>
+
+                    <div>
+                        <label for="category_id" class="block text-[11px] font-bold text-crimson-primary mb-2 uppercase tracking-widest">Category</label>
+                        <select id="category_id" 
+                                name="category_id"
+                                class="w-full px-4 py-2.5 bg-dragon-surface border border-dragon rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all cursor-pointer">
+                            <option value="">No Category</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                        <div id="category_id_error" class="text-red-400 text-[10px] mt-1 hidden font-bold uppercase"></div>
+                    </div>
+
+                    <div>
+                        <label for="item_id" class="block text-[11px] font-bold text-crimson-primary mb-2 uppercase tracking-widest">Item ID</label>
+                        <input type="number" 
+                               id="item_id" 
+                               name="item_id" 
+                               class="w-full px-4 py-2.5 bg-dragon-surface border border-dragon rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all"
+                               placeholder="OSRS Item ID"
+                               required>
+                        <div id="item_id_error" class="text-red-400 text-[10px] mt-1 hidden font-bold uppercase"></div>
+                    </div>
+
+                    <div>
+                        <label for="qty_unit" class="block text-[11px] font-bold text-crimson-primary mb-2 uppercase tracking-widest">Quantity Unit</label>
+                        <input type="number" 
+                               id="qty_unit" 
+                               name="qty_unit" 
+                               min="1"
+                               class="w-full px-4 py-2.5 bg-dragon-surface border border-dragon rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all"
+                               required>
+                        <div id="qty_unit_error" class="text-red-400 text-[10px] mt-1 hidden font-bold uppercase"></div>
+                    </div>
+
+                    <div>
+                        <label for="price" class="block text-[11px] font-bold text-crimson-primary mb-2 uppercase tracking-widest">Price ($)</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-metallic-gray font-bold">$</span>
+                            <input type="number" 
+                                   id="price" 
+                                   name="price" 
+                                   step="0.01" 
+                                   min="0.01"
+                                   class="w-full pl-8 pr-4 py-2.5 bg-dragon-surface border border-dragon rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all"
+                                   required>
+                        </div>
+                        <div id="price_error" class="text-red-400 text-[10px] mt-1 hidden font-bold uppercase"></div>
+                    </div>
+
+                    <div class="flex items-center pt-8">
+                        <label class="flex items-center cursor-pointer group">
+                            <input type="checkbox" 
+                                   id="is_active" 
+                                   name="is_active" 
+                                   value="1"
+                                   checked
+                                   class="w-5 h-5 text-crimson-primary bg-dragon-surface border-dragon rounded focus:ring-crimson-primary focus:ring-offset-dragon-surface transition-all">
+                            <span class="ml-3 text-[11px] font-bold text-metallic-silver group-hover:text-crimson-primary transition-colors uppercase tracking-widest">Product is active</span>
+                        </label>
+                    </div>
                 </div>
 
-                <form id="product-form" class="space-y-6">
-                    @csrf
-                    <input type="hidden" id="product-id" name="product_id">
-                    <input type="hidden" id="form-method" name="_method" value="POST">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="product_name" class="block text-sm font-semibold text-crimson-primary mb-2 uppercase tracking-wider">Product Name</label>
-                            <input type="text" 
-                                   id="product_name" 
-                                   name="product_name" 
-                                   class="w-full px-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all placeholder:text-metallic-gray/30"
-                                   placeholder="e.g. 100x Dragon Bones"
-                                   required>
-                            <div id="product_name_error" class="text-red-400 text-xs mt-1 hidden font-medium"></div>
-                        </div>
-
-                        <div>
-                            <label for="category_id" class="block text-sm font-semibold text-crimson-primary mb-2 uppercase tracking-wider">Category</label>
-                            <select id="category_id" 
-                                    name="category_id"
-                                    class="w-full px-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all cursor-pointer">
-                                <option value="">No Category</option>
-                                @foreach($categories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                @endforeach
-                            </select>
-                            <div id="category_id_error" class="text-red-400 text-xs mt-1 hidden font-medium"></div>
-                        </div>
-
-                        <div>
-                            <label for="item_id" class="block text-sm font-semibold text-crimson-primary mb-2 uppercase tracking-wider">Item ID</label>
-                            <input type="number" 
-                                   id="item_id" 
-                                   name="item_id" 
-                                   class="w-full px-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all"
-                                   placeholder="OSRS Item ID"
-                                   required>
-                            <div id="item_id_error" class="text-red-400 text-xs mt-1 hidden font-medium"></div>
-                        </div>
-
-                        <div>
-                            <label for="qty_unit" class="block text-sm font-semibold text-crimson-primary mb-2 uppercase tracking-wider">Quantity Unit</label>
-                            <input type="number" 
-                                   id="qty_unit" 
-                                   name="qty_unit" 
-                                   min="1"
-                                   class="w-full px-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all"
-                                   required>
-                            <div id="qty_unit_error" class="text-red-400 text-xs mt-1 hidden font-medium"></div>
-                        </div>
-
-                        <div>
-                            <label for="price" class="block text-sm font-semibold text-crimson-primary mb-2 uppercase tracking-wider">Price ($)</label>
-                            <div class="relative">
-                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-metallic-gray">$</span>
-                                <input type="number" 
-                                       id="price" 
-                                       name="price" 
-                                       step="0.01" 
-                                       min="0.01"
-                                       class="w-full pl-8 pr-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all"
-                                       required>
-                            </div>
-                            <div id="price_error" class="text-red-400 text-xs mt-1 hidden font-medium"></div>
-                        </div>
-
-                        <div class="flex items-end pb-2">
-                            <label class="flex items-center cursor-pointer group">
-                                <input type="checkbox" 
-                                       id="is_active" 
-                                       name="is_active" 
-                                       value="1"
-                                       checked
-                                       class="w-5 h-5 text-crimson-primary bg-dragon-darker border-dragon/50 rounded focus:ring-crimson-primary focus:ring-offset-dragon-surface transition-all cursor-pointer">
-                                <span class="ml-3 text-sm font-semibold text-metallic-silver group-hover:text-crimson-primary transition-colors">Product is active</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="bg-dragon-darker/30 rounded-2xl p-5 border border-dragon/30">
-                        <div class="flex justify-between items-center mb-4">
-                            <h4 class="text-sm font-bold text-crimson-primary uppercase tracking-widest flex items-center gap-2">
-                                <i class="fas fa-layer-group text-xs"></i>
-                                Bundle Items (Optional)
-                            </h4>
-                            <button type="button" onclick="addBundleItem()" 
-                                    class="text-xs px-4 py-1.5 gradient-crimson text-white rounded-full font-bold hover:scale-105 transition-transform shadow-lg shadow-crimson-900/20">
-                                <i class="fas fa-plus mr-1"></i> Add Item
-                            </button>
-                        </div>
-                        <p class="text-[11px] text-metallic-gray mb-4 font-medium italic">Create a pack by adding multiple items. Leave empty for a standard single product.</p>
-                        <div id="bundle-items-container" class="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end gap-3 pt-4 border-t border-dragon/30">
-                        <button type="button" onclick="closeModal()" 
-                                class="px-6 py-2.5 bg-dragon-surface border border-dragon/50 text-metallic-silver rounded-xl font-bold hover:bg-dragon-darker transition-all">
-                            Cancel
+                <div class="mb-6">
+                    <label class="block text-[11px] font-bold text-crimson-primary mb-4 flex items-center justify-between uppercase tracking-widest">
+                        <span>Bundle Items (Optional)</span>
+                        <button type="button" onclick="addBundleItem()" 
+                                class="text-[10px] px-4 py-1.5 gradient-crimson text-white rounded-lg font-bold hover:scale-105 transition-transform shadow-lg shadow-crimson-900/20 uppercase">
+                            <i class="fas fa-plus mr-1"></i> Add Item
                         </button>
-                        <button type="submit" 
-                                class="px-8 py-2.5 gradient-crimson text-white rounded-xl font-bold shadow-lg shadow-crimson-900/20 hover:scale-[1.02] active:scale-95 transition-all">
-                            <span id="submit-text">Create Product</span>
-                        </button>
+                    </label>
+                    <div id="bundle-items-container" class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                     </div>
-                </form>
-            </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-6 border-t border-dragon/30 mt-6">
+                    <button type="button" onclick="closeModal()" 
+                            class="px-6 py-2.5 rounded-xl border border-dragon text-metallic-silver hover:bg-dragon-surface transition-all font-bold uppercase text-xs tracking-widest">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-8 py-2.5 rounded-xl gradient-crimson font-bold shadow-lg shadow-crimson-900/20 hover:scale-[1.02] active:scale-95 transition-all text-white uppercase tracking-widest text-xs">
+                        <span id="submit-text">Create Product</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
