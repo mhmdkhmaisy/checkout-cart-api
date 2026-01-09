@@ -20,109 +20,122 @@
     <div id="message-container"></div>
 
     <!-- Create/Edit Form Modal -->
-    <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div id="product-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-dragon-surface rounded-lg shadow-lg p-6 w-full max-w-md border border-dragon-border">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 id="modal-title" class="text-xl font-bold text-dragon-silver">Add New Product</h3>
-                    <button onclick="closeModal()" class="text-dragon-silver-dark hover:text-dragon-silver">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
+            <div class="bg-dragon-surface rounded-2xl shadow-2xl p-6 w-full max-w-2xl border border-dragon/30 animate-in fade-in zoom-in duration-200">
+                <div class="flex justify-between items-center mb-6 border-b border-dragon/30 pb-4">
+                    <h3 id="modal-title" class="text-2xl font-bold text-crimson-primary flex items-center gap-2">
+                        <i class="fas fa-box-open text-lg"></i>
+                        Add New Product
+                    </h3>
+                    <button onclick="closeModal()" class="text-metallic-gray hover:text-white transition-colors">
+                        <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
 
-                <form id="product-form" class="space-y-4">
+                <form id="product-form" class="space-y-6">
                     @csrf
                     <input type="hidden" id="product-id" name="product_id">
                     <input type="hidden" id="form-method" name="_method" value="POST">
                     
-                    <div>
-                        <label for="product_name" class="block text-sm font-medium text-dragon-red mb-2">Product Name</label>
-                        <input type="text" 
-                               id="product_name" 
-                               name="product_name" 
-                               class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
-                               required>
-                        <div id="product_name_error" class="text-red-400 text-sm mt-1 hidden"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="product_name" class="block text-sm font-semibold text-crimson-primary mb-2 uppercase tracking-wider">Product Name</label>
+                            <input type="text" 
+                                   id="product_name" 
+                                   name="product_name" 
+                                   class="w-full px-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all placeholder:text-metallic-gray/30"
+                                   placeholder="e.g. 100x Dragon Bones"
+                                   required>
+                            <div id="product_name_error" class="text-red-400 text-xs mt-1 hidden font-medium"></div>
+                        </div>
+
+                        <div>
+                            <label for="category_id" class="block text-sm font-semibold text-crimson-primary mb-2 uppercase tracking-wider">Category</label>
+                            <select id="category_id" 
+                                    name="category_id"
+                                    class="w-full px-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all cursor-pointer">
+                                <option value="">No Category</option>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                            <div id="category_id_error" class="text-red-400 text-xs mt-1 hidden font-medium"></div>
+                        </div>
+
+                        <div>
+                            <label for="item_id" class="block text-sm font-semibold text-crimson-primary mb-2 uppercase tracking-wider">Item ID</label>
+                            <input type="number" 
+                                   id="item_id" 
+                                   name="item_id" 
+                                   class="w-full px-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all"
+                                   placeholder="OSRS Item ID"
+                                   required>
+                            <div id="item_id_error" class="text-red-400 text-xs mt-1 hidden font-medium"></div>
+                        </div>
+
+                        <div>
+                            <label for="qty_unit" class="block text-sm font-semibold text-crimson-primary mb-2 uppercase tracking-wider">Quantity Unit</label>
+                            <input type="number" 
+                                   id="qty_unit" 
+                                   name="qty_unit" 
+                                   min="1"
+                                   class="w-full px-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all"
+                                   required>
+                            <div id="qty_unit_error" class="text-red-400 text-xs mt-1 hidden font-medium"></div>
+                        </div>
+
+                        <div>
+                            <label for="price" class="block text-sm font-semibold text-crimson-primary mb-2 uppercase tracking-wider">Price ($)</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-metallic-gray">$</span>
+                                <input type="number" 
+                                       id="price" 
+                                       name="price" 
+                                       step="0.01" 
+                                       min="0.01"
+                                       class="w-full pl-8 pr-4 py-2.5 bg-dragon-darker border border-dragon/50 rounded-xl text-metallic-silver focus:border-crimson-primary focus:ring-1 focus:ring-crimson-primary outline-none transition-all"
+                                       required>
+                            </div>
+                            <div id="price_error" class="text-red-400 text-xs mt-1 hidden font-medium"></div>
+                        </div>
+
+                        <div class="flex items-end pb-2">
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" 
+                                       id="is_active" 
+                                       name="is_active" 
+                                       value="1"
+                                       checked
+                                       class="w-5 h-5 text-crimson-primary bg-dragon-darker border-dragon/50 rounded focus:ring-crimson-primary focus:ring-offset-dragon-surface transition-all cursor-pointer">
+                                <span class="ml-3 text-sm font-semibold text-metallic-silver group-hover:text-crimson-primary transition-colors">Product is active</span>
+                            </label>
+                        </div>
                     </div>
 
-                    <div>
-                        <label for="category_id" class="block text-sm font-medium text-dragon-red mb-2">Category</label>
-                        <select id="category_id" 
-                                name="category_id"
-                                class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent">
-                            <option value="">No Category</option>
-                            @foreach($categories as $category)
-                                <option value="{{ $category->id }}">{{ $category->name }}</option>
-                            @endforeach
-                        </select>
-                        <div id="category_id_error" class="text-red-400 text-sm mt-1 hidden"></div>
-                    </div>
-
-                    <div>
-                        <label for="item_id" class="block text-sm font-medium text-dragon-red mb-2">Item ID</label>
-                        <input type="number" 
-                               id="item_id" 
-                               name="item_id" 
-                               class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
-                               required>
-                        <div id="item_id_error" class="text-red-400 text-sm mt-1 hidden"></div>
-                    </div>
-
-                    <div>
-                        <label for="qty_unit" class="block text-sm font-medium text-dragon-red mb-2">Quantity Unit</label>
-                        <input type="number" 
-                               id="qty_unit" 
-                               name="qty_unit" 
-                               min="1"
-                               class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
-                               required>
-                        <div id="qty_unit_error" class="text-red-400 text-sm mt-1 hidden"></div>
-                    </div>
-
-                    <div>
-                        <label for="price" class="block text-sm font-medium text-dragon-red mb-2">Price ($)</label>
-                        <input type="number" 
-                               id="price" 
-                               name="price" 
-                               step="0.01" 
-                               min="0.01"
-                               class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
-                               required>
-                        <div id="price_error" class="text-red-400 text-sm mt-1 hidden"></div>
-                    </div>
-
-                    <div class="border-t border-dragon-border pt-4">
-                        <div class="flex justify-between items-center mb-3">
-                            <label class="block text-sm font-medium text-dragon-red">Bundle Items (Optional)</label>
+                    <div class="bg-dragon-darker/30 rounded-2xl p-5 border border-dragon/30">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-sm font-bold text-crimson-primary uppercase tracking-widest flex items-center gap-2">
+                                <i class="fas fa-layer-group text-xs"></i>
+                                Bundle Items (Optional)
+                            </h4>
                             <button type="button" onclick="addBundleItem()" 
-                                    class="text-sm px-3 py-1 bg-dragon-red text-white rounded hover:opacity-90">
-                                + Add Item
+                                    class="text-xs px-4 py-1.5 gradient-crimson text-white rounded-full font-bold hover:scale-105 transition-transform shadow-lg shadow-crimson-900/20">
+                                <i class="fas fa-plus mr-1"></i> Add Item
                             </button>
                         </div>
-                        <p class="text-xs text-dragon-silver-dark mb-2">Add items to create a bundle/pack. Leave empty for single product.</p>
-                        <div id="bundle-items-container" class="space-y-2">
+                        <p class="text-[11px] text-metallic-gray mb-4 font-medium italic">Create a pack by adding multiple items. Leave empty for a standard single product.</p>
+                        <div id="bundle-items-container" class="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                         </div>
                     </div>
 
-                    <div class="flex items-center">
-                        <input type="checkbox" 
-                               id="is_active" 
-                               name="is_active" 
-                               value="1"
-                               checked
-                               class="w-4 h-4 text-dragon-red bg-dragon-black border-dragon-border rounded focus:ring-dragon-red focus:ring-2">
-                        <label for="is_active" class="ml-2 text-sm font-medium text-dragon-silver-dark">Product is active</label>
-                    </div>
-
-                    <div class="flex justify-end space-x-4 pt-4">
+                    <div class="flex justify-end gap-3 pt-4 border-t border-dragon/30">
                         <button type="button" onclick="closeModal()" 
-                                class="px-6 py-2 bg-dragon-border hover:bg-dragon-silver-dark text-dragon-silver rounded-lg transition duration-200">
+                                class="px-6 py-2.5 bg-dragon-surface border border-dragon/50 text-metallic-silver rounded-xl font-bold hover:bg-dragon-darker transition-all">
                             Cancel
                         </button>
                         <button type="submit" 
-                                class="px-6 py-2 gradient-red hover:opacity-90 text-dragon-silver rounded-lg transition duration-200">
+                                class="px-8 py-2.5 gradient-crimson text-white rounded-xl font-bold shadow-lg shadow-crimson-900/20 hover:scale-[1.02] active:scale-95 transition-all">
                             <span id="submit-text">Create Product</span>
                         </button>
                     </div>
@@ -381,27 +394,33 @@ function addBundleItem(itemId = '', qtyUnit = '') {
     const index = bundleItemCounter++;
     
     const itemHtml = `
-        <div class="flex gap-2 items-start bundle-item" data-index="${index}">
+        <div class="flex gap-3 items-center bundle-item p-3 bg-dragon-surface rounded-xl border border-dragon/30 group hover:border-crimson-primary/30 transition-all animate-in slide-in-from-top-1" data-index="${index}">
             <div class="flex-1">
-                <input type="number" 
-                       name="bundle_items[${index}][item_id]" 
-                       value="${itemId}"
-                       placeholder="Item ID" 
-                       class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
-                       required>
+                <div class="flex items-center bg-dragon-darker rounded-lg px-3 border border-dragon/30">
+                    <span class="text-[10px] text-metallic-gray uppercase font-bold mr-2">ID</span>
+                    <input type="number" 
+                           name="bundle_items[${index}][item_id]" 
+                           value="${itemId}"
+                           placeholder="Item ID" 
+                           class="w-full bg-transparent border-none text-metallic-silver py-2 focus:ring-0 outline-none text-sm"
+                           required>
+                </div>
             </div>
             <div class="flex-1">
-                <input type="number" 
-                       name="bundle_items[${index}][qty_unit]" 
-                       value="${qtyUnit}"
-                       placeholder="Qty Unit" 
-                       min="1"
-                       class="w-full px-3 py-2 bg-dragon-black border border-dragon-border rounded-lg text-dragon-silver focus:outline-none focus:ring-2 focus:ring-dragon-red focus:border-transparent"
-                       required>
+                <div class="flex items-center bg-dragon-darker rounded-lg px-3 border border-dragon/30">
+                    <span class="text-[10px] text-metallic-gray uppercase font-bold mr-2">Qty</span>
+                    <input type="number" 
+                           name="bundle_items[${index}][qty_unit]" 
+                           value="${qtyUnit}"
+                           placeholder="Qty" 
+                           min="1"
+                           class="w-full bg-transparent border-none text-metallic-silver py-2 focus:ring-0 outline-none text-sm"
+                           required>
+                </div>
             </div>
             <button type="button" onclick="removeBundleItem(${index})" 
-                    class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                Remove
+                    class="p-2 text-metallic-gray hover:text-red-500 transition-colors">
+                <i class="fas fa-trash-alt"></i>
             </button>
         </div>
     `;
