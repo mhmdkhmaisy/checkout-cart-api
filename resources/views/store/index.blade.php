@@ -373,7 +373,7 @@
     <div class="container">
         <!-- Store Alerts -->
         @if(isset($alerts) && $alerts->count() > 0)
-        <div style="margin-bottom: 2rem;">
+        <div style="margin-bottom: 2rem; margin-top: 2rem;">
             @foreach($alerts as $alert)
                 <div style="background: rgba(20, 20, 20, 0.95); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 1rem; transition: all 0.3s ease; position: relative; overflow: hidden;
                     @if($alert->type === 'HOT') border-left: 3px solid #ef4444;
