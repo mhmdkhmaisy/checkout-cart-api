@@ -373,73 +373,41 @@
     <div class="container">
         <!-- Store Alerts -->
         @if(isset($alerts) && $alerts->count() > 0)
-        <div class="flex flex-col gap-4 mb-10">
+        <div class="flex flex-col gap-3 mb-8">
             @foreach($alerts as $alert)
-                <div class="relative group rounded-lg overflow-hidden border border-white/10 shadow-2xl" 
-                     style="background: linear-gradient(90deg, 
-                        @if($alert->type === 'HOT') rgba(212, 0, 0, 0.4) 0%, rgba(20, 20, 20, 0.95) 100%
-                        @elseif($alert->type === 'LIMITED') rgba(184, 134, 11, 0.4) 0%, rgba(20, 20, 20, 0.95) 100%
-                        @elseif($alert->type === 'NEW') rgba(0, 102, 204, 0.4) 0%, rgba(20, 20, 20, 0.95) 100%
-                        @else rgba(50, 50, 50, 0.4) 0%, rgba(20, 20, 20, 0.95) 100%
-                        @endif);">
+                <div class="rounded-lg border-l-4 px-5 py-4 flex items-center justify-between shadow-lg
+                    @if($alert->type === 'HOT') bg-red-950/40 border-red-600 text-red-100
+                    @elseif($alert->type === 'LIMITED') bg-amber-950/40 border-amber-600 text-amber-100
+                    @elseif($alert->type === 'NEW') bg-blue-950/40 border-blue-600 text-blue-100
+                    @else bg-zinc-900/40 border-zinc-600 text-zinc-100
+                    @endif">
                     
-                    <!-- Decorative Side Bar -->
-                    <div class="absolute left-0 top-0 bottom-0 w-1.5
-                        @if($alert->type === 'HOT') bg-dragon-red shadow-[0_0_15px_#ff0000]
-                        @elseif($alert->type === 'LIMITED') bg-amber-500 shadow-[0_0_15px_#f59e0b]
-                        @elseif($alert->type === 'NEW') bg-blue-500 shadow-[0_0_15px_#3b82f6]
-                        @else bg-zinc-500
-                        @endif">
-                    </div>
-
-                    <div class="relative px-6 py-5 flex items-center justify-between">
-                        <div class="flex items-center gap-5">
-                            <!-- Tag and Icon -->
-                            <div class="flex items-center gap-3">
-                                <span class="px-3 py-1.5 rounded text-[11px] font-black tracking-widest uppercase
-                                    @if($alert->type === 'HOT') bg-dragon-red text-white shadow-[0_0_10px_rgba(212,0,0,0.6)]
-                                    @elseif($alert->type === 'LIMITED') bg-amber-500 text-black
-                                    @elseif($alert->type === 'NEW') bg-blue-600 text-white
-                                    @else bg-zinc-700 text-zinc-200
-                                    @endif">
-                                    {{ $alert->type }}
-                                </span>
-                                
-                                <div class="text-xl">
-                                    @if($alert->type === 'HOT') <i class="fas fa-fire text-dragon-red-bright drop-shadow-[0_0_5px_#ff0000] animate-bounce"></i>
-                                    @elseif($alert->type === 'LIMITED') <i class="fas fa-hourglass-half text-amber-400 animate-spin-slow"></i>
-                                    @elseif($alert->type === 'NEW') <i class="fas fa-star text-blue-400 animate-pulse"></i>
-                                    @else <i class="fas fa-bullhorn text-zinc-400"></i>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <!-- Text Content -->
-                            <h3 class="text-white font-bold text-base md:text-lg tracking-wide dragon-text-glow">
+                    <div class="flex items-center gap-4">
+                        <span class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider
+                            @if($alert->type === 'HOT') bg-red-600 text-white
+                            @elseif($alert->type === 'LIMITED') bg-amber-500 text-black
+                            @elseif($alert->type === 'NEW') bg-blue-600 text-white
+                            @else bg-zinc-700 text-zinc-200
+                            @endif">
+                            {{ $alert->type }}
+                        </span>
+                        
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">
+                                @if($alert->type === 'HOT') <i class="fas fa-fire text-red-500"></i>
+                                @elseif($alert->type === 'LIMITED') <i class="fas fa-hourglass-half text-amber-500"></i>
+                                @elseif($alert->type === 'NEW') <i class="fas fa-star text-blue-400"></i>
+                                @else <i class="fas fa-bullhorn text-zinc-400"></i>
+                                @endif
+                            </span>
+                            <span class="font-bold tracking-wide">
                                 {{ $alert->text }}
-                            </h3>
-                        </div>
-
-                        <!-- Right Side Visual Decoration -->
-                        <div class="hidden lg:flex items-center gap-2 opacity-30">
-                            <div class="w-1 h-8 bg-white/10 rounded-full"></div>
-                            <div class="w-1 h-12 bg-white/20 rounded-full"></div>
-                            <div class="w-1 h-8 bg-white/10 rounded-full"></div>
+                            </span>
                         </div>
                     </div>
                 </div>
             @endforeach
         </div>
-        
-        <style>
-            @keyframes spin-slow {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
-            }
-            .animate-spin-slow {
-                animation: spin-slow 8s linear infinite;
-            }
-        </style>
         @endif
 
         <!-- Active Promotions Banner Carousel -->
