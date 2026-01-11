@@ -31,11 +31,11 @@
                             </svg>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="px-2 py-1 rounded text-xs uppercase
-                                @if($alert->type === 'info') bg-blue-900 text-blue-100
-                                @elseif($alert->type === 'success') bg-green-900 text-green-100
-                                @elseif($alert->type === 'warning') bg-yellow-900 text-yellow-100
-                                @elseif($alert->type === 'danger') bg-red-900 text-red-100
+                            <span class="px-2 py-1 rounded text-xs uppercase font-bold
+                                @if($alert->type === 'HOT') bg-red-600 text-white shadow-[0_0_10px_rgba(255,0,0,0.5)]
+                                @elseif($alert->type === 'LIMITED') bg-amber-500 text-black
+                                @elseif($alert->type === 'NEW') bg-blue-500 text-white
+                                @elseif($alert->type === 'INFO') bg-zinc-700 text-zinc-300
                                 @endif">
                                 {{ $alert->type }}
                             </span>
@@ -78,10 +78,10 @@
                 <div>
                     <label class="block text-sm font-medium text-dragon-silver-dark mb-1">Type</label>
                     <select name="type" id="alertType" class="w-full bg-dragon-surface border border-dragon-border rounded-lg px-4 py-2 text-dragon-silver focus:ring-1 focus:ring-dragon-red focus:border-dragon-red outline-none">
-                        <option value="info">Info (Blue)</option>
-                        <option value="success">Success (Green)</option>
-                        <option value="warning">Warning (Yellow)</option>
-                        <option value="danger">Danger (Red)</option>
+                        <option value="HOT">HOT (Red Glow)</option>
+                        <option value="LIMITED">LIMITED (Gold)</option>
+                        <option value="NEW">NEW (Blue)</option>
+                        <option value="INFO">INFO (Gray)</option>
                     </select>
                 </div>
                 <div>
