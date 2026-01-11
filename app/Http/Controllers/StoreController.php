@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\StoreAlert;
 use App\Services\PromotionManager;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -37,6 +38,9 @@ class StoreController extends Controller
 
         // Get active promotions
         $promotions = $this->promotionManager->getActivePromotions();
+
+        // Get active store alerts
+        $alerts = StoreAlert::active()->get();
         
         // Get user progress if cart_user session exists
         $userProgress = [];
@@ -44,7 +48,7 @@ class StoreController extends Controller
             $userProgress = $this->promotionManager->evaluateUserProgress(session('cart_user'));
         }
 
-        return view('store.index', compact('products', 'categories', 'promotions', 'userProgress'));
+        return view('store.index', compact('products', 'categories', 'promotions', 'userProgress', 'alerts'));
     }
 
     public function terms(): View

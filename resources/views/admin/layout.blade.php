@@ -147,6 +147,12 @@
                                 <i class="fas fa-percent mr-3"></i>
                                 Promotions
                             </a>
+
+                            <a href="{{ route('admin.store-alerts.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.store-alerts.*') ? 'active' : '' }}">
+                                <i class="fas fa-bell mr-3"></i>
+                                Store Alerts
+                            </a>
                         </div>
                     </div>
 

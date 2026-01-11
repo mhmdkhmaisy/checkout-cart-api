@@ -168,6 +168,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'owner'])->group(fun
     Route::resource('webhooks', App\Http\Controllers\Admin\WebhookController::class);
     Route::patch('webhooks/{webhook}/toggle-active', [App\Http\Controllers\Admin\WebhookController::class, 'toggleActive'])->name('webhooks.toggle-active');
 
+    // Store alerts management
+    Route::post('store-alerts/update-order', [\App\Http\Controllers\Admin\StoreAlertController::class, 'updateOrder'])->name('store-alerts.update-order');
+    Route::resource('store-alerts', \App\Http\Controllers\Admin\StoreAlertController::class);
+
     // Team members & payouts management
     Route::resource('team-members', TeamMemberController::class);
     Route::patch('team-members/{team_member}/toggle-active', [TeamMemberController::class, 'toggleActive'])->name('team-members.toggle-active');

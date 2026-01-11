@@ -371,6 +371,32 @@
 
     <!-- Store Layout: Products + Basket -->
     <div class="container">
+        <!-- Store Alerts -->
+        @if(isset($alerts) && $alerts->count() > 0)
+        <div class="space-y-3 mb-6">
+            @foreach($alerts as $alert)
+                <div class="p-4 rounded-lg border flex items-center shadow-lg animate-pulse
+                    @if($alert->type === 'info') bg-blue-900/30 border-blue-500 text-blue-100
+                    @elseif($alert->type === 'success') bg-green-900/30 border-green-500 text-green-100
+                    @elseif($alert->type === 'warning') bg-yellow-900/30 border-yellow-500 text-yellow-100
+                    @elseif($alert->type === 'danger') bg-red-900/30 border-red-500 text-red-100
+                    @else bg-dragon-surface border-dragon-border text-dragon-silver
+                    @endif">
+                    <div class="mr-3">
+                        @if($alert->type === 'info') <i class="fas fa-info-circle text-blue-400"></i>
+                        @elseif($alert->type === 'success') <i class="fas fa-check-circle text-green-400"></i>
+                        @elseif($alert->type === 'warning') <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                        @elseif($alert->type === 'danger') <i class="fas fa-exclamation-circle text-red-400"></i>
+                        @endif
+                    </div>
+                    <div class="font-bold text-sm md:text-base">
+                        {{ $alert->text }}
+                    </div>
+                </div>
+            @endforeach
+        </div>
+        @endif
+
         <!-- Active Promotions Banner Carousel -->
         @if($promotions->count() > 0)
         <div style="margin-bottom: 2rem;">
