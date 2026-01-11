@@ -373,42 +373,55 @@
     <div class="container">
         <!-- Store Alerts -->
         @if(isset($alerts) && $alerts->count() > 0)
-        <div class="flex flex-col gap-3 mb-8">
+        <div style="margin-bottom: 2rem;">
             @foreach($alerts as $alert)
-                <div class="rounded-lg border-l-4 px-5 py-4 flex items-center justify-between shadow-lg
-                    @if($alert->type === 'HOT') bg-red-950/40 border-red-600 text-red-100
-                    @elseif($alert->type === 'LIMITED') bg-amber-950/40 border-amber-600 text-amber-100
-                    @elseif($alert->type === 'NEW') bg-blue-950/40 border-blue-600 text-blue-100
-                    @else bg-zinc-900/40 border-zinc-600 text-zinc-100
-                    @endif">
+                <div style="background: rgba(20, 20, 20, 0.95); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 1rem; transition: all 0.3s ease; position: relative; overflow: hidden;
+                    @if($alert->type === 'HOT') border-left: 3px solid #ef4444;
+                    @elseif($alert->type === 'LIMITED') border-left: 3px solid #f59e0b;
+                    @elseif($alert->type === 'NEW') border-left: 3px solid #3b82f6;
+                    @else border-left: 3px solid var(--border-color);
+                    @endif"
+                    onmouseover="this.style.borderColor='var(--primary-color)'; this.style.background='rgba(26, 26, 26, 0.95)';"
+                    onmouseout="this.style.borderColor='var(--border-color)'; this.style.background='rgba(20, 20, 20, 0.95)';">
                     
-                    <div class="flex items-center gap-4">
-                        <span class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-wider
-                            @if($alert->type === 'HOT') bg-red-600 text-white
-                            @elseif($alert->type === 'LIMITED') bg-amber-500 text-black
-                            @elseif($alert->type === 'NEW') bg-blue-600 text-white
-                            @else bg-zinc-700 text-zinc-200
-                            @endif">
-                            {{ $alert->type }}
-                        </span>
-                        
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg">
-                                @if($alert->type === 'HOT') <i class="fas fa-fire text-red-500"></i>
-                                @elseif($alert->type === 'LIMITED') <i class="fas fa-hourglass-half text-amber-500"></i>
-                                @elseif($alert->type === 'NEW') <i class="fas fa-star text-blue-400"></i>
-                                @else <i class="fas fa-bullhorn text-zinc-400"></i>
-                                @endif
-                            </span>
-                            <span class="font-bold tracking-wide">
-                                {{ $alert->text }}
-                            </span>
-                        </div>
+                    <!-- Alert Type Badge -->
+                    <div style="background: 
+                        @if($alert->type === 'HOT') var(--primary-color)
+                        @elseif($alert->type === 'LIMITED') rgba(212, 175, 55, 0.9)
+                        @elseif($alert->type === 'NEW') #3b82f6
+                        @else var(--border-color)
+                        @endif; 
+                        color: 
+                        @if($alert->type === 'LIMITED') #000
+                        @else var(--text-light)
+                        @endif; 
+                        padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                        {{ $alert->type }}
+                    </div>
+                    
+                    <!-- Alert Icon -->
+                    <div style="font-size: 1.25rem; color: 
+                        @if($alert->type === 'HOT') #ef4444
+                        @elseif($alert->type === 'LIMITED') #f59e0b
+                        @elseif($alert->type === 'NEW') #3b82f6
+                        @else var(--text-muted)
+                        @endif;">
+                        @if($alert->type === 'HOT') <i class="fas fa-fire"></i>
+                        @elseif($alert->type === 'LIMITED') <i class="fas fa-hourglass-half"></i>
+                        @elseif($alert->type === 'NEW') <i class="fas fa-star"></i>
+                        @else <i class="fas fa-bullhorn"></i>
+                        @endif
+                    </div>
+                    
+                    <!-- Alert Text -->
+                    <div style="flex: 1; color: var(--text-light); font-weight: 600; font-size: 0.9rem; letter-spacing: 0.3px;">
+                        {{ $alert->text }}
                     </div>
                 </div>
             @endforeach
         </div>
         @endif
+
 
         <!-- Active Promotions Banner Carousel -->
         @if($promotions->count() > 0)
