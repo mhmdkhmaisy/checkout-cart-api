@@ -52,7 +52,7 @@
     </div>
 
     <!-- Charts and Tables -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Recent Orders -->
         <div class="glass-effect rounded-xl p-6 border border-dragon-border">
             <h3 class="text-xl font-semibold mb-4 text-dragon-red">Recent Orders</h3>
@@ -102,6 +102,26 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                         </svg>
                         <p class="text-dragon-silver-dark">No sales data yet</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
+        <!-- Top Donators -->
+        <div class="glass-effect rounded-xl p-6 border border-dragon-border">
+            <h3 class="text-xl font-semibold mb-4 text-dragon-red">Top Donators</h3>
+            <div class="space-y-3">
+                @forelse($topDonators ?? [] as $donator)
+                    <div class="flex justify-between items-center p-3 bg-dragon-surface rounded-lg border border-dragon-border">
+                        <div class="font-medium text-dragon-silver">{{ $donator->username }}</div>
+                        <div class="text-green-400 font-medium">${{ number_format($donator->total_donated, 2) }}</div>
+                    </div>
+                @empty
+                    <div class="text-center py-8">
+                        <svg class="w-12 h-12 mx-auto text-dragon-border mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        <p class="text-dragon-silver-dark">No donations yet</p>
                     </div>
                 @endforelse
             </div>

@@ -38,6 +38,14 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Top donators (PAID only)
+        $topDonators = Order::where('status', 'paid')
+            ->select('username', DB::raw('SUM(amount) as total_donated'))
+            ->groupBy('username')
+            ->orderBy('total_donated', 'desc')
+            ->limit(10)
+            ->get();
+
         // Monthly revenue chart data
         $monthlyRevenue = Order::where('status', 'paid')
             ->select(
@@ -60,6 +68,7 @@ class DashboardController extends Controller
             'unclaimedOrders',
             'recentOrders',
             'topProducts',
+            'topDonators',
             'monthlyRevenue'
         ));
     }
