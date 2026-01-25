@@ -177,7 +177,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'owner'])->group(fun
     Route::patch('team-members/{team_member}/toggle-active', [TeamMemberController::class, 'toggleActive'])->name('team-members.toggle-active');
     Route::get('payouts', [TeamMemberController::class, 'payouts'])->name('team-members.payouts');
 
+    // Referral system management
+    Route::resource('referrals', \App\Http\Controllers\Admin\ReferralController::class);
 });
+
+// Referral tracking route
+Route::get('/ref/{code}', [\App\Http\Controllers\ReferralController::class, 'track'])->name('referral.track');
 
 // Payment completion pages (NEW ROUTES)
 Route::prefix('payment')->name('payment.')->group(function () {
