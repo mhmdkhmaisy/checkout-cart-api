@@ -26,12 +26,13 @@ class ReferralController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:20|unique:referral_links,code',
             'target_url' => 'required|string|max:255',
         ]);
 
         ReferralLink::create([
             'name' => $request->name,
-            'code' => Str::random(8),
+            'code' => $request->code ?: Str::random(8),
             'target_url' => $request->target_url,
         ]);
 

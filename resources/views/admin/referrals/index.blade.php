@@ -95,6 +95,11 @@
                            class="w-full bg-dragon-black border border-dragon-border rounded-lg px-4 py-2.5 text-dragon-silver focus:border-dragon-red outline-none transition-all">
                 </div>
                 <div>
+                    <label class="block text-xs font-black text-dragon-red uppercase tracking-widest mb-2">Custom Code (Optional)</label>
+                    <input type="text" name="code" placeholder="e.g. Rsguy (Leave blank for random)" 
+                           class="w-full bg-dragon-black border border-dragon-border rounded-lg px-4 py-2.5 text-dragon-silver focus:border-dragon-red outline-none transition-all">
+                </div>
+                <div>
                     <label class="block text-xs font-black text-dragon-red uppercase tracking-widest mb-2">Target URL</label>
                     <input type="text" name="target_url" required value="/"
                            class="w-full bg-dragon-black border border-dragon-border rounded-lg px-4 py-2.5 text-dragon-silver focus:border-dragon-red outline-none transition-all">
