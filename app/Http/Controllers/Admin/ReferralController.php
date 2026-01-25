@@ -13,18 +13,13 @@ class ReferralController extends Controller
 {
     public function index()
     {
-        try {
-            $links = ReferralLink::withCount(['clicks as total_clicks'])
-                ->withCount(['clicks as unique_clicks' => function($query) {
-                    $query->select(DB::raw('count(distinct ip_address)'));
-                }])
-                ->get();
+        $links = ReferralLink::withCount(['clicks as total_clicks'])
+            ->withCount(['clicks as unique_clicks' => function($query) {
+                $query->select(DB::raw('count(distinct ip_address)'));
+            }])
+            ->get();
 
-            return view('admin.referrals.index', compact('links'));
-        } catch (\Exception $e) {
-            \Log::error('Referral Index Error: ' . $e->getMessage());
-            return back()->with('error', 'Error loading referral links: ' . $e->getMessage());
-        }
+        return view('admin.referrals.index', compact('links'));
     }
 
     public function store(Request $request)
