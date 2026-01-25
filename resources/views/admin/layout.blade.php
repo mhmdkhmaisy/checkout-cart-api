@@ -249,6 +249,12 @@
                                 <i class="fas fa-newspaper mr-3"></i>
                                 Updates
                             </a>
+
+                            <a href="{{ route('admin.referrals.index') }}" 
+                               class="nav-link flex items-center px-4 py-2 text-dragon-silver-dark rounded-lg {{ request()->routeIs('admin.referrals.*') ? 'active' : '' }}">
+                                <i class="fas fa-link mr-3"></i>
+                                Referral Links
+                            </a>
                         </div>
                     </div>
                     
