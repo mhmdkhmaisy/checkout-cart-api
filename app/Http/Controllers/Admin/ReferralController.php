@@ -13,13 +13,18 @@ class ReferralController extends Controller
 {
     public function index()
     {
-        $links = ReferralLink::withCount(['clicks as total_clicks'])
-            ->withCount(['clicks as unique_clicks' => function($query) {
-                $query->select(DB::raw('count(distinct ip_address)'));
-            }])
-            ->get();
+        try {
+            $links = ReferralLink::withCount(['clicks as total_clicks'])
+                ->withCount(['clicks as unique_clicks' => function($query) {
+                    $query->select(DB::raw('count(distinct ip_address)'));
+                }])
+                ->get();
 
-        return view('admin.referrals.index', compact('links'));
+            return view('admin.referrals.index', compact('links'));
+        } catch (\Exception $e) {
+            \Log::error('Referral Index Error: ' . $e->getMessage());
+            return back()->with('error', 'Error loading referral links: ' . $e->getMessage());
+        }
     }
 
     public function store(Request $request)
@@ -38,8 +43,9 @@ class ReferralController extends Controller
         return back()->with('success', 'Referral link created successfully.');
     }
 
-    public function show(ReferralLink $referralLink)
+    public function show($id)
     {
+        $referralLink = ReferralLink::findOrFail($id);
         $clicksByDay = ReferralClick::where('referral_link_id', $referralLink->id)
             ->select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
             ->groupBy('date')
@@ -50,8 +56,9 @@ class ReferralController extends Controller
         return view('admin.referrals.show', compact('referralLink', 'clicksByDay'));
     }
 
-    public function destroy(ReferralLink $referralLink)
+    public function destroy($id)
     {
+        $referralLink = ReferralLink::findOrFail($id);
         $referralLink->delete();
         return back()->with('success', 'Referral link deleted.');
     }
