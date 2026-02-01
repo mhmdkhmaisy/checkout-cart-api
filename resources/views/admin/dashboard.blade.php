@@ -108,25 +108,97 @@
         </div>
 
         <!-- Top Donators -->
-        <div class="glass-effect rounded-xl p-6 border border-dragon-border">
-            <h3 class="text-xl font-semibold mb-4 text-dragon-red">Top Donators</h3>
-            <div class="space-y-3">
-                @forelse($topDonators ?? [] as $donator)
-                    <div class="flex justify-between items-center p-3 bg-dragon-surface rounded-lg border border-dragon-border">
-                        <div class="font-medium text-dragon-silver">{{ $donator->username }}</div>
-                        <div class="text-green-400 font-medium">${{ number_format($donator->total_donated, 2) }}</div>
-                    </div>
-                @empty
-                    <div class="text-center py-8">
-                        <svg class="w-12 h-12 mx-auto text-dragon-border mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
-                        <p class="text-dragon-silver-dark">No donations yet</p>
-                    </div>
-                @endforelse
+        <div class="glass-effect rounded-xl border border-dragon-border flex flex-col h-full">
+            <div class="p-6 pb-2">
+                <h3 class="text-xl font-semibold text-dragon-red flex items-center">
+                    <i class="fas fa-trophy mr-3"></i> Top Donators
+                </h3>
+                
+                <!-- Tabs Navigation -->
+                <div class="flex mt-4 p-1 bg-dragon-black/50 rounded-lg">
+                    <button onclick="switchTab('all-time')" id="tab-all-time" class="flex-1 py-1.5 text-xs font-bold rounded-md transition-all duration-200 bg-dragon-red text-white">ALL TIME</button>
+                    <button onclick="switchTab('this-month')" id="tab-this-month" class="flex-1 py-1.5 text-xs font-bold rounded-md transition-all duration-200 text-dragon-silver-dark hover:text-white">THIS MONTH</button>
+                    <button onclick="switchTab('last-month')" id="tab-last-month" class="flex-1 py-1.5 text-xs font-bold rounded-md transition-all duration-200 text-dragon-silver-dark hover:text-white">LAST MONTH</button>
+                </div>
+            </div>
+
+            <div class="flex-1 p-6 pt-2 overflow-y-auto">
+                <!-- All Time List -->
+                <div id="list-all-time" class="space-y-3">
+                    @forelse($topDonators ?? [] as $donator)
+                        <div class="flex justify-between items-center p-3 bg-dragon-surface rounded-lg border border-dragon-border hover:border-dragon-red/30 transition-all group">
+                            <div class="flex items-center">
+                                <span class="w-6 h-6 flex items-center justify-center bg-dragon-black rounded text-[10px] font-bold text-dragon-red mr-3 border border-dragon-border group-hover:border-dragon-red/50">{{ $loop->iteration }}</span>
+                                <div class="font-medium text-dragon-silver">{{ $donator->username }}</div>
+                            </div>
+                            <div class="text-green-400 font-bold">${{ number_format($donator->total_donated, 2) }}</div>
+                        </div>
+                    @empty
+                        <div class="text-center py-8">
+                            <p class="text-dragon-silver-dark italic">No data available</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                <!-- This Month List -->
+                <div id="list-this-month" class="space-y-3 hidden">
+                    @forelse($topDonatorsMonth ?? [] as $donator)
+                        <div class="flex justify-between items-center p-3 bg-dragon-surface rounded-lg border border-dragon-border hover:border-dragon-red/30 transition-all group">
+                            <div class="flex items-center">
+                                <span class="w-6 h-6 flex items-center justify-center bg-dragon-black rounded text-[10px] font-bold text-dragon-red mr-3 border border-dragon-border group-hover:border-dragon-red/50">{{ $loop->iteration }}</span>
+                                <div class="font-medium text-dragon-silver">{{ $donator->username }}</div>
+                            </div>
+                            <div class="text-green-400 font-bold">${{ number_format($donator->total_donated, 2) }}</div>
+                        </div>
+                    @empty
+                        <div class="text-center py-8 text-dragon-silver-dark italic">No donations this month</div>
+                    @endforelse
+                </div>
+
+                <!-- Last Month List -->
+                <div id="list-last-month" class="space-y-3 hidden">
+                    @forelse($topDonatorsLastMonth ?? [] as $donator)
+                        <div class="flex justify-between items-center p-3 bg-dragon-surface rounded-lg border border-dragon-border hover:border-dragon-red/30 transition-all group">
+                            <div class="flex items-center">
+                                <span class="w-6 h-6 flex items-center justify-center bg-dragon-black rounded text-[10px] font-bold text-dragon-red mr-3 border border-dragon-border group-hover:border-dragon-red/50">{{ $loop->iteration }}</span>
+                                <div class="font-medium text-dragon-silver">{{ $donator->username }}</div>
+                            </div>
+                            <div class="text-green-400 font-bold">${{ number_format($donator->total_donated, 2) }}</div>
+                        </div>
+                    @empty
+                        <div class="text-center py-8 text-dragon-silver-dark italic">No donations last month</div>
+                    @endforelse
+                </div>
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        function switchTab(tabId) {
+            // Hide all lists
+            document.getElementById('list-all-time').classList.add('hidden');
+            document.getElementById('list-this-month').classList.add('hidden');
+            document.getElementById('list-last-month').classList.add('hidden');
+            
+            // Deactivate all tabs
+            const tabs = ['all-time', 'this-month', 'last-month'];
+            tabs.forEach(t => {
+                const btn = document.getElementById('tab-' + t);
+                btn.classList.remove('bg-dragon-red', 'text-white');
+                btn.classList.add('text-dragon-silver-dark', 'hover:text-white');
+            });
+            
+            // Show selected list
+            document.getElementById('list-' + tabId).classList.remove('hidden');
+            
+            // Activate selected tab
+            const activeBtn = document.getElementById('tab-' + tabId);
+            activeBtn.classList.add('bg-dragon-red', 'text-white');
+            activeBtn.classList.remove('text-dragon-silver-dark', 'hover:text-white');
+        }
+    </script>
+    @endpush
 
     <!-- Monthly Revenue Chart -->
     @if(isset($monthlyRevenue) && $monthlyRevenue->count() > 0)

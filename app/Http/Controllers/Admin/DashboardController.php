@@ -38,8 +38,29 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // Top donators (PAID only)
+        // Top donators (All Time)
         $topDonators = Order::where('status', 'paid')
+            ->select('username', DB::raw('SUM(amount) as total_donated'))
+            ->groupBy('username')
+            ->orderBy('total_donated', 'desc')
+            ->limit(10)
+            ->get();
+
+        // Top donators (This Month)
+        $topDonatorsMonth = Order::where('status', 'paid')
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->select('username', DB::raw('SUM(amount) as total_donated'))
+            ->groupBy('username')
+            ->orderBy('total_donated', 'desc')
+            ->limit(10)
+            ->get();
+
+        // Top donators (Last Month)
+        $lastMonth = now()->subMonth();
+        $topDonatorsLastMonth = Order::where('status', 'paid')
+            ->whereYear('created_at', $lastMonth->year)
+            ->whereMonth('created_at', $lastMonth->month)
             ->select('username', DB::raw('SUM(amount) as total_donated'))
             ->groupBy('username')
             ->orderBy('total_donated', 'desc')
@@ -69,6 +90,8 @@ class DashboardController extends Controller
             'recentOrders',
             'topProducts',
             'topDonators',
+            'topDonatorsMonth',
+            'topDonatorsLastMonth',
             'monthlyRevenue'
         ));
     }
