@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderEvent;
 use App\Models\Vote;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -65,8 +66,26 @@ class ClaimController extends Controller
                 }
 
                 // Mark order items as claimed
-                OrderItem::whereIn('id', $orderItemsToUpdate)
-                    ->update(['claimed' => true]);
+                OrderItem::whereIn('id', $orderItemsToUpdate)->update([
+                    'claimed' => true,
+                    'claimed_at' => now(),
+                    'claim_ip' => $request->ip()
+                ]);
+
+                // ALWAYS log the event to OrderEvent table (full history)
+                OrderEvent::create([
+                    'order_id' => $orders->first()->id,
+                    'event_type' => 'PLAYER.ORDER.CLAIMED',
+                    'status' => 'claimed',
+                    'payload' => [
+                        'items_count' => count($claimableItems),
+                        'total_gross' => $totalGross,
+                        'claimed_by' => $username,
+                        'claimed_at' => now(),
+                        'claim_ip' => $request->ip()
+                    ]
+                ]);
+
 
                 return response()->json([
                     'success' => true,

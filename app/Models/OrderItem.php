@@ -16,16 +16,20 @@ class OrderItem extends Model
         'price',
         'qty_units',
         'total_qty',
-        'claimed'
+        'claimed',
+        'claimed_at',
+        'claim_ip'
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'qty_units' => 'integer',
-        'total_qty' => 'integer',
-        'product_id' => 'integer',
-        'claimed' => 'boolean'
+        'price'       => 'decimal:2',
+        'qty_units'   => 'integer',
+        'total_qty'   => 'integer',
+        'product_id'  => 'integer',
+        'claimed'     => 'boolean',
+        'claimed_at'  => 'datetime'
     ];
+
 
     protected $attributes = [
         'product_id' => null
