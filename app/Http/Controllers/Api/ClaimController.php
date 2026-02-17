@@ -68,24 +68,6 @@ class ClaimController extends Controller
                 OrderItem::whereIn('id', $orderItemsToUpdate)
                     ->update(['claimed' => true]);
 
-                // Update orders with claim details and log events
-                foreach ($orders as $order) {
-                    $order->update([
-                        'claimed_at' => now(),
-                        'claim_ip' => $request->ip()
-                    ]);
-
-                    $order->events()->create([
-                        'event_type' => 'ORDER_CLAIMED',
-                        'status' => 'success',
-                        'payload' => [
-                            'ip' => $request->ip(),
-                            'user_agent' => $request->userAgent(),
-                            'claimed_at' => now()->toDateTimeString()
-                        ]
-                    ]);
-                }
-
                 return response()->json([
                     'success' => true,
                     'items' => $claimableItems,
