@@ -65,11 +65,13 @@ class ClaimController extends Controller
                     ]);
                 }
 
+                $clientIp = $request->header('X-Client-IP') ?? $request->ip();
+
                 // Mark order items as claimed
                 OrderItem::whereIn('id', $orderItemsToUpdate)->update([
                     'claimed' => true,
                     'claimed_at' => now(),
-                    'claim_ip' => $request->ip()
+                    'claim_ip' => $clientIp
                 ]);
 
                 // ALWAYS log the event to OrderEvent table (full history)
@@ -82,7 +84,7 @@ class ClaimController extends Controller
                         'total_gross' => $totalGross,
                         'claimed_by' => $username,
                         'claimed_at' => now(),
-                        'claim_ip' => $request->ip()
+                        'claim_ip' => $clientIp
                     ]
                 ]);
 
